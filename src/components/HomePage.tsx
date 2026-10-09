@@ -5,6 +5,7 @@ import { Navbar } from './Navbar';
 import { Hero } from './Hero';
 import { WorkshopPreview } from './WorkshopPreview';
 import { Benefits } from './Benefits';
+import { AiJobImpact } from './AiJobImpact';
 import { WorkshopAgenda } from './WorkshopAgenda';
 import { Instructor } from './Instructor';
 import { Testimonials } from './Testimonials';
@@ -44,6 +45,7 @@ export const HomePage: React.FC = () => {
           onOpenRegister={handleOpenRegister}
         />
         <Benefits />
+        <AiJobImpact onOpenRegister={handleOpenRegister} />
         <WorkshopAgenda />
         <Instructor />
         <Testimonials />

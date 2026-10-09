@@ -36,6 +36,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
 
   const navLinks = [
     { name: 'Learn', href: '#benefits' },
+    { name: 'Why AI', href: '#why-ai' },
     { name: 'Agenda', href: '#agenda' },
     { name: 'Instructor', href: '#instructor' },
     { name: 'Pricing', href: '#pricing' },

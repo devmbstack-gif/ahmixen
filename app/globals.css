@@ -28,6 +28,7 @@
     --media-surface: #090810;
     --logo-plate: rgba(0, 0, 0, 0.65);
     --purple-soft-text: #d8b4fe;
+    --hero-accent: #c084fc;
   }
 
   html.light {
@@ -57,6 +58,7 @@
     --media-surface: #110d21;
     --logo-plate: #0B0911;
     --purple-soft-text: #6B21A8;
+    --hero-accent: #7C3AED;
   }
 
   html {
@@ -74,7 +76,30 @@
     overflow-x: hidden;
     margin: 0;
     padding: 0;
+    cursor: default;
     transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* Arrow on copy. Hand only on controls. Text caret only in fields. */
+  a[href],
+  button:not(:disabled),
+  summary,
+  label[for],
+  select,
+  [role="button"] {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
+  input,
+  textarea,
+  [contenteditable="true"] {
+    cursor: text;
+    caret-color: var(--text-main);
   }
 
   /* Smooth theme shifts on common surfaces */
@@ -167,6 +192,374 @@ html.light .purple-badge {
   background: rgba(124, 58, 237, 0.1);
   border: 1px solid rgba(124, 58, 237, 0.25);
   color: #7C3AED;
+}
+
+.hero-accent {
+  color: var(--hero-accent);
+}
+
+.hero-floor-glow {
+  background:
+    radial-gradient(ellipse 90% 80% at 50% 100%, rgba(124, 58, 237, 0.55) 0%, rgba(88, 28, 135, 0.22) 42%, transparent 72%),
+    linear-gradient(to top, rgba(76, 29, 149, 0.28), transparent 68%);
+}
+
+html.light .hero-floor-glow {
+  background: radial-gradient(
+    ellipse 110% 95% at 50% 120%,
+    rgba(124, 58, 237, 0.32) 0%,
+    rgba(168, 85, 247, 0.14) 40%,
+    transparent 72%
+  );
+}
+
+.hero-meta-pill {
+  background: rgba(0, 0, 0, 0.45);
+  border: 1.5px solid rgba(192, 132, 252, 0.4);
+  color: var(--text-main);
+}
+
+html.light .hero-meta-pill {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1.5px solid rgba(124, 58, 237, 0.32);
+  color: var(--text-main);
+}
+
+/* Stacked benefit layers — designed art fills each slide */
+.benefit-stack {
+  --benefit-layers: 4;
+  /* Card art ratio ≈ 447×259 */
+  --benefit-card-h: calc(100cqw * 259 / 447);
+  --benefit-peek: clamp(38px, 11cqw, 52px);
+  --benefit-radius: clamp(1.15rem, 4.5cqw, 1.75rem);
+  container-type: inline-size;
+  width: min(100%, 360px);
+  height: calc(var(--benefit-card-h) + var(--benefit-peek) * (var(--benefit-layers) - 1));
+  margin-inline: auto;
+}
+
+@media (min-width: 640px) {
+  .benefit-stack {
+    width: min(100%, 440px);
+    --benefit-peek: clamp(42px, 9cqw, 54px);
+  }
+}
+
+@media (min-width: 1024px) {
+  .benefit-stack {
+    width: 480px;
+  }
+}
+
+.benefit-layer {
+  background: var(--media-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--benefit-radius) var(--benefit-radius) 1.1rem 1.1rem;
+  transform-origin: center top;
+  will-change: top, height, transform;
+  box-shadow:
+    0 0 0 1px rgba(168, 85, 247, 0.1),
+    0 12px 32px -14px rgba(124, 58, 237, 0.45),
+    0 22px 50px -20px rgba(147, 51, 234, 0.35);
+}
+
+html.light .benefit-layer {
+  background: #ffffff;
+  box-shadow:
+    0 0 0 1px rgba(124, 58, 237, 0.12),
+    0 12px 30px -12px rgba(124, 58, 237, 0.26),
+    0 20px 44px -18px rgba(147, 51, 234, 0.2);
+}
+
+.benefit-stack-glow {
+  background: radial-gradient(
+    ellipse 80% 55% at 50% 70%,
+    rgba(124, 58, 237, 0.22) 0%,
+    rgba(147, 51, 234, 0.08) 45%,
+    transparent 70%
+  );
+}
+
+html.light .benefit-stack-glow {
+  background: radial-gradient(
+    ellipse 85% 60% at 50% 75%,
+    rgba(124, 58, 237, 0.12) 0%,
+    rgba(168, 85, 247, 0.05) 45%,
+    transparent 70%
+  );
+}
+
+.benefit-art-frame {
+  position: absolute;
+  inset: 0;
+}
+
+.benefit-art-dark,
+.benefit-art-light {
+  object-fit: cover;
+  object-position: top center;
+}
+
+.benefit-art-light {
+  display: none;
+}
+
+html.light .benefit-art-light {
+  display: block;
+}
+
+html.light .benefit-art-dark {
+  display: none;
+}
+
+/* Soft motion on the open (front) slide art */
+@keyframes benefit-art-alive {
+  0%,
+  100% {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  50% {
+    transform: scale(1.03) translate3d(0, -2px, 0);
+  }
+}
+
+@keyframes benefit-glow-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.benefit-layer-active .benefit-art-motion {
+  animation: benefit-art-alive 5s ease-in-out infinite;
+  will-change: transform;
+}
+
+.benefit-layer-sheen {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 70% 55% at 70% 30%,
+    rgba(168, 85, 247, 0.22) 0%,
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.benefit-layer-active .benefit-layer-sheen {
+  opacity: 1;
+  animation: benefit-glow-pulse 3.6s ease-in-out infinite;
+}
+
+html.light .benefit-layer-sheen {
+  background: radial-gradient(
+    ellipse 70% 55% at 70% 30%,
+    rgba(124, 58, 237, 0.14) 0%,
+    transparent 60%
+  );
+}
+
+.benefit-layer-active {
+  box-shadow:
+    0 0 0 2px rgba(168, 85, 247, 0.55),
+    0 0 28px rgba(147, 51, 234, 0.45),
+    0 16px 40px -12px rgba(124, 58, 237, 0.55);
+}
+
+html.light .benefit-layer-active {
+  box-shadow:
+    0 0 0 2px rgba(124, 58, 237, 0.42),
+    0 0 22px rgba(147, 51, 234, 0.25),
+    0 14px 36px -10px rgba(124, 58, 237, 0.32);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .benefit-layer-active .benefit-art-motion,
+  .benefit-layer-active .benefit-layer-sheen {
+    animation: none !important;
+  }
+}
+
+/* AI job-impact section */
+.job-impact-glow {
+  background:
+    radial-gradient(ellipse 55% 50% at 0% 30%, rgba(124, 58, 237, 0.18), transparent 70%),
+    radial-gradient(ellipse 45% 40% at 100% 80%, rgba(168, 85, 247, 0.12), transparent 65%);
+}
+
+html.light .job-impact-glow {
+  background:
+    radial-gradient(ellipse 55% 50% at 0% 30%, rgba(124, 58, 237, 0.08), transparent 70%),
+    radial-gradient(ellipse 45% 40% at 100% 80%, rgba(168, 85, 247, 0.06), transparent 65%);
+}
+
+/* Shared touch layer stacks (job stats + headlines) */
+.touch-layer-stack {
+  --layer-count: 3;
+  --layer-card-h: clamp(168px, 48vw, 200px);
+  --layer-peek: clamp(44px, 12vw, 56px);
+  --layer-radius: clamp(1.1rem, 4vw, 1.5rem);
+  width: min(100%, 380px);
+  height: calc(var(--layer-card-h) + var(--layer-peek) * (var(--layer-count) - 1));
+}
+
+@media (min-width: 640px) {
+  .touch-layer-stack {
+    --layer-card-h: clamp(190px, 28vw, 230px);
+    --layer-peek: 52px;
+    width: min(100%, 440px);
+  }
+}
+
+.touch-layer-stack.news-stack {
+  --layer-card-h: clamp(176px, 50vw, 210px);
+}
+
+@media (min-width: 640px) {
+  .touch-layer-stack.news-stack {
+    --layer-card-h: clamp(200px, 30vw, 240px);
+  }
+}
+
+.touch-layer {
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--layer-radius);
+  box-shadow:
+    0 0 0 1px rgba(168, 85, 247, 0.08),
+    0 12px 32px -14px rgba(124, 58, 237, 0.4),
+    0 20px 48px -18px rgba(147, 51, 234, 0.28);
+}
+
+html.light .touch-layer {
+  box-shadow:
+    0 0 0 1px rgba(124, 58, 237, 0.1),
+    0 12px 28px -12px rgba(124, 58, 237, 0.22),
+    0 18px 40px -16px rgba(147, 51, 234, 0.16);
+}
+
+.touch-layer-active {
+  box-shadow:
+    0 0 0 2px rgba(168, 85, 247, 0.5),
+    0 0 24px rgba(147, 51, 234, 0.4),
+    0 16px 40px -12px rgba(124, 58, 237, 0.5);
+}
+
+html.light .touch-layer-active {
+  box-shadow:
+    0 0 0 2px rgba(124, 58, 237, 0.4),
+    0 0 20px rgba(147, 51, 234, 0.22),
+    0 14px 34px -10px rgba(124, 58, 237, 0.28);
+}
+
+/* Per-slide polish animations */
+@keyframes layer-shimmer {
+  0% {
+    transform: translateX(-120%) skewX(-12deg);
+    opacity: 0;
+  }
+  35% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: translateX(140%) skewX(-12deg);
+    opacity: 0;
+  }
+}
+
+@keyframes layer-icon-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.35);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(168, 85, 247, 0);
+    transform: scale(1.06);
+  }
+}
+
+@keyframes layer-spark-spin {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.15);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+@keyframes layer-figure-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0 rgba(192, 132, 252, 0));
+  }
+  50% {
+    filter: drop-shadow(0 0 14px rgba(192, 132, 252, 0.55));
+  }
+}
+
+.touch-layer-shimmer {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  opacity: 0;
+}
+
+.touch-layer-active .touch-layer-shimmer,
+.benefit-layer-active .touch-layer-shimmer {
+  opacity: 1;
+}
+
+.touch-layer-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 45%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(216, 180, 254, 0.22),
+    transparent
+  );
+}
+
+.touch-layer-active .touch-layer-shimmer::after,
+.benefit-layer-active .touch-layer-shimmer::after {
+  animation: layer-shimmer 2.8s ease-in-out infinite;
+}
+
+.layer-icon-alive {
+  animation: layer-icon-pulse 2.4s ease-in-out infinite;
+}
+
+.layer-spark-alive {
+  animation: layer-spark-spin 4.5s linear infinite;
+}
+
+.layer-figure-alive {
+  animation: layer-figure-glow 2.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .touch-layer-active .touch-layer-shimmer::after,
+  .benefit-layer-active .touch-layer-shimmer::after,
+  .layer-icon-alive,
+  .layer-spark-alive,
+  .layer-figure-alive {
+    animation: none !important;
+  }
 }
 
 /* GPU-accelerated slow floating orb animations */
