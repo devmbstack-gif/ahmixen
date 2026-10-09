@@ -126,6 +126,58 @@ html.light .purple-badge {
   color: #7C3AED;
 }
 
+/* GPU-accelerated slow floating orb animations */
+@keyframes orb-float-1 {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-35px, 45px, 0) scale(1.06);
+  }
+  100% {
+    transform: translate3d(25px, -30px, 0) scale(0.96);
+  }
+}
+
+@keyframes orb-float-2 {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(40px, -35px, 0) scale(1.08);
+  }
+  100% {
+    transform: translate3d(-30px, 40px, 0) scale(0.95);
+  }
+}
+
+@keyframes orb-float-3 {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-45px, -25px, 0) scale(1.05);
+  }
+  100% {
+    transform: translate3d(35px, 35px, 0) scale(0.98);
+  }
+}
+
+.animate-orb-float-1 {
+  animation: orb-float-1 26s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.animate-orb-float-2 {
+  animation: orb-float-2 32s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.animate-orb-float-3 {
+  animation: orb-float-3 28s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -135,5 +187,12 @@ html.light .purple-badge {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  .animate-orb-float-1,
+  .animate-orb-float-2,
+  .animate-orb-float-3 {
+    animation: none !important;
+    transform: none !important;
   }
 }

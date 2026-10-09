@@ -13,6 +13,7 @@ import { FAQ } from './components/FAQ';
 import { Footer } from './components/Footer';
 import { VideoModal } from './components/VideoModal';
 import { RegistrationModal } from './components/RegistrationModal';
+import { AnimatedBackground } from './components/AnimatedBackground';
 
 export const AppContent: React.FC = () => {
   const [videoModalOpen, setVideoModalOpen] = useState(false);
@@ -42,7 +43,10 @@ export const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--bg-primary)] text-[var(--text-main)] transition-colors duration-300 antialiased selection:bg-purple-600 selection:text-white">
+    <div className="min-h-screen flex flex-col bg-transparent text-[var(--text-main)] transition-colors duration-300 antialiased selection:bg-purple-600 selection:text-white relative">
+      {/* Premium Animated Background Layer */}
+      <AnimatedBackground />
+
       {/* 1. Navigation Bar */}
       <Navbar onOpenRegister={handleOpenRegister} />
 

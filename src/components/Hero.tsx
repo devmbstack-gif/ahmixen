@@ -24,12 +24,10 @@ export const Hero: React.FC<HeroProps> = ({ onOpenRegister, onExploreWorkshop })
   return (
     <section
       id="hero"
-      className="relative pt-32 pb-20 md:pt-40 md:pb-32 overflow-hidden tech-grid-pattern"
+      className="relative pt-32 pb-20 md:pt-40 md:pb-32 overflow-hidden"
     >
-      {/* Background ambient lighting */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[600px] ambient-purple-radial pointer-events-none -z-10" />
-      <div className="absolute top-20 right-[-10%] w-[500px] h-[500px] bg-purple-600/10 blur-[130px] rounded-full pointer-events-none -z-10" />
-      <div className="absolute bottom-10 left-[-10%] w-[500px] h-[500px] bg-violet-600/10 blur-[130px] rounded-full pointer-events-none -z-10" />
+      {/* Subtle top ambient radial glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[500px] ambient-purple-radial pointer-events-none -z-10 opacity-70" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">

@@ -33,9 +33,9 @@ export const WorkshopAgenda: React.FC<WorkshopAgendaProps> = ({ onOpenRegister }
   };
 
   return (
-    <section id="agenda" className="py-24 relative bg-[var(--bg-secondary)] border-t border-[var(--border-subtle)]">
+    <section id="agenda" className="py-24 relative bg-[var(--bg-secondary)]/60 backdrop-blur-sm border-t border-[var(--border-subtle)]">
       {/* Ambient background glow */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-full max-w-6xl h-[600px] ambient-purple-radial pointer-events-none -z-10 opacity-30" />
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-full max-w-6xl h-[600px] ambient-purple-radial pointer-events-none -z-10 opacity-20" />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         

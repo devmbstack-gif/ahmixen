@@ -8,9 +8,9 @@ interface CommunityStatsProps {
 
 export const CommunityStats: React.FC<CommunityStatsProps> = ({ onOpenRegister }) => {
   return (
-    <section id="community" className="py-20 relative bg-[var(--bg-secondary)] border-y border-[var(--border-subtle)]">
+    <section id="community" className="py-20 relative bg-[var(--bg-secondary)]/60 backdrop-blur-sm border-y border-[var(--border-subtle)]">
       {/* Ambient background glow */}
-      <div className="absolute inset-0 ambient-side-glow pointer-events-none opacity-40" />
+      <div className="absolute inset-0 ambient-side-glow pointer-events-none opacity-30" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         

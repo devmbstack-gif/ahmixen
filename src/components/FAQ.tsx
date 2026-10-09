@@ -16,9 +16,9 @@ export const FAQ: React.FC = () => {
   };
 
   return (
-    <section id="faq" className="py-24 relative bg-[var(--bg-secondary)] border-t border-[var(--border-subtle)]">
+    <section id="faq" className="py-24 relative bg-[var(--bg-secondary)]/60 backdrop-blur-sm border-t border-[var(--border-subtle)]">
       {/* Background ambient lighting */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-purple-900/10 blur-[150px] pointer-events-none -z-10" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-purple-900/10 blur-[150px] pointer-events-none -z-10 opacity-30" />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         

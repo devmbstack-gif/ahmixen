@@ -4,9 +4,9 @@ import { INSTRUCTOR_DATA } from '../data/workshopData';
 
 export const Instructor: React.FC = () => {
   return (
-    <section id="instructor" className="py-24 relative bg-[var(--bg-secondary)] border-y border-[var(--border-subtle)]">
+    <section id="instructor" className="py-24 relative bg-[var(--bg-secondary)]/60 backdrop-blur-sm border-y border-[var(--border-subtle)]">
       {/* Background ambient lighting */}
-      <div className="absolute bottom-0 left-1/3 w-[500px] h-[500px] bg-purple-700/10 blur-[140px] pointer-events-none -z-10" />
+      <div className="absolute bottom-0 left-1/3 w-[500px] h-[500px] bg-purple-700/10 blur-[140px] pointer-events-none -z-10 opacity-60" />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
