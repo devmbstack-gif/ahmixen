@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle2, ShieldCheck, Mail, User, Briefcase, ArrowRight, Sparkles } from 'lucide-react';
 import { WORKSHOP_CONFIG } from '../data/workshopData';
 
@@ -15,6 +16,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({ isOpen, on
     goal: 'AI Agents & Workflow Automation',
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const previouslyFocusedElement = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -28,17 +30,19 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({ isOpen, on
 
   useEffect(() => {
     if (isOpen) {
+      previouslyFocusedElement.current = document.activeElement as HTMLElement;
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
       setIsSubmitted(false);
+      if (previouslyFocusedElement.current) {
+        previouslyFocusedElement.current.focus();
+      }
     }
     return () => {
       document.body.style.overflow = '';
     };
   }, [isOpen]);
-
-  if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,17 +52,27 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({ isOpen, on
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="registration-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
-      onClick={onClose}
-    >
-      <div
-        className="relative w-full max-w-xl glass-panel rounded-3xl overflow-hidden border border-[var(--border-highlight)] shadow-[0_25px_60px_-15px_rgba(124,58,237,0.5)] bg-[var(--card-bg)] flex flex-col max-h-[90vh]"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="registration-modal-title"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.22 }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md"
+          onClick={onClose}
+        >
+          <motion.div
+            initial={{ scale: 0.94, opacity: 0, y: 16 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.94, opacity: 0, y: 16 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 320 }}
+            className="relative w-full max-w-xl glass-panel rounded-3xl overflow-hidden border border-[var(--border-highlight)] shadow-[0_25px_60px_-15px_rgba(124,58,237,0.5)] bg-[var(--card-bg)] flex flex-col max-h-[90vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
         {/* Top Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-subtle)] bg-black/30">
           <div className="flex items-center gap-2">
@@ -229,7 +243,9 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({ isOpen, on
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
   );
 };

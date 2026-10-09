@@ -1,15 +1,17 @@
 import React from 'react';
-import { Play, ArrowRight, Video } from 'lucide-react';
+import { Play, ArrowRight, Video, Maximize2 } from 'lucide-react';
 import { WORKSHOP_CONFIG } from '../data/workshopData';
 
 interface WorkshopPreviewProps {
   onOpenVideo: () => void;
   onOpenRegister: () => void;
+  onOpenLightbox?: (id: string) => void;
 }
 
 export const WorkshopPreview: React.FC<WorkshopPreviewProps> = ({
   onOpenVideo,
   onOpenRegister,
+  onOpenLightbox,
 }) => {
   return (
     <section id="preview" className="py-20 relative overflow-hidden">
@@ -126,6 +128,18 @@ export const WorkshopPreview: React.FC<WorkshopPreviewProps> = ({
               <span>Reserve My Seat Today</span>
               <ArrowRight className="w-5 h-5" />
             </button>
+
+            {onOpenLightbox && (
+              <button
+                type="button"
+                id="preview-blueprint-cta"
+                onClick={() => onOpenLightbox('blueprint')}
+                className="glass-panel py-3.5 px-6 rounded-2xl font-semibold text-sm text-[var(--text-main)] hover:border-purple-400 hover:bg-white/5 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Maximize2 className="w-4 h-4 text-purple-400" />
+                <span>Inspect Curriculum Blueprint</span>
+              </button>
+            )}
           </div>
 
           {/* Live Scarcity Counter Badge */}

@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Check,
   ShieldCheck,
@@ -9,14 +8,16 @@ import {
   Clock,
   Video,
   Lock,
+  Maximize2,
 } from 'lucide-react';
 import { WORKSHOP_CONFIG } from '../data/workshopData';
 
 interface RegistrationProps {
   onOpenRegister: () => void;
+  onOpenLightbox?: (id: string) => void;
 }
 
-export const Registration: React.FC<RegistrationProps> = ({ onOpenRegister }) => {
+export const Registration: React.FC<RegistrationProps> = ({ onOpenRegister, onOpenLightbox }) => {
   const perks = [
     '2.5 Hours of Live Interactive Instruction & Demonstrations',
     'Full 4K HD Recording Access Forever with Chapter Markers',
@@ -83,6 +84,20 @@ export const Registration: React.FC<RegistrationProps> = ({ onOpenRegister }) =>
                     </div>
                   ))}
                 </div>
+
+                {onOpenLightbox && (
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      id="preview-cert-lightbox-btn"
+                      onClick={() => onOpenLightbox('certificate')}
+                      className="inline-flex items-center gap-2 text-xs font-semibold text-purple-300 hover:text-white bg-purple-950/40 border border-purple-500/25 px-3.5 py-2 rounded-xl hover:border-purple-400 transition-all cursor-pointer"
+                    >
+                      <Maximize2 className="w-3.5 h-3.5 text-purple-400" />
+                      <span>Preview Verifiable Certificate Sample</span>
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Right Column: Pricing & Primary CTA */}

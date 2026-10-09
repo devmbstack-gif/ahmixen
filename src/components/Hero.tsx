@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Calendar,
   Clock,
@@ -12,15 +11,21 @@ import {
   Activity,
   Layers,
   Cpu,
+  Maximize2,
 } from 'lucide-react';
 import { WORKSHOP_CONFIG } from '../data/workshopData';
 
 interface HeroProps {
   onOpenRegister: () => void;
   onExploreWorkshop: () => void;
+  onOpenLightbox?: (id: string) => void;
 }
 
-export const Hero: React.FC<HeroProps> = ({ onOpenRegister, onExploreWorkshop }) => {
+export const Hero: React.FC<HeroProps> = ({
+  onOpenRegister,
+  onExploreWorkshop,
+  onOpenLightbox,
+}) => {
   return (
     <section
       id="hero"
@@ -163,9 +168,23 @@ export const Hero: React.FC<HeroProps> = ({ onOpenRegister, onExploreWorkshop })
                     ahmixen-agent-core v2.6
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-semibold text-emerald-400">
-                  <Activity className="w-3 h-3 animate-pulse" />
-                  PIPELINE LIVE
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-semibold text-emerald-400">
+                    <Activity className="w-3 h-3 animate-pulse" />
+                    PIPELINE LIVE
+                  </div>
+                  {onOpenLightbox && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenLightbox('blueprint')}
+                      aria-label="Inspect Full Agent Blueprint in Lightbox"
+                      title="Inspect Architecture Blueprint in Lightbox"
+                      className="p-1 sm:px-2 sm:py-0.5 rounded-lg border border-purple-500/25 bg-purple-950/30 text-purple-300 hover:text-white hover:border-purple-400 transition-colors flex items-center gap-1 text-[11px] font-mono cursor-pointer"
+                    >
+                      <Maximize2 className="w-3 h-3" />
+                      <span className="hidden sm:inline">Blueprint</span>
+                    </button>
+                  )}
                 </div>
               </div>
 

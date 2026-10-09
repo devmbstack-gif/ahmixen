@@ -5,9 +5,10 @@ import { useTheme } from '../context/ThemeContext';
 
 interface NavbarProps {
   onOpenRegister: () => void;
+  onOpenLightbox?: (id: string) => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister, onOpenLightbox }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { theme } = useTheme();
@@ -72,31 +73,45 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo with preserved original asset */}
-          <a
-            href="#hero"
-            onClick={(e) => handleNavClick(e, '#hero')}
-            className="flex items-center gap-3 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 rounded-lg"
-            aria-label="AhmiXen Homepage"
-          >
-            <div
-              className={`p-1.5 rounded-xl transition-all duration-300 ${
-                theme === 'light'
-                  ? 'bg-black shadow-md'
-                  : 'bg-black/60 border border-purple-500/20 group-hover:border-purple-500/50'
-              }`}
+          <div className="flex items-center gap-3">
+            <a
+              href="#hero"
+              onClick={(e) => handleNavClick(e, '#hero')}
+              className="flex items-center group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 rounded-lg"
+              aria-label="AhmiXen Homepage"
             >
-              <img
-                src="/ahmixen-logo.png"
-                alt="AhmiXen Logo"
-                className="h-8 sm:h-9 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
-                width="160"
-                height="40"
-              />
-            </div>
-            <span className="hidden sm:inline-block text-xs font-semibold px-2 py-0.5 rounded-full purple-badge">
-              LIVE COHORT
-            </span>
-          </a>
+              <div
+                className={`p-1.5 rounded-xl transition-all duration-300 ${
+                  theme === 'light'
+                    ? 'bg-black shadow-md'
+                    : 'bg-black/60 border border-purple-500/20 group-hover:border-purple-500/50'
+                }`}
+              >
+                <img
+                  src="/ahmixen-logo.png"
+                  alt="AhmiXen Logo"
+                  className="h-8 sm:h-9 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+                  width="160"
+                  height="40"
+                />
+              </div>
+            </a>
+            {onOpenLightbox ? (
+              <button
+                type="button"
+                onClick={() => onOpenLightbox('logo')}
+                title="Inspect high-resolution brand asset in lightbox"
+                className="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full purple-badge hover:border-purple-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <span>LIVE COHORT</span>
+                <span className="text-[10px] opacity-75">🔍</span>
+              </button>
+            ) : (
+              <span className="hidden sm:inline-block text-xs font-semibold px-2 py-0.5 rounded-full purple-badge">
+                LIVE COHORT
+              </span>
+            )}
+          </div>
 
           {/* Desktop Navigation Links */}
           <nav className="hidden lg:flex items-center gap-1 xl:gap-2" aria-label="Main Navigation">

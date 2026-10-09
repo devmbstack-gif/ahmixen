@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 750" width="100%" height="100%">
+  <defs>
+    <linearGradient id="certBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#07060B"/>
+      <stop offset="50%" stop-color="#0E0C18"/>
+      <stop offset="100%" stop-color="#150E28"/>
+    </linearGradient>
+    <linearGradient id="goldPurple" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#7C3AED"/>
+      <stop offset="50%" stop-color="#C084FC"/>
+      <stop offset="100%" stop-color="#E9D5FF"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1100" height="750" fill="url(#certBg)"/>
+
+  <!-- Outer Double Border -->
+  <rect x="30" y="30" width="1040" height="690" rx="16" fill="none" stroke="rgba(196, 155, 255, 0.3)" stroke-width="2"/>
+  <rect x="42" y="42" width="1016" height="666" rx="12" fill="none" stroke="rgba(147, 51, 234, 0.2)" stroke-width="1"/>
+
+  <!-- Corner Ornaments -->
+  <path d="M 42 75 L 75 42 M 1058 75 L 1025 42 M 42 675 L 75 708 M 1058 675 L 1025 708" stroke="#9333EA" stroke-width="2"/>
+
+  <!-- Brand Name / Header -->
+  <text x="550" y="115" text-anchor="middle" fill="#FFFFFF" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="28" font-weight="800" letter-spacing="4">AHMIXEN INSTITUTE</text>
+  <text x="550" y="145" text-anchor="middle" fill="#A855F7" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="12" font-weight="600" letter-spacing="3">ACADEMY OF APPLIED ARTIFICIAL INTELLIGENCE</text>
+
+  <!-- Title -->
+  <text x="550" y="225" text-anchor="middle" fill="url(#goldPurple)" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="40" font-weight="800">CERTIFICATE OF COMPLETION</text>
+
+  <!-- Subtitle -->
+  <text x="550" y="275" text-anchor="middle" fill="#B8B5C4" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="16">THIS VERIFIABLE CREDENTIAL IS PROUDLY CONFERRED UPON</text>
+
+  <!-- Recipient Name Line -->
+  <text x="550" y="345" text-anchor="middle" fill="#FFFFFF" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="34" font-weight="700">Sample Participant Name</text>
+  <line x1="280" y1="365" x2="820" y2="365" stroke="rgba(196, 155, 255, 0.4)" stroke-width="1"/>
+
+  <!-- Description Body -->
+  <text x="550" y="415" text-anchor="middle" fill="#B8B5C4" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="15">FOR SUCCESSFULLY MASTERING THE PRACTICAL 2.5-HOUR LIVE CURRICULUM IN</text>
+  <text x="550" y="445" text-anchor="middle" fill="#D8B4FE" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="20" font-weight="700">APPLIED AI &amp; AUTONOMOUS AGENT ORCHESTRATION</text>
+
+  <text x="550" y="485" text-anchor="middle" fill="#8E8A9F" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="13">Covering Frontier Prompt Architectures, n8n Automation Pipelines, Multi-Step Tool Calling &amp; Vibe Coding Prototypes.</text>
+
+  <!-- Credential Badges & Signatures -->
+  <g transform="translate(180, 560)">
+    <line x1="0" y1="40" x2="220" y2="40" stroke="rgba(255, 255, 255, 0.3)" stroke-width="1"/>
+    <text x="110" y="60" text-anchor="middle" fill="#FFFFFF" font-family="'Plus Jakarta Sans', sans-serif" font-size="14" font-weight="600">Ahmad Raza</text>
+    <text x="110" y="78" text-anchor="middle" fill="#8E8A9F" font-family="'Plus Jakarta Sans', sans-serif" font-size="11">Lead AI Practitioner &amp; Founder</text>
+  </g>
+
+  <!-- Official Seal -->
+  <g transform="translate(550, 600)">
+    <circle cx="0" cy="0" r="48" fill="#161424" stroke="url(#goldPurple)" stroke-width="2"/>
+    <circle cx="0" cy="0" r="42" fill="none" stroke="rgba(196, 155, 255, 0.3)" stroke-width="1" stroke-dasharray="4,3"/>
+    <text x="0" y="-8" text-anchor="middle" fill="#D8B4FE" font-family="'Plus Jakarta Sans', sans-serif" font-size="10" font-weight="700">OFFICIAL SEAL</text>
+    <text x="0" y="10" text-anchor="middle" fill="#FFFFFF" font-size="18">★</text>
+    <text x="0" y="24" text-anchor="middle" fill="#10B981" font-family="monospace" font-size="9">VERIFIED</text>
+  </g>
+
+  <g transform="translate(700, 560)">
+    <line x1="0" y1="40" x2="220" y2="40" stroke="rgba(255, 255, 255, 0.3)" stroke-width="1"/>
+    <text x="110" y="60" text-anchor="middle" fill="#FFFFFF" font-family="monospace" font-size="13">#AHM-2026-LIVE</text>
+    <text x="110" y="78" text-anchor="middle" fill="#8E8A9F" font-family="'Plus Jakarta Sans', sans-serif" font-size="11">Verification Identifier</text>
+  </g>
+</svg>
