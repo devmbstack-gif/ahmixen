@@ -96,7 +96,8 @@ export const VideoModal: React.FC<VideoModalProps> = ({
           exit={{ opacity: 0 }}
           transition={{ duration: 0.22 }}
           onClick={onClose}
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md select-none focus:outline-none"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 backdrop-blur-md select-none focus:outline-none"
+          style={{ backgroundColor: 'var(--overlay-scrim)' }}
         >
           {/* Modal Container */}
           <motion.div
@@ -105,10 +106,10 @@ export const VideoModal: React.FC<VideoModalProps> = ({
             exit={{ scale: 0.94, opacity: 0, y: 16 }}
             transition={{ type: 'spring', damping: 25, stiffness: 320 }}
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-4xl glass-panel rounded-3xl overflow-hidden border border-[var(--border-highlight)] shadow-[0_25px_70px_rgba(124,58,237,0.45)] bg-[#090810] flex flex-col"
+            className="relative w-full max-w-4xl glass-panel rounded-3xl overflow-hidden border border-[var(--border-highlight)] shadow-[0_25px_70px_rgba(124,58,237,0.45)] bg-[var(--card-bg)] flex flex-col"
           >
             {/* Modal Top Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-subtle)] bg-black/40">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-subtle)] bg-[var(--modal-chrome)]">
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="w-2.5 h-2.5 rounded-full bg-purple-500 animate-pulse shrink-0" />
                 <h3
@@ -124,7 +125,7 @@ export const VideoModal: React.FC<VideoModalProps> = ({
                 onClick={onClose}
                 aria-label="Close video preview modal"
                 title="Close (Escape)"
-                className="p-2 rounded-xl text-[var(--text-secondary)] hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                className="p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--hover-fill)] transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -214,13 +215,13 @@ export const VideoModal: React.FC<VideoModalProps> = ({
             </div>
 
             {/* Modal Footer Reassurance & Action */}
-            <div className="p-5 sm:p-6 bg-black/50 border-t border-[var(--border-subtle)] flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="p-5 sm:p-6 bg-[var(--modal-chrome)] border-t border-[var(--border-subtle)] flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-xs text-[var(--text-secondary)]">
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-purple-400" />
                   Live Q&A with Ahmad Raza
                 </span>
-                <span className="hidden sm:inline text-gray-600">•</span>
+                <span className="hidden sm:inline text-[var(--text-muted)]">•</span>
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-purple-400" />
                   Code Templates Included

@@ -1,6 +1,8 @@
+'use client';
+
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, CheckCircle2, ShieldCheck, Mail, User, Briefcase, ArrowRight, Sparkles } from 'lucide-react';
+import { X, CheckCircle2, ShieldCheck, Mail, User, ArrowRight } from 'lucide-react';
 import { WORKSHOP_CONFIG } from '../data/workshopData';
 
 interface RegistrationModalProps {
@@ -9,20 +11,13 @@ interface RegistrationModalProps {
 }
 
 export const RegistrationModal: React.FC<RegistrationModalProps> = ({ isOpen, onClose }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    role: 'Founder / Entrepreneur',
-    goal: 'AI Agents & Workflow Automation',
-  });
+  const [formData, setFormData] = useState({ name: '', email: '' });
   const [isSubmitted, setIsSubmitted] = useState(false);
   const previouslyFocusedElement = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
-      }
+      if (e.key === 'Escape' && isOpen) onClose();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -35,9 +30,8 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({ isOpen, on
     } else {
       document.body.style.overflow = '';
       setIsSubmitted(false);
-      if (previouslyFocusedElement.current) {
-        previouslyFocusedElement.current.focus();
-      }
+      setFormData({ name: '', email: '' });
+      previouslyFocusedElement.current?.focus();
     }
     return () => {
       document.body.style.overflow = '';
@@ -48,6 +42,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({ isOpen, on
     e.preventDefault();
     if (formData.name.trim() && formData.email.trim()) {
       setIsSubmitted(true);
+      // Backend wiring comes later — frontend confirmation only
     }
   };
 
@@ -61,191 +56,128 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({ isOpen, on
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.22 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md"
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 backdrop-blur-md"
+          style={{ backgroundColor: 'var(--overlay-scrim)' }}
           onClick={onClose}
         >
           <motion.div
-            initial={{ scale: 0.94, opacity: 0, y: 16 }}
+            initial={{ scale: 0.96, opacity: 0, y: 12 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.94, opacity: 0, y: 16 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 320 }}
-            className="relative w-full max-w-xl glass-panel rounded-3xl overflow-hidden border border-[var(--border-highlight)] shadow-[0_25px_60px_-15px_rgba(124,58,237,0.5)] bg-[var(--card-bg)] flex flex-col max-h-[90vh]"
+            exit={{ scale: 0.96, opacity: 0, y: 12 }}
+            transition={{ type: 'spring', damping: 26, stiffness: 320 }}
+            className="relative w-full max-w-md rounded-2xl overflow-hidden border border-[var(--border-highlight)] bg-[var(--card-bg)] shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-        {/* Top Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-subtle)] bg-black/30">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-purple-500 animate-pulse" />
-            <h3 id="registration-modal-title" className="text-sm sm:text-base font-bold text-[var(--text-main)]">
-              {isSubmitted ? 'Reservation Confirmed' : 'Reserve Your Cohort Seat'}
-            </h3>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close registration modal"
-            className="p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-white/10 transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Modal Scrollable Content */}
-        <div className="p-6 sm:p-8 overflow-y-auto">
-          {!isSubmitted ? (
-            <form onSubmit={handleSubmit} className="space-y-6">
-              
-              {/* Summary Card */}
-              <div className="p-4 rounded-2xl bg-purple-950/20 border border-purple-500/25 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <div className="text-xs font-bold uppercase tracking-wider text-purple-300">
-                    {WORKSHOP_CONFIG.priceEarlyBird.label}
-                  </div>
-                  <div className="text-xl font-extrabold text-[var(--text-main)]">
-                    {WORKSHOP_CONFIG.priceEarlyBird.amount}{' '}
-                    <span className="text-xs text-[var(--text-secondary)] font-normal">
-                      ({WORKSHOP_CONFIG.priceEarlyBird.savings})
-                    </span>
-                  </div>
-                </div>
-                <div className="text-left sm:text-right text-xs text-[var(--text-secondary)]">
-                  <div className="font-medium text-[var(--text-main)]">{WORKSHOP_CONFIG.date}</div>
-                  <div>{WORKSHOP_CONFIG.duration} • Live Zoom / Stream</div>
-                </div>
-              </div>
-
-              {/* Notice that this is Phase 1 frontend */}
-              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300 flex items-start gap-2">
-                <Sparkles className="w-4 h-4 shrink-0 mt-0.5" />
-                <span>
-                  Frontend Demonstration: Fill in your details below to test the instant confirmation workflow. No payment is processed in this phase.
-                </span>
-              </div>
-
-              {/* Form Fields */}
-              <div className="space-y-4">
-                {/* Full Name */}
-                <div>
-                  <label htmlFor="reg-name" className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5">
-                    Full Name *
-                  </label>
-                  <div className="relative">
-                    <User className="w-4 h-4 text-purple-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <input
-                      id="reg-name"
-                      type="text"
-                      required
-                      placeholder="e.g. Alex Morgan"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full pl-10 pr-4 py-3 rounded-xl glass-panel border border-[var(--border-subtle)] focus:border-purple-400 text-sm text-[var(--text-main)] bg-[var(--card-bg)] placeholder-[var(--text-secondary)]/50 focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Email Address */}
-                <div>
-                  <label htmlFor="reg-email" className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5">
-                    Email Address (For Zoom Access &amp; Replays) *
-                  </label>
-                  <div className="relative">
-                    <Mail className="w-4 h-4 text-purple-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <input
-                      id="reg-email"
-                      type="email"
-                      required
-                      placeholder="alex@example.com"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full pl-10 pr-4 py-3 rounded-xl glass-panel border border-[var(--border-subtle)] focus:border-purple-400 text-sm text-[var(--text-main)] bg-[var(--card-bg)] placeholder-[var(--text-secondary)]/50 focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Role / Background */}
-                <div>
-                  <label htmlFor="reg-role" className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5">
-                    Professional Background / Role
-                  </label>
-                  <div className="relative">
-                    <Briefcase className="w-4 h-4 text-purple-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <select
-                      id="reg-role"
-                      value={formData.role}
-                      onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                      className="w-full pl-10 pr-4 py-3 rounded-xl glass-panel border border-[var(--border-subtle)] focus:border-purple-400 text-sm text-[var(--text-main)] bg-[var(--card-bg)] focus:outline-none"
-                    >
-                      <option value="Founder / Entrepreneur" className="bg-[#111019] text-white">Founder / Entrepreneur</option>
-                      <option value="Software Engineer / Developer" className="bg-[#111019] text-white">Software Engineer / Developer</option>
-                      <option value="Product Designer / UI/UX" className="bg-[#111019] text-white">Product Designer / UI/UX</option>
-                      <option value="Marketing / Growth Specialist" className="bg-[#111019] text-white">Marketing / Growth Specialist</option>
-                      <option value="Operations / Project Manager" className="bg-[#111019] text-white">Operations / Project Manager</option>
-                      <option value="Student / Career Switcher" className="bg-[#111019] text-white">Student / Career Switcher</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                id="submit-reservation-btn"
-                className="btn-ahmixen w-full py-3.5 px-6 rounded-xl font-bold text-base flex items-center justify-center gap-2 shadow-lg cursor-pointer"
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-subtle)]">
+              <h3
+                id="registration-modal-title"
+                className="text-base font-bold text-[var(--text-main)]"
               >
-                <span>Complete Seat Reservation</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-
-              {/* Trust Footer */}
-              <div className="flex items-center justify-center gap-2 text-xs text-[var(--text-secondary)] pt-1">
-                <ShieldCheck className="w-4 h-4 text-purple-400" />
-                <span>100% Satisfaction Guarantee • No Spam Guarantee</span>
-              </div>
-            </form>
-          ) : (
-            /* Confirmation Success State */
-            <div className="text-center py-6 space-y-6 animate-in zoom-in-95 duration-200">
-              <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center mx-auto shadow-lg">
-                <CheckCircle2 className="w-9 h-9" />
-              </div>
-
-              <div className="space-y-2">
-                <h4 className="text-2xl font-extrabold text-[var(--text-main)]">
-                  Seat Successfully Reserved!
-                </h4>
-                <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto">
-                  Thank you, <strong className="text-[var(--text-main)]">{formData.name}</strong>. A confirmation message and private calendar link have been prepared for <strong className="text-purple-300">{formData.email}</strong>.
-                </p>
-              </div>
-
-              {/* Mock Ticket Preview */}
-              <div className="p-5 rounded-2xl bg-purple-950/20 border border-purple-500/30 text-left space-y-3 font-mono text-xs">
-                <div className="flex justify-between border-b border-purple-500/20 pb-2 text-purple-300">
-                  <span>COHORT TICKET: #AHM-2026-LIVE</span>
-                  <span className="text-emerald-400">STATUS: CONFIRMED</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-[var(--text-secondary)]">
-                  <div>ATTENDEE: <span className="text-white font-sans">{formData.name}</span></div>
-                  <div>PASS: <span className="text-white font-sans">Early Bird Pass</span></div>
-                  <div>DATE: <span className="text-white font-sans">{WORKSHOP_CONFIG.date}</span></div>
-                  <div>TIME: <span className="text-white font-sans">{WORKSHOP_CONFIG.time}</span></div>
-                </div>
-              </div>
-
+                {isSubmitted ? 'Seat reserved' : 'Reserve your seat'}
+              </h3>
               <button
                 type="button"
                 onClick={onClose}
-                className="btn-ahmixen w-full py-3.5 px-6 rounded-xl font-bold text-sm cursor-pointer"
+                aria-label="Close"
+                className="p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--hover-fill)] cursor-pointer"
               >
-                Done &amp; Return To Page
+                <X className="w-5 h-5" />
               </button>
             </div>
-          )}
-        </div>
-      </motion.div>
-    </motion.div>
-  )}
-</AnimatePresence>
+
+            <div className="p-5 sm:p-6">
+              {!isSubmitted ? (
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <p className="text-sm text-[var(--text-secondary)]">
+                    {WORKSHOP_CONFIG.date} · {WORKSHOP_CONFIG.time} ·{' '}
+                    {WORKSHOP_CONFIG.priceEarlyBird.amount}
+                  </p>
+
+                  <div>
+                    <label
+                      htmlFor="reg-name"
+                      className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5"
+                    >
+                      Full name
+                    </label>
+                    <div className="relative">
+                      <User className="w-4 h-4 text-purple-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        id="reg-name"
+                        type="text"
+                        required
+                        placeholder="Your name"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-[var(--border-subtle)] text-sm text-[var(--text-main)] bg-[var(--bg-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-purple-400"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="reg-email"
+                      className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5"
+                    >
+                      Email
+                    </label>
+                    <div className="relative">
+                      <Mail className="w-4 h-4 text-purple-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        id="reg-email"
+                        type="email"
+                        required
+                        placeholder="you@example.com"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-[var(--border-subtle)] text-sm text-[var(--text-main)] bg-[var(--bg-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-purple-400"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    id="submit-reservation-btn"
+                    className="btn-ahmixen w-full py-3.5 px-6 rounded-xl font-bold text-sm inline-flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    Confirm reservation
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+
+                  <p className="text-xs text-[var(--text-muted)] flex items-center justify-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
+                    Frontend only — no payment yet
+                  </p>
+                </form>
+              ) : (
+                <div className="text-center space-y-5 py-2">
+                  <div className="w-14 h-14 rounded-full bg-emerald-500/15 text-emerald-500 border border-emerald-500/25 flex items-center justify-center mx-auto">
+                    <CheckCircle2 className="w-8 h-8" />
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="text-xl font-extrabold text-[var(--text-main)]">
+                      You&apos;re on the list
+                    </h4>
+                    <p className="text-sm text-[var(--text-secondary)]">
+                      Thanks, <strong className="text-[var(--text-main)]">{formData.name}</strong>.
+                      We&apos;ll use <strong className="text-[var(--purple-soft-text)]">{formData.email}</strong>{' '}
+                      when backend email/payment is connected.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="btn-ahmixen w-full py-3 rounded-xl font-bold text-sm cursor-pointer"
+                  >
+                    Done
+                  </button>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
