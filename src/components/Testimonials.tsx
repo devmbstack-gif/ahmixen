@@ -6,9 +6,9 @@ import { Reveal } from './Reveal';
 
 export const Testimonials: React.FC = () => {
   return (
-    <section id="testimonials" className="py-16 md:py-20 border-t border-[var(--border-subtle)]">
+    <section id="testimonials" className="py-10 sm:py-12 md:py-14 border-t border-[var(--border-subtle)]">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Reveal className="text-center max-w-2xl mx-auto mb-12 space-y-3">
+        <Reveal className="text-center max-w-2xl mx-auto mb-6 sm:mb-8 space-y-2">
           <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
             What Attendees <span className="gradient-text-ahmixen">Say</span>
           </h2>

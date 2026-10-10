@@ -11,9 +11,9 @@ export const FAQ: React.FC = () => {
   const reduceMotion = useReducedMotion();
 
   return (
-    <section id="faq" className="py-16 md:py-20">
+    <section id="faq" className="py-10 sm:py-12 md:py-14">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Reveal className="text-center mb-12 space-y-3">
+        <Reveal className="text-center mb-6 sm:mb-8 space-y-2">
           <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
             Frequently Asked <span className="gradient-text-ahmixen">Questions</span>
           </h2>

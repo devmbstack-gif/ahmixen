@@ -35,8 +35,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
   }, [mobileMenuOpen]);
 
   const navLinks = [
+    { name: 'Community', href: '#community' },
     { name: 'Learn', href: '#benefits' },
-    { name: 'Why AI', href: '#why-ai' },
+    { name: 'AI Jobs', href: '#rise-ai-jobs' },
     { name: 'Agenda', href: '#agenda' },
     { name: 'Instructor', href: '#instructor' },
     { name: 'Pricing', href: '#pricing' },

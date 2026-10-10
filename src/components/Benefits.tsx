@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
-import { motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { WORKSHOP_BENEFITS } from '../data/workshopData';
 import { Reveal } from './Reveal';
 
@@ -29,60 +30,64 @@ const benefitArt: Record<string, { dark: string; light: string; alt: string }> =
   },
 };
 
-function readStackMetrics(el: HTMLElement) {
-  const probe = document.createElement('div');
-  probe.style.cssText =
-    'position:absolute;visibility:hidden;pointer-events:none;height:var(--benefit-card-h)';
-  const peekProbe = document.createElement('div');
-  peekProbe.style.cssText =
-    'position:absolute;visibility:hidden;pointer-events:none;height:var(--benefit-peek)';
-  el.appendChild(probe);
-  el.appendChild(peekProbe);
-  const cardH = probe.offsetHeight || 200;
-  const peek = peekProbe.offsetHeight || 40;
-  el.removeChild(probe);
-  el.removeChild(peekProbe);
-  return { cardH, peek };
-}
+const INTERVAL_MS = 3400;
+const EASE_FLOW: [number, number, number, number] = [0.22, 1, 0.36, 1];
+
+/** dir > 0 = forward (enter from right, exit to left) */
+const slideVariants = {
+  enter: (dir: number) => ({
+    opacity: 0,
+    x: dir > 0 ? '28%' : '-28%',
+    scale: 0.98,
+  }),
+  center: {
+    opacity: 1,
+    x: '0%',
+    scale: 1,
+  },
+  exit: (dir: number) => ({
+    opacity: 0,
+    x: dir > 0 ? '-22%' : '22%',
+    scale: 0.98,
+  }),
+};
 
 export const Benefits: React.FC = () => {
   const reduceMotion = useReducedMotion();
-  const stackRef = useRef<HTMLDivElement>(null);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [entered, setEntered] = useState(false);
-  const [metrics, setMetrics] = useState({ cardH: 200, peek: 42 });
+  const [index, setIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [direction, setDirection] = useState(1);
   const total = WORKSHOP_BENEFITS.length;
 
+  const goTo = useCallback(
+    (next: number, dir: number) => {
+      setDirection(dir);
+      setIndex(((next % total) + total) % total);
+    },
+    [total]
+  );
+
+  const next = useCallback(() => goTo(index + 1, 1), [goTo, index]);
+  const prev = useCallback(() => goTo(index - 1, -1), [goTo, index]);
+
   useEffect(() => {
-    const el = stackRef.current;
-    if (!el) return;
+    if (paused || reduceMotion) return;
+    const id = window.setInterval(() => {
+      setDirection(1);
+      setIndex((i) => (i + 1) % total);
+    }, INTERVAL_MS);
+    return () => window.clearInterval(id);
+  }, [paused, reduceMotion, total]);
 
-    const update = () => setMetrics(readStackMetrics(el));
-    update();
-
-    const observer = new ResizeObserver(update);
-    observer.observe(el);
-    window.addEventListener('resize', update);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener('resize', update);
-    };
-  }, []);
-
-  const openLayer = (index: number) => {
-    if (index === activeIndex) {
-      setActiveIndex((prev) => (prev + 1) % total);
-      return;
-    }
-    setActiveIndex(index);
-  };
+  const benefit = WORKSHOP_BENEFITS[index];
+  const art = benefitArt[benefit.id];
 
   return (
-    <section id="benefits" className="relative py-12 sm:py-16 md:py-20 overflow-hidden">
+    <section id="benefits" className="relative py-10 sm:py-12 md:py-14 overflow-hidden">
       <div className="benefit-stack-glow absolute inset-x-0 bottom-0 h-[70%] pointer-events-none" />
 
       <div className="relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Reveal className="text-center max-w-2xl mx-auto mb-8 sm:mb-10 space-y-2 sm:space-y-3">
+        <Reveal className="text-center max-w-2xl mx-auto mb-6 sm:mb-8 space-y-2">
           <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
             What You&apos;ll <span className="gradient-text-ahmixen">Learn</span>
           </h2>
@@ -91,160 +96,170 @@ export const Benefits: React.FC = () => {
           </p>
         </Reveal>
 
-        <motion.div
-          ref={stackRef}
-          className="benefit-stack relative"
-          viewport={{ once: true, amount: 0.35 }}
-          onViewportEnter={() => setEntered(true)}
-        >
-          {WORKSHOP_BENEFITS.map((benefit, benefitIndex) => {
-            const depth =
-              benefitIndex === activeIndex
-                ? 0
-                : benefitIndex < activeIndex
-                  ? total - activeIndex + benefitIndex
-                  : benefitIndex - activeIndex;
-
-            const isFront = depth === 0;
-            const art = benefitArt[benefit.id];
-            const top = (total - 1 - depth) * metrics.peek;
-            const height = isFront ? metrics.cardH : metrics.peek + 6;
-            const scale = 1 - depth * 0.016;
-
-            return (
-              <motion.article
-                key={benefit.id}
-                role="button"
-                tabIndex={0}
-                aria-pressed={isFront}
-                aria-label={`${benefit.title}. ${isFront ? 'Active — tap to open next' : 'Tap to open'}`}
-                onClick={() => openLayer(benefitIndex)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    openLayer(benefitIndex);
-                  }
-                }}
-                initial={false}
-                animate={{
-                  top,
-                  height,
-                  scale,
-                  zIndex: total - depth,
-                }}
-                transition={
-                  reduceMotion
-                    ? { duration: 0 }
-                    : {
-                        type: 'spring',
-                        stiffness: 280,
-                        damping: 26,
-                        mass: 0.85,
-                      }
-                }
-                whileHover={
-                  reduceMotion || !isFront
-                    ? undefined
-                    : { scale: 1.02, transition: { duration: 0.2 } }
-                }
-                whileTap={reduceMotion ? undefined : { scale: 0.985 }}
-                className={`benefit-layer absolute left-0 right-0 cursor-pointer overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-purple-500 ${
-                  isFront ? 'benefit-layer-active' : ''
-                }`}
-                style={{ transformOrigin: 'center top' }}
-              >
-                <div className="touch-layer-shimmer" aria-hidden="true" />
-                <motion.div
-                  initial={
-                    reduceMotion
-                      ? false
-                      : {
-                          opacity: 0,
-                          y: 40,
-                          x: benefitIndex % 2 === 0 ? -20 : 20,
-                        }
-                  }
-                  animate={
-                    entered || reduceMotion
-                      ? { opacity: 1, y: 0, x: 0 }
-                      : {
-                          opacity: 0,
-                          y: 40,
-                          x: benefitIndex % 2 === 0 ? -20 : 20,
-                        }
-                  }
+        <Reveal delay={0.08}>
+          <div
+            className="benefit-carousel"
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
+            onFocusCapture={() => setPaused(true)}
+            onBlurCapture={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                setPaused(false);
+              }
+            }}
+          >
+            <div className="benefit-carousel-frame relative overflow-hidden rounded-2xl sm:rounded-3xl">
+              <AnimatePresence initial={false} custom={direction} mode="sync">
+                <motion.article
+                  key={benefit.id}
+                  custom={direction}
+                  variants={reduceMotion ? undefined : slideVariants}
+                  initial={reduceMotion ? { opacity: 0 } : 'enter'}
+                  animate={reduceMotion ? { opacity: 1 } : 'center'}
+                  exit={reduceMotion ? { opacity: 0 } : 'exit'}
                   transition={
                     reduceMotion
-                      ? { duration: 0 }
+                      ? { duration: 0.2 }
                       : {
-                          type: 'spring',
-                          stiffness: 260,
-                          damping: 26,
-                          delay: benefitIndex * 0.18,
+                          x: { duration: 0.85, ease: EASE_FLOW },
+                          opacity: { duration: 0.7, ease: EASE_FLOW },
+                          scale: { duration: 0.85, ease: EASE_FLOW },
                         }
                   }
-                  className="benefit-art-frame"
+                  className="absolute inset-0 flex flex-col bg-[var(--card-bg)]"
+                  aria-roledescription="slide"
+                  aria-label={`${index + 1} of ${total}: ${benefit.title}`}
                 >
-                  {art && (
-                    <div className="benefit-art-motion absolute inset-0">
-                      <Image
-                        src={art.dark}
-                        alt={art.alt}
-                        fill
-                        sizes="(max-width: 640px) 360px, 480px"
-                        quality={95}
-                        className="benefit-art-dark pointer-events-none select-none"
-                        priority={benefitIndex < 2}
-                      />
-                      <Image
-                        src={art.light}
-                        alt={art.alt}
-                        fill
-                        sizes="(max-width: 640px) 360px, 480px"
-                        quality={95}
-                        className="benefit-art-light pointer-events-none select-none"
-                        priority={benefitIndex < 2}
-                      />
-                    </div>
-                  )}
+                  <div className="relative flex-1 min-h-0 benefit-carousel-art">
+                    {art && (
+                      <>
+                        <Image
+                          src={art.dark}
+                          alt=""
+                          fill
+                          sizes="(max-width: 640px) 100vw, 720px"
+                          quality={95}
+                          className="benefit-art-dark object-contain object-center p-3 sm:p-4"
+                          priority={index < 2}
+                        />
+                        <Image
+                          src={art.light}
+                          alt=""
+                          fill
+                          sizes="(max-width: 640px) 100vw, 720px"
+                          quality={95}
+                          className="benefit-art-light object-contain object-center p-3 sm:p-4"
+                          priority={index < 2}
+                        />
+                      </>
+                    )}
+                  </div>
 
-                  <div className="benefit-layer-sheen" />
+                  <div className="benefit-carousel-copy shrink-0 px-5 sm:px-7 pb-5 sm:pb-6 pt-1">
+                    <motion.p
+                      initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.12, duration: 0.45, ease: EASE_FLOW }}
+                      className="text-[11px] font-semibold uppercase tracking-[0.16em] text-purple-400 mb-1.5"
+                    >
+                      Topic {String(index + 1).padStart(2, '0')}
+                    </motion.p>
+                    <motion.h3
+                      initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.18, duration: 0.5, ease: EASE_FLOW }}
+                      className="text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--text-main)]"
+                    >
+                      {benefit.title}
+                    </motion.h3>
+                    <motion.p
+                      initial={reduceMotion ? false : { opacity: 0, y: 14 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.26, duration: 0.55, ease: EASE_FLOW }}
+                      className="mt-2 text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed"
+                    >
+                      {benefit.description}
+                    </motion.p>
+                  </div>
+                </motion.article>
+              </AnimatePresence>
+            </div>
 
-                  {!isFront && (
-                    <div
-                      className="absolute inset-x-0 bottom-0 h-6 pointer-events-none"
-                      style={{
-                        background:
-                          'linear-gradient(to top, color-mix(in srgb, var(--card-bg) 88%, transparent), transparent)',
-                      }}
-                    />
-                  )}
-                </motion.div>
-              </motion.article>
-            );
-          })}
-        </motion.div>
+            {!reduceMotion && (
+              <div className="benefit-carousel-progress mt-3 h-0.5 rounded-full overflow-hidden">
+                <motion.div
+                  key={`progress-${index}-${paused}`}
+                  className="h-full w-full rounded-full bg-gradient-to-r from-purple-500 to-fuchsia-400"
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: paused ? 0 : 1 }}
+                  style={{ transformOrigin: 'left center' }}
+                  transition={
+                    paused
+                      ? { duration: 0.3, ease: EASE_FLOW }
+                      : { duration: INTERVAL_MS / 1000, ease: 'linear' }
+                  }
+                />
+              </div>
+            )}
 
-        <div className="mt-5 sm:mt-6 flex flex-col items-center gap-2.5">
-          <div className="flex items-center justify-center gap-2">
-            {WORKSHOP_BENEFITS.map((b, i) => (
-              <button
-                key={b.id}
-                type="button"
-                aria-label={`Show ${b.title}`}
-                onClick={() => setActiveIndex(i)}
-                className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                  i === activeIndex
-                    ? 'w-5 bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.65)]'
-                    : 'w-1.5 bg-purple-500/30 hover:bg-purple-500/50'
-                }`}
-              />
-            ))}
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-1.5">
+                {WORKSHOP_BENEFITS.map((b, i) => (
+                  <motion.button
+                    key={b.id}
+                    type="button"
+                    aria-label={`Show ${b.title}`}
+                    aria-current={i === index ? 'true' : undefined}
+                    onClick={() => goTo(i, i > index ? 1 : -1)}
+                    className={`h-1.5 rounded-full cursor-pointer ${
+                      i === index ? 'bg-purple-500' : 'bg-purple-500/30 hover:bg-purple-500/50'
+                    }`}
+                    animate={{
+                      width: i === index ? 22 : 6,
+                      boxShadow:
+                        i === index
+                          ? '0 0 12px rgba(168,85,247,0.7)'
+                          : '0 0 0 rgba(0,0,0,0)',
+                    }}
+                    transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+                  />
+                ))}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  aria-label="Previous topic"
+                  onClick={prev}
+                  className="community-ctrl"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Next topic"
+                  onClick={next}
+                  className="community-ctrl"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              {WORKSHOP_BENEFITS.map((b, i) => (
+                <button
+                  key={`chip-${b.id}`}
+                  type="button"
+                  onClick={() => goTo(i, i > index ? 1 : -1)}
+                  className={`benefit-topic-chip ${i === index ? 'benefit-topic-chip-active' : ''}`}
+                >
+                  {b.title}
+                </button>
+              ))}
+            </div>
           </div>
-          <p className="text-[11px] sm:text-xs text-[var(--text-muted)] text-center px-2">
-            {WORKSHOP_BENEFITS[activeIndex].title}
-          </p>
-        </div>
+        </Reveal>
       </div>
     </section>
   );

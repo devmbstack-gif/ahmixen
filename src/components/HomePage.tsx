@@ -4,8 +4,9 @@ import React, { useState } from 'react';
 import { Navbar } from './Navbar';
 import { Hero } from './Hero';
 import { WorkshopPreview } from './WorkshopPreview';
+import { Community } from './Community';
 import { Benefits } from './Benefits';
-import { AiJobImpact } from './AiJobImpact';
+import { RiseInAiJobs } from './RiseInAiJobs';
 import { WorkshopAgenda } from './WorkshopAgenda';
 import { Instructor } from './Instructor';
 import { Testimonials } from './Testimonials';
@@ -15,6 +16,7 @@ import { Footer } from './Footer';
 import { VideoModal } from './VideoModal';
 import { RegistrationModal } from './RegistrationModal';
 import { AnimatedBackground } from './AnimatedBackground';
+import { WhatsAppFloat } from './WhatsAppFloat';
 
 export const HomePage: React.FC = () => {
   const [videoModalOpen, setVideoModalOpen] = useState(false);
@@ -44,8 +46,9 @@ export const HomePage: React.FC = () => {
           onOpenVideo={handleOpenVideo}
           onOpenRegister={handleOpenRegister}
         />
+        <Community />
         <Benefits />
-        <AiJobImpact onOpenRegister={handleOpenRegister} />
+        <RiseInAiJobs onOpenRegister={handleOpenRegister} />
         <WorkshopAgenda />
         <Instructor />
         <Testimonials />
@@ -54,6 +57,7 @@ export const HomePage: React.FC = () => {
       </main>
 
       <Footer />
+      <WhatsAppFloat />
 
       <VideoModal
         isOpen={videoModalOpen}

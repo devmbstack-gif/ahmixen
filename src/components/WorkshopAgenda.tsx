@@ -13,10 +13,10 @@ export const WorkshopAgenda: React.FC = () => {
   return (
     <section
       id="agenda"
-      className="py-16 md:py-20 bg-[var(--bg-secondary)]/50 border-y border-[var(--border-subtle)]"
+      className="py-10 sm:py-12 md:py-14 bg-[var(--bg-secondary)]/50 border-y border-[var(--border-subtle)]"
     >
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Reveal className="text-center max-w-2xl mx-auto mb-12 space-y-3">
+        <Reveal className="text-center max-w-2xl mx-auto mb-6 sm:mb-8 space-y-2">
           <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
             Session <span className="gradient-text-ahmixen">Agenda</span>
           </h2>

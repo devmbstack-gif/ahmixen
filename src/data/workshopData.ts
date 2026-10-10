@@ -34,6 +34,9 @@ export interface WorkshopInfo {
     label: string;
   };
   contactEmail: string;
+  /** International WhatsApp number, digits only (country code + number, no +) */
+  whatsappNumber: string;
+  whatsappPrefill: string;
 }
 
 export const WORKSHOP_CONFIG: WorkshopInfo = {
@@ -73,6 +76,9 @@ export const WORKSHOP_CONFIG: WorkshopInfo = {
     label: 'Standard Registration',
   },
   contactEmail: 'workshops@ahmixen.com',
+  whatsappNumber: '923001234567',
+  whatsappPrefill:
+    "Hi AhmiXen! I'd like to know more about the live AI workshop.",
 };
 
 export interface BenefitItem {
@@ -207,6 +213,9 @@ export interface InstructorProfile {
   title: string;
   bio: string;
   highlights: string[];
+  photo: string;
+  linkedinUrl: string;
+  instagramUrl: string;
 }
 
 export const INSTRUCTOR_DATA: InstructorProfile = {
@@ -218,6 +227,9 @@ export const INSTRUCTOR_DATA: InstructorProfile = {
     '1,200+ professionals trained',
     'Focus on real workflows, not theory',
   ],
+  photo: '/instructor/ahmad-raza.jpg',
+  linkedinUrl: 'https://www.linkedin.com/in/hafizahmadali',
+  instagramUrl: 'https://www.instagram.com/ahmimindset/',
 };
 
 export interface FAQItem {
@@ -262,69 +274,5 @@ export const FAQS: FAQItem[] = [
     question: 'What is the refund policy?',
     answer:
       'If you attend live and feel it wasn’t valuable, email workshops@ahmixen.com within 7 days for a full refund.',
-  },
-];
-
-export interface JobLossStat {
-  id: string;
-  org: string;
-  orgShort: string;
-  figure: string;
-  label: string;
-}
-
-export const AI_JOB_LOSS_STATS: JobLossStat[] = [
-  {
-    id: 'goldman',
-    org: 'Goldman Sachs',
-    orgShort: 'GS',
-    figure: '30 Cr+',
-    label: 'Job losses predicted',
-  },
-  {
-    id: 'wef',
-    org: 'World Economic Forum',
-    orgShort: 'WEF',
-    figure: '40 Cr+',
-    label: 'Roles at risk globally',
-  },
-  {
-    id: 'mckinsey',
-    org: 'McKinsey & Company',
-    orgShort: 'McK',
-    figure: '8.3 Cr',
-    label: 'Job losses by 2027',
-  },
-];
-
-export interface AiJobHeadline {
-  id: string;
-  source: string;
-  sourceTone: string;
-  title: string;
-  blurb: string;
-}
-
-export const AI_JOB_HEADLINES: AiJobHeadline[] = [
-  {
-    id: 'forbes',
-    source: 'Forbes',
-    sourceTone: 'from-amber-500/20 to-orange-500/10',
-    title: 'AI Will Create Far More Jobs Than It Will Kill',
-    blurb: 'New roles open for people who can use AI in real work — not just watch it happen.',
-  },
-  {
-    id: 'bi',
-    source: 'Business Insider',
-    sourceTone: 'from-sky-500/20 to-blue-500/10',
-    title: 'The “Godfather of AI” warns 2026 will bring a new wave of AI job change',
-    blurb: 'Experts say the shift rewards people who learn practical AI skills early.',
-  },
-  {
-    id: 'cnbc',
-    source: 'CNBC Make It',
-    sourceTone: 'from-emerald-500/20 to-teal-500/10',
-    title: '69 million jobs to emerge — and AI could play a key role',
-    blurb: 'World Economic Forum outlook: growth for AI-enabled talent over the next five years.',
   },
 ];

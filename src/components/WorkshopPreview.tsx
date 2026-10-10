@@ -14,9 +14,9 @@ export const WorkshopPreview: React.FC<WorkshopPreviewProps> = ({
   onOpenRegister,
 }) => {
   return (
-    <section id="preview" className="py-16 md:py-20 border-t border-[var(--border-subtle)]">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        <Reveal className="text-center space-y-3">
+    <section id="preview" className="py-10 sm:py-12 md:py-14 border-t border-[var(--border-subtle)]">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <Reveal className="text-center space-y-2">
           <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
             Workshop <span className="gradient-text-ahmixen">Preview</span>
           </h2>

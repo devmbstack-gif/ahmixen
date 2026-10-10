@@ -3,7 +3,7 @@ import { AhmiXenLogo } from './AhmiXenLogo';
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="border-t border-[var(--border-subtle)] bg-[var(--footer-bg)] py-12">
+    <footer className="border-t border-[var(--border-subtle)] bg-[var(--footer-bg)] py-8 sm:py-10">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left">
         <div className="space-y-2">
           <AhmiXenLogo className="text-2xl sm:text-3xl" />
