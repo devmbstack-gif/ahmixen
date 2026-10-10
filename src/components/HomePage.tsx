@@ -62,27 +62,11 @@ const Instructor = dynamic(
   }
 );
 
-const SocialProofMarquee = dynamic(
-  () => import('./SocialProofMarquee').then((m) => ({ default: m.SocialProofMarquee })),
-  {
-    ssr: false,
-    loading: () => <SectionPlaceholder minHeight="12rem" label="Loading social proof" />,
-  }
-);
-
 const Testimonials = dynamic(
   () => import('./Testimonials').then((m) => ({ default: m.Testimonials })),
   {
     ssr: false,
     loading: () => <SectionPlaceholder minHeight="16rem" label="Loading testimonials" />,
-  }
-);
-
-const FAQ = dynamic(
-  () => import('./FAQ').then((m) => ({ default: m.FAQ })),
-  {
-    ssr: false,
-    loading: () => <SectionPlaceholder minHeight="16rem" label="Loading FAQ" />,
   }
 );
 
@@ -150,16 +134,10 @@ const HomePageInner: React.FC = () => {
           <Instructor />
         </SectionReveal>
         <SectionReveal>
-          <SocialProofMarquee />
-        </SectionReveal>
-        <SectionReveal>
           <Testimonials />
         </SectionReveal>
         <SectionReveal>
           <Registration onOpenRegister={handleOpenRegister} />
-        </SectionReveal>
-        <SectionReveal>
-          <FAQ />
         </SectionReveal>
       </main>
 

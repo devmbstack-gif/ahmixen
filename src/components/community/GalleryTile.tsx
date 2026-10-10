@@ -51,7 +51,12 @@ export function GalleryTile({ photo, index, onOpen }: GalleryTileProps) {
             alt={photo.caption}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            className={`community-tile-img object-cover${index === 0 ? ' object-[50%_15%]' : ''}`}
+            className="community-tile-img object-cover"
+            style={
+              photo.objectPosition
+                ? { objectPosition: photo.objectPosition }
+                : undefined
+            }
             placeholder="blur"
             blurDataURL={COMMUNITY_BLUR_DATA_URL}
             loading="lazy"

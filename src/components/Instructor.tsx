@@ -1,17 +1,18 @@
 'use client';
 
-import { useRef, useState, type MouseEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { CheckCircle2 } from 'lucide-react';
-import {
-  motion,
-  useMotionValue,
-  useReducedMotion,
-  useSpring,
-  useTransform,
-} from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { INSTRUCTOR_DATA } from '../data/workshopData';
-import { Reveal } from './Reveal';
+
+/** New instructor photo in /public — do not rename or move */
+const INSTRUCTOR_PHOTO = '/pic 1.jpeg';
+
+const EASE = [0.16, 1, 0.3, 1] as const;
+const STAT_YEARS = INSTRUCTOR_DATA.highlights[0];
+const STAT_TRAINED = INSTRUCTOR_DATA.highlights[1];
+const CHIP_FOCUS = INSTRUCTOR_DATA.highlights[2];
 
 function LinkedInIcon({ className }: { className?: string }) {
   return (
@@ -29,193 +30,223 @@ function InstagramIcon({ className }: { className?: string }) {
   );
 }
 
-function InstructorPhoto() {
-  const reduceMotion = useReducedMotion();
-  const ref = useRef<HTMLDivElement>(null);
-  const [imgFailed, setImgFailed] = useState(false);
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const springX = useSpring(x, { stiffness: 180, damping: 18 });
-  const springY = useSpring(y, { stiffness: 180, damping: 18 });
-  const rotateX = useTransform(springY, [-0.5, 0.5], [7, -7]);
-  const rotateY = useTransform(springX, [-0.5, 0.5], [-9, 9]);
+function useCountUp(target: number, active: boolean, reduceMotion: boolean | null) {
+  const [value, setValue] = useState(reduceMotion ? target : 0);
 
-  const onMove = (e: MouseEvent<HTMLDivElement>) => {
-    if (reduceMotion || !ref.current) return;
-    const rect = ref.current.getBoundingClientRect();
-    x.set((e.clientX - rect.left) / rect.width - 0.5);
-    y.set((e.clientY - rect.top) / rect.height - 0.5);
-  };
+  useEffect(() => {
+    if (reduceMotion) {
+      setValue(target);
+      return;
+    }
+    if (!active) return;
 
-  const onLeave = () => {
-    x.set(0);
-    y.set(0);
-  };
+    const duration = 1100;
+    const start = performance.now();
+    let raf = 0;
 
-  const initials = INSTRUCTOR_DATA.name
-    .split(/\s+/)
-    .map((p) => p[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setValue(Math.round(target * eased));
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [active, reduceMotion, target]);
+
+  return value;
+}
+
+function formatCount(n: number) {
+  return n.toLocaleString('en-US');
+}
+
+function parseStat(text: string): { target: number; suffix: string; label: string } | null {
+  const m = text.match(/^([\d,]+)(\+?)(\s.+)$/);
+  if (!m) return null;
+  const target = Number(m[1].replace(/,/g, ''));
+  if (Number.isNaN(target)) return null;
+  return { target, suffix: m[2], label: m[3].trim() };
+}
+
+function StatBlock({
+  text,
+  active,
+  reduceMotion,
+  delay,
+}: {
+  text: string;
+  active: boolean;
+  reduceMotion: boolean | null;
+  delay: number;
+}) {
+  const parsed = parseStat(text);
+  const count = useCountUp(parsed?.target ?? 0, active && parsed !== null, reduceMotion);
+
+  if (!parsed) return null;
 
   return (
-    <div className="relative mx-auto w-full max-w-[280px] sm:max-w-[320px] md:max-w-none [perspective:1000px]">
-      <motion.div
-        ref={ref}
-        className="instructor-photo-wrap relative"
-        style={
-          reduceMotion
-            ? undefined
-            : {
-                rotateX,
-                rotateY,
-                transformStyle: 'preserve-3d',
-              }
-        }
-        onMouseMove={onMove}
-        onMouseLeave={onLeave}
-        animate={reduceMotion ? undefined : { y: [0, -8, 0] }}
-        transition={
-          reduceMotion
-            ? undefined
-            : { y: { duration: 5.5, repeat: Infinity, ease: 'easeInOut' } }
-        }
-      >
-        <div className="instructor-photo-frame relative aspect-[4/5] overflow-hidden rounded-2xl sm:rounded-3xl bg-brand/20">
-          {imgFailed ? (
-            <div
-              className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-brand/40 to-brand-bright/20"
-              aria-label={INSTRUCTOR_DATA.name}
-            >
-              <span className="text-5xl font-extrabold text-white/90 tracking-tight">
-                {initials}
-              </span>
-            </div>
-          ) : (
-            <Image
-              src={INSTRUCTOR_DATA.photo}
-              alt={INSTRUCTOR_DATA.name}
-              fill
-              sizes="(max-width: 640px) 280px, 360px"
-              className="object-cover object-top"
-              onError={() => setImgFailed(true)}
-            />
-          )}
-          <div className="instructor-photo-sheen pointer-events-none absolute inset-0" aria-hidden="true" />
-        </div>
-      </motion.div>
-    </div>
+    <motion.div
+      className="instructor-stat"
+      initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.4 }}
+      transition={{ duration: reduceMotion ? 0.01 : 0.45, delay: reduceMotion ? 0 : delay, ease: EASE }}
+    >
+      <span className="instructor-stat-number">
+        {formatCount(count)}
+        {parsed.suffix}
+      </span>
+      <span className="instructor-stat-label">{parsed.label}</span>
+    </motion.div>
+  );
+}
+
+function InstructorPortrait() {
+  const reduceMotion = useReducedMotion();
+
+  return (
+    <motion.div
+      className="instructor-photo-wrap"
+      initial={reduceMotion ? false : { opacity: 0, y: 22 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.05, margin: '80px 0px' }}
+      transition={{ duration: reduceMotion ? 0.01 : 0.55, ease: EASE }}
+    >
+      <div className="instructor-photo-frame">
+        <Image
+          src={encodeURI(INSTRUCTOR_PHOTO)}
+          alt={INSTRUCTOR_DATA.name}
+          fill
+          sizes="(max-width: 768px) 416px, (max-width: 1024px) 480px, 544px"
+          className="instructor-photo-img"
+          priority
+          unoptimized
+        />
+      </div>
+    </motion.div>
   );
 }
 
 export const Instructor: React.FC = () => {
   const reduceMotion = useReducedMotion();
+  const statsRef = useRef<HTMLDivElement | null>(null);
+  const [statsActive, setStatsActive] = useState(false);
+
+  const firstName = INSTRUCTOR_DATA.name.split(' ')[0] ?? INSTRUCTOR_DATA.name;
+  const lastName = INSTRUCTOR_DATA.name.split(' ').slice(1).join(' ');
+
+  useEffect(() => {
+    const el = statsRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setStatsActive(true);
+          io.disconnect();
+        }
+      },
+      { threshold: 0.35 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   return (
     <section
       id="instructor"
-      className="relative section-y overflow-hidden bg-transparent"
+      className="relative section-y instructor-section bg-transparent"
       aria-labelledby="instructor-heading"
     >
-      <div className="relative container-narrow">
-        <Reveal className="text-center mb-6 sm:mb-8 space-y-2">
-          <h2 id="instructor-heading" className="type-title text-ink">
-            Your <span className="gradient-text-ahmixen">Instructor</span>
-          </h2>
-        </Reveal>
+      <div className="relative container-narrow instructor-container">
+        <h2 id="instructor-heading" className="sr-only">
+          Your Instructor
+        </h2>
 
-        <Reveal delay={0.08}>
-          <div className="instructor-panel grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 items-center p-5 sm:p-8 rounded-2xl sm:rounded-3xl border border-[var(--border-subtle)] bg-[var(--card-bg)]">
-            <div className="order-2 md:order-1 text-center md:text-left space-y-4">
-              <div>
-                <h3 className="text-xl sm:text-2xl font-extrabold text-[var(--text-main)]">
-                  {INSTRUCTOR_DATA.name}
-                </h3>
-                <p className="text-sm font-medium text-purple-400 mt-0.5">
-                  {INSTRUCTOR_DATA.title}
-                </p>
-              </div>
-              <p className="text-sm sm:text-[15px] text-[var(--text-secondary)] leading-relaxed">
-                {INSTRUCTOR_DATA.bio}
+        <div className="instructor-panel grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
+          <div className="order-2 md:order-1 text-center md:text-left space-y-5">
+            <motion.div
+              initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.4 }}
+              transition={{ duration: reduceMotion ? 0.01 : 0.5, delay: reduceMotion ? 0 : 0.12, ease: EASE }}
+            >
+              <h3 className="instructor-name">
+                {firstName}{' '}
+                <span className="gradient-text-ahmixen">{lastName}</span>
+              </h3>
+              <p className="instructor-title text-purple-400 mt-1">
+                {INSTRUCTOR_DATA.title}
               </p>
-              <ul className="space-y-2">
-                {INSTRUCTOR_DATA.highlights.map((item) => (
-                  <li
-                    key={item}
-                    className="flex items-center justify-center md:justify-start gap-2 text-sm text-[var(--text-secondary)]"
-                  >
-                    <CheckCircle2 className="w-4 h-4 text-purple-400 shrink-0" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
+            </motion.div>
 
-              <div className="pt-2 flex items-center justify-center md:justify-start gap-3">
-                <motion.a
-                  href={INSTRUCTOR_DATA.linkedinUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={`${INSTRUCTOR_DATA.name} on LinkedIn`}
-                  className="instructor-social"
-                  whileHover={reduceMotion ? undefined : { y: -3, scale: 1.06 }}
-                  whileTap={reduceMotion ? undefined : { scale: 0.96 }}
-                  animate={
-                    reduceMotion
-                      ? undefined
-                      : { y: [0, -3, 0] }
-                  }
-                  transition={
-                    reduceMotion
-                      ? undefined
-                      : {
-                          y: {
-                            duration: 3.2,
-                            repeat: Infinity,
-                            ease: 'easeInOut',
-                            delay: 0.2,
-                          },
-                        }
-                  }
-                >
-                  <LinkedInIcon className="w-5 h-5" />
-                </motion.a>
-                <motion.a
-                  href={INSTRUCTOR_DATA.instagramUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={`${INSTRUCTOR_DATA.name} on Instagram`}
-                  className="instructor-social"
-                  whileHover={reduceMotion ? undefined : { y: -3, scale: 1.06 }}
-                  whileTap={reduceMotion ? undefined : { scale: 0.96 }}
-                  animate={
-                    reduceMotion
-                      ? undefined
-                      : { y: [0, -3, 0] }
-                  }
-                  transition={
-                    reduceMotion
-                      ? undefined
-                      : {
-                          y: {
-                            duration: 3.2,
-                            repeat: Infinity,
-                            ease: 'easeInOut',
-                            delay: 0.7,
-                          },
-                        }
-                  }
-                >
-                  <InstagramIcon className="w-5 h-5" />
-                </motion.a>
-              </div>
+            <motion.p
+              className="instructor-bio text-[var(--text-secondary)] leading-relaxed"
+              initial={reduceMotion ? false : { opacity: 0, y: 14 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.4 }}
+              transition={{ duration: reduceMotion ? 0.01 : 0.5, delay: reduceMotion ? 0 : 0.2, ease: EASE }}
+            >
+              {INSTRUCTOR_DATA.bio}
+            </motion.p>
+
+            <div ref={statsRef} className="instructor-stats">
+              <StatBlock
+                text={STAT_YEARS}
+                active={statsActive}
+                reduceMotion={reduceMotion}
+                delay={0.26}
+              />
+              <StatBlock
+                text={STAT_TRAINED}
+                active={statsActive}
+                reduceMotion={reduceMotion}
+                delay={0.34}
+              />
             </div>
 
-            <div className="order-1 md:order-2 flex justify-center md:justify-end">
-              <InstructorPhoto />
+            <motion.div
+              className="instructor-chip inline-flex"
+              initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.4 }}
+              transition={{ duration: reduceMotion ? 0.01 : 0.45, delay: reduceMotion ? 0 : 0.42, ease: EASE }}
+            >
+              <CheckCircle2 className="w-4 h-4 text-purple-400 shrink-0" aria-hidden="true" />
+              <span>{CHIP_FOCUS}</span>
+            </motion.div>
+
+            <div className="pt-1 flex items-center justify-center md:justify-start gap-3">
+              <motion.a
+                href={INSTRUCTOR_DATA.linkedinUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${INSTRUCTOR_DATA.name} on LinkedIn`}
+                className="instructor-social"
+                whileHover={reduceMotion ? undefined : { y: -3, scale: 1.06 }}
+                whileTap={reduceMotion ? undefined : { scale: 0.96 }}
+              >
+                <LinkedInIcon className="w-5 h-5" />
+              </motion.a>
+              <motion.a
+                href={INSTRUCTOR_DATA.instagramUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${INSTRUCTOR_DATA.name} on Instagram`}
+                className="instructor-social"
+                whileHover={reduceMotion ? undefined : { y: -3, scale: 1.06 }}
+                whileTap={reduceMotion ? undefined : { scale: 0.96 }}
+              >
+                <InstagramIcon className="w-5 h-5" />
+              </motion.a>
             </div>
           </div>
-        </Reveal>
+
+          <div className="order-1 md:order-2 flex justify-center md:justify-end">
+            <InstructorPortrait />
+          </div>
+        </div>
       </div>
     </section>
   );

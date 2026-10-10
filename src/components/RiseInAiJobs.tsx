@@ -1,37 +1,125 @@
 'use client';
 
-import { ArrowRight, Briefcase, TrendingUp, Users } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ArrowRight, ArrowUpRight } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Reveal } from './Reveal';
 import { WORKSHOP_CONFIG } from '../data/workshopData';
+import { PROOF_ITEMS, type ProofItem } from '../data/proofItems';
 
 interface RiseInAiJobsProps {
   onOpenRegister: () => void;
 }
 
-const STATS = [
-  {
-    id: 'demand',
-    value: '3×',
-    label: 'Higher demand',
-    detail: 'For AI-ready professionals vs traditional roles',
-    icon: TrendingUp,
-  },
-  {
-    id: 'roles',
-    value: '40%',
-    label: 'Roles shifting',
-    detail: 'Work is moving toward AI-enabled skills by 2027',
-    icon: Briefcase,
-  },
-  {
-    id: 'learners',
-    value: '1,250+',
-    label: 'Already learning',
-    detail: 'Founders, marketers & builders joining AhmiXen cohorts',
-    icon: Users,
-  },
-] as const;
+const ROTATIONS = [-2, 0, 2] as const;
+const EASE = [0.16, 1, 0.3, 1] as const;
+
+function useCountUp(target: number, active: boolean, reduceMotion: boolean | null) {
+  const [value, setValue] = useState(reduceMotion ? target : 0);
+
+  useEffect(() => {
+    if (reduceMotion) {
+      setValue(target);
+      return;
+    }
+    if (!active) return;
+
+    const duration = 1200;
+    const start = performance.now();
+    let raf = 0;
+
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setValue(Math.round(target * eased));
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [active, reduceMotion, target]);
+
+  return value;
+}
+
+function ProofCard({
+  item,
+  index,
+  reduceMotion,
+}: {
+  item: ProofItem;
+  index: number;
+  reduceMotion: boolean | null;
+}) {
+  const ref = useRef<HTMLAnchorElement | null>(null);
+  const [active, setActive] = useState(false);
+  const [desktop, setDesktop] = useState(false);
+  const count = useCountUp(item.number, active, reduceMotion);
+  const restRotate = reduceMotion || !desktop ? 0 : ROTATIONS[index] ?? 0;
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 640px)');
+    const sync = () => setDesktop(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setActive(true);
+          io.disconnect();
+        }
+      },
+      { threshold: 0.35 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  return (
+    <motion.a
+      ref={ref}
+      href={item.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`proof-card proof-card-${index}`}
+      aria-label={`${item.publisher}: ${item.prefix}${item.number}${item.suffix}. ${item.headline}`}
+      initial={
+        reduceMotion
+          ? false
+          : { opacity: 0, y: -28, rotate: restRotate === 0 ? 0 : restRotate - 4 }
+      }
+      whileInView={{ opacity: 1, y: 0, rotate: restRotate }}
+      viewport={{ once: true, amount: 0.3 }}
+      transition={{
+        duration: reduceMotion ? 0.01 : 0.55,
+        delay: reduceMotion ? 0 : index * 0.1,
+        ease: EASE,
+      }}
+      whileHover={
+        reduceMotion
+          ? { y: -8 }
+          : { y: -8, rotate: 0, transition: { duration: 0.28, ease: EASE } }
+      }
+    >
+      <span className="proof-card-inner">
+        <span className="proof-publisher">{item.publisher}</span>
+        <span className="proof-number tabular-nums">
+          {item.prefix}
+          {count}
+          {item.suffix}
+        </span>
+        <span className="proof-headline">{item.headline}</span>
+        <ArrowUpRight className="proof-arrow" aria-hidden="true" strokeWidth={2.25} />
+      </span>
+    </motion.a>
+  );
+}
 
 export const RiseInAiJobs: React.FC<RiseInAiJobsProps> = ({ onOpenRegister }) => {
   const reduceMotion = useReducedMotion();
@@ -51,32 +139,17 @@ export const RiseInAiJobs: React.FC<RiseInAiJobsProps> = ({ onOpenRegister }) =>
             Jobs are moving to{' '}
             <span className="gradient-text-ahmixen">AI-ready people</span>
           </h2>
-          <p className="type-body">
-            Become AI-ready in one focused live session — fundamentals, agents, automation, and
-            building with AI.
-          </p>
         </Reveal>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 mb-10">
-          {STATS.map((stat, index) => {
-            const Icon = stat.icon;
-            return (
-              <Reveal key={stat.id} delay={index * 0.06}>
-                <div className="h-full rounded-2xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-5 sm:p-6 space-y-3">
-                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
-                    <Icon className="w-5 h-5" />
-                  </div>
-                  <div className="text-3xl font-extrabold text-[var(--text-main)] tracking-tight">
-                    {stat.value}
-                  </div>
-                  <div className="text-sm font-bold text-[var(--text-main)]">{stat.label}</div>
-                  <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
-                    {stat.detail}
-                  </p>
-                </div>
-              </Reveal>
-            );
-          })}
+        <div className="proof-row mb-10">
+          {PROOF_ITEMS.map((item, index) => (
+            <ProofCard
+              key={`${item.publisher}-${item.number}-${item.headline}`}
+              item={item}
+              index={index}
+              reduceMotion={reduceMotion}
+            />
+          ))}
         </div>
 
         <Reveal delay={0.12} className="flex flex-col sm:flex-row items-center justify-center gap-3">

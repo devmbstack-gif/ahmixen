@@ -4,21 +4,25 @@ export type CommunityPhoto = {
   caption: string;
   /** Bento mosaic size on desktop */
   span: 'lg' | 'tall' | 'wide' | 'sm';
+  /** Face-friendly crop anchor for object-cover tiles */
+  objectPosition?: string;
 };
 
 /** Same workshop photos + captions as before */
 export const COMMUNITY_PHOTOS: CommunityPhoto[] = [
   {
-    id: 'workshop-01',
-    src: '/community/workshop-01.jpg',
-    caption: 'Speaking at the Agentic AI & vibe coding workshop',
-    span: 'lg',
-  },
-  {
     id: 'workshop-02',
     src: '/community/workshop-02.jpg',
     caption: 'Workshop hosts with Mukabbir University leadership',
+    span: 'lg',
+    objectPosition: '50% 35%',
+  },
+  {
+    id: 'workshop-01',
+    src: '/community/workshop-01.jpg',
+    caption: 'Speaking at the Agentic AI & vibe coding workshop',
     span: 'tall',
+    objectPosition: '50% 20%',
   },
   {
     id: 'workshop-03',

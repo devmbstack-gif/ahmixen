@@ -1,36 +1,100 @@
 'use client';
 
 import {
-  Award,
-  Bot,
-  Code2,
-  Cpu,
-  MessageCircle,
-  Sparkles,
-  type LucideIcon,
-} from 'lucide-react';
-import { motion, useReducedMotion } from 'framer-motion';
+  useCallback,
+  useEffect,
+  useId,
+  useState,
+  type ComponentType,
+  type KeyboardEvent,
+} from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { BENTO_FEATURES } from '../data/workshopData';
 import { Reveal } from './Reveal';
+import {
+  AgentsIcon,
+  AutomationIcon,
+  BuildIcon,
+  CertificateIcon,
+  FundamentalsIcon,
+  QnAIcon,
+} from './bento-icons';
+import {
+  AgentsScene,
+  AutomationScene,
+  BuildScene,
+  CertificateScene,
+  FundamentalsScene,
+  QnAScene,
+} from './bento-scenes';
 
-const ICONS: Record<string, LucideIcon> = {
-  Cpu,
-  Bot,
-  Sparkles,
-  Code2,
-  MessageCircle,
-  Award,
+const LIST_ICONS: Record<string, ComponentType<{ className?: string }>> = {
+  fundamentals: FundamentalsIcon,
+  agents: AgentsIcon,
+  automation: AutomationIcon,
+  building: BuildIcon,
+  'live-qa': QnAIcon,
+  certificate: CertificateIcon,
 };
 
-const spanClass: Record<string, string> = {
-  lg: 'bento-span-lg',
-  md: 'bento-span-md',
-  sm: 'bento-span-sm',
-  wide: 'bento-span-wide',
+const SCENES: Record<string, ComponentType> = {
+  fundamentals: FundamentalsScene,
+  agents: AgentsScene,
+  automation: AutomationScene,
+  building: BuildScene,
+  'live-qa': QnAScene,
+  certificate: CertificateScene,
 };
+
+const INTERVAL_MS = 4000;
+const EASE = [0.16, 1, 0.3, 1] as const;
 
 export const BentoFeatures: React.FC = () => {
   const reduceMotion = useReducedMotion();
+  const baseId = useId();
+  const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const total = BENTO_FEATURES.length;
+
+  const select = useCallback(
+    (index: number, focusTab = false) => {
+      const next = ((index % total) + total) % total;
+      setActive(next);
+      if (focusTab) {
+        requestAnimationFrame(() => {
+          document.getElementById(`${baseId}-tab-${BENTO_FEATURES[next].id}`)?.focus();
+        });
+      }
+    },
+    [total, baseId]
+  );
+
+  useEffect(() => {
+    if (reduceMotion || paused) return;
+    const id = window.setInterval(() => {
+      setActive((i) => (i + 1) % total);
+    }, INTERVAL_MS);
+    return () => window.clearInterval(id);
+  }, [reduceMotion, paused, total, active]);
+
+  const onListKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      select(active + 1, true);
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      select(active - 1, true);
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      select(0, true);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      select(total - 1, true);
+    }
+  };
+
+  const feature = BENTO_FEATURES[active];
+  const Scene = SCENES[feature.id] ?? FundamentalsScene;
 
   return (
     <section
@@ -47,41 +111,101 @@ export const BentoFeatures: React.FC = () => {
             Skills that stick —{' '}
             <span className="gradient-text-ahmixen">in one live session</span>
           </h2>
-          <p className="type-body">
-            Four core tracks plus live Q&A and a completion certificate.
-          </p>
         </Reveal>
 
-        <div className="bento-grid">
-          {BENTO_FEATURES.map((feature, index) => {
-            const Icon = ICONS[feature.iconName] ?? Sparkles;
-            return (
-              <Reveal key={feature.id} delay={index * 0.05} className={spanClass[feature.span]}>
-                <motion.article
-                  className="bento-card group h-full"
-                  whileHover={reduceMotion ? undefined : { y: -4, scale: 1.01 }}
-                  transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+        <Reveal delay={0.08}>
+          <div
+            className="learn-shell"
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
+            onFocusCapture={() => setPaused(true)}
+            onBlurCapture={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                setPaused(false);
+              }
+            }}
+          >
+            <div
+              className="learn-list"
+              role="tablist"
+              aria-label="What you'll learn"
+              onKeyDown={onListKeyDown}
+            >
+              {BENTO_FEATURES.map((item, index) => {
+                const Icon = LIST_ICONS[item.id] ?? FundamentalsIcon;
+                const isActive = index === active;
+                const tabId = `${baseId}-tab-${item.id}`;
+                const panelId = `${baseId}-panel-${item.id}`;
+
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    role="tab"
+                    id={tabId}
+                    aria-selected={isActive}
+                    aria-controls={panelId}
+                    tabIndex={isActive ? 0 : -1}
+                    className={`learn-tab${isActive ? ' is-active' : ''}`}
+                    onClick={() => select(index)}
+                  >
+                    {isActive && !reduceMotion && (
+                      <motion.span
+                        layoutId="learn-tab-indicator"
+                        className="learn-tab-indicator"
+                        transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                      />
+                    )}
+                    {isActive && reduceMotion && (
+                      <span className="learn-tab-indicator" />
+                    )}
+                    <span className="learn-tab-icon">
+                      <Icon />
+                    </span>
+                    <span className="learn-tab-title">{item.title}</span>
+                    <span className="sr-only">{item.description}</span>
+                    {isActive && !reduceMotion && (
+                      <span className="learn-tab-progress" aria-hidden="true">
+                        <motion.span
+                          key={`progress-${active}-${paused}`}
+                          className="learn-tab-progress-bar"
+                          initial={{ scaleX: 0 }}
+                          animate={{ scaleX: paused ? 0 : 1 }}
+                          transition={
+                            paused
+                              ? { duration: 0.25 }
+                              : { duration: INTERVAL_MS / 1000, ease: 'linear' }
+                          }
+                        />
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div
+              className="learn-preview"
+              role="tabpanel"
+              id={`${baseId}-panel-${feature.id}`}
+              aria-labelledby={`${baseId}-tab-${feature.id}`}
+            >
+              <p className="sr-only">{feature.description}</p>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={feature.id}
+                  className="learn-preview-inner"
+                  initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={reduceMotion ? undefined : { opacity: 0, scale: 0.98 }}
+                  transition={{ duration: reduceMotion ? 0.01 : 0.35, ease: EASE }}
                 >
-                  <div
-                    className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${feature.accent ?? 'from-purple-500/15 to-transparent'} opacity-80`}
-                    aria-hidden="true"
-                  />
-                  <div className="relative z-[1] flex h-full flex-col gap-3 p-5 sm:p-6">
-                    <div className="bento-icon">
-                      <Icon className="w-5 h-5" strokeWidth={2.25} />
-                    </div>
-                    <h3 className="text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-main)]">
-                      {feature.title}
-                    </h3>
-                    <p className="text-sm text-[var(--text-secondary)] leading-relaxed flex-1">
-                      {feature.description}
-                    </p>
-                  </div>
-                </motion.article>
-              </Reveal>
-            );
-          })}
-        </div>
+                  <Scene />
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </div>
+        </Reveal>
       </div>
     </section>
   );

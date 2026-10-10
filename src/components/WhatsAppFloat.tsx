@@ -14,10 +14,11 @@ export const WhatsAppFloat: React.FC = () => {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Chat with AhmiXen on WhatsApp"
-      className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-full bg-[#25D366] text-white pl-3.5 pr-4 py-3 shadow-[0_10px_30px_rgba(37,211,102,0.45)] hover:bg-[#20bd5a] hover:scale-[1.03] active:scale-[0.98] transition-all cursor-pointer"
+      className="whatsapp-float"
     >
-      <MessageCircle className="w-5 h-5 fill-white" />
-      <span className="text-sm font-semibold hidden sm:inline">Let&apos;s have a chat!</span>
+      <span className="whatsapp-float-pulse" aria-hidden="true" />
+      <MessageCircle className="relative z-[1] w-5 h-5 fill-white shrink-0" />
+      <span className="whatsapp-float-label">Let&apos;s have a chat!</span>
     </a>
   );
 };
