@@ -6,15 +6,17 @@ import { Reveal } from './Reveal';
 
 export const Testimonials: React.FC = () => {
   return (
-    <section id="testimonials" className="py-10 sm:py-12 md:py-14 border-t border-[var(--border-subtle)]">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section
+      id="testimonials"
+      className="section-y bg-transparent"
+      aria-labelledby="testimonials-heading"
+    >
+      <div className="container-narrow">
         <Reveal className="text-center max-w-2xl mx-auto mb-6 sm:mb-8 space-y-2">
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+          <h2 id="testimonials-heading" className="type-title text-ink">
             What Attendees <span className="gradient-text-ahmixen">Say</span>
           </h2>
-          <p className="text-sm sm:text-base text-[var(--text-secondary)]">
-            Short feedback from recent cohorts.
-          </p>
+          <p className="type-body">Short feedback from recent cohorts.</p>
         </Reveal>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">

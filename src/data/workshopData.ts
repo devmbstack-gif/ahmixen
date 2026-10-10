@@ -2,17 +2,17 @@ export interface WorkshopInfo {
   brandName: string;
   tagline: string;
   badgeText: string;
-  eyebrow: string;
   titlePrefix: string;
   titleDuration: string;
   titleHighlight: string;
   titleSuffix: string;
   calloutQuestion: string;
   calloutAnswer: string;
-  subtitle: string;
   date: string;
   dateShort: string;
   time: string;
+  /** ISO 8601 start time (PKT / Asia/Karachi) */
+  startsAt: string;
   durationLabel: string;
   sessionLabel: string;
   duration: string;
@@ -20,7 +20,6 @@ export interface WorkshopInfo {
   level: string;
   seatsTotal: number;
   seatsRemaining: number;
-  trustLine: string;
   priceEarlyBird: {
     amount: string;
     original: string;
@@ -43,18 +42,16 @@ export const WORKSHOP_CONFIG: WorkshopInfo = {
   brandName: 'AhmiXen',
   tagline: 'Practical AI for real work',
   badgeText: 'Live AI Workshop',
-  eyebrow: 'AI is changing how people work, build, and get things done.',
   titlePrefix: 'Join Our',
   titleDuration: '2.5-Hour Live',
   titleHighlight: 'AI Workshop',
   titleSuffix: '',
   calloutQuestion: 'No heavy tech background?',
   calloutAnswer: 'No problem.',
-  subtitle:
-    'Learn AI fundamentals, agents, automation, and building with AI — in one focused live session.',
   date: 'Saturday, October 24, 2026',
   dateShort: 'Oct 24, 2026',
   time: '7:00 PM PKT',
+  startsAt: '2026-10-24T19:00:00+05:00',
   duration: '2.5 Hours Live',
   durationLabel: '2.5 Hours',
   sessionLabel: 'Live Session',
@@ -62,7 +59,6 @@ export const WORKSHOP_CONFIG: WorkshopInfo = {
   level: 'Beginner friendly',
   seatsTotal: 100,
   seatsRemaining: 18,
-  trustLine: '1,250+ learners · 98% would recommend · Beginner friendly',
   priceEarlyBird: {
     amount: '$29',
     original: '$79',
@@ -113,6 +109,96 @@ export const WORKSHOP_BENEFITS: BenefitItem[] = [
     title: 'Build with AI',
     description: 'Create small apps and tools with AI assistance — without a heavy coding background.',
   },
+];
+
+export interface LandingStat {
+  id: string;
+  value: number;
+  decimals?: number;
+  suffix: string;
+  prefix?: string;
+  label: string;
+}
+
+export const LANDING_STATS: LandingStat[] = [
+  { id: 'trained', value: 1200, suffix: '+', label: 'Professionals trained' },
+  { id: 'hours', value: 2.5, decimals: 1, suffix: 'h', label: 'Live workshop' },
+  { id: 'rating', value: 4.9, decimals: 1, suffix: '★', label: 'Average rating' },
+  { id: 'modules', value: 4, suffix: '', label: 'Hands-on modules' },
+];
+
+export type BentoSpan = 'lg' | 'md' | 'sm' | 'wide';
+
+export interface BentoFeature {
+  id: string;
+  iconName: string;
+  title: string;
+  description: string;
+  span: BentoSpan;
+  accent?: string;
+}
+
+export const BENTO_FEATURES: BentoFeature[] = [
+  {
+    id: 'fundamentals',
+    iconName: 'Cpu',
+    title: 'AI Fundamentals',
+    description:
+      'How modern models work, when to use them, and prompt patterns that get reliable results every time.',
+    span: 'lg',
+    accent: 'from-violet-500/25 to-transparent',
+  },
+  {
+    id: 'agents',
+    iconName: 'Bot',
+    title: 'AI Agents',
+    description: 'Watch agents research, use tools, and finish multi-step work while you supervise.',
+    span: 'md',
+    accent: 'from-fuchsia-500/20 to-transparent',
+  },
+  {
+    id: 'automation',
+    iconName: 'Sparkles',
+    title: 'Automation',
+    description: 'Wire AI into the tools you already use — less busywork, more output.',
+    span: 'md',
+    accent: 'from-sky-500/20 to-transparent',
+  },
+  {
+    id: 'building',
+    iconName: 'Code2',
+    title: 'Build with AI',
+    description: 'Ship a small working tool in-session — no heavy coding background required.',
+    span: 'wide',
+    accent: 'from-purple-500/25 to-transparent',
+  },
+  {
+    id: 'live-qa',
+    iconName: 'MessageCircle',
+    title: 'Live Q&A',
+    description: 'Ask anything. Get answers in real time.',
+    span: 'sm',
+    accent: 'from-rose-500/15 to-transparent',
+  },
+  {
+    id: 'certificate',
+    iconName: 'Award',
+    title: 'Certificate',
+    description: 'Proof you completed the AhmiXen live workshop.',
+    span: 'sm',
+    accent: 'from-amber-500/15 to-transparent',
+  },
+];
+
+export const TRUST_LOGOS: { id: string; name: string }[] = [
+  { id: 'chatgpt', name: 'ChatGPT' },
+  { id: 'claude', name: 'Claude' },
+  { id: 'gemini', name: 'Gemini' },
+  { id: 'n8n', name: 'n8n' },
+  { id: 'cursor', name: 'Cursor' },
+  { id: 'notion', name: 'Notion' },
+  { id: 'zapier', name: 'Zapier' },
+  { id: 'midjourney', name: 'Midjourney' },
 ];
 
 export interface AgendaModule {

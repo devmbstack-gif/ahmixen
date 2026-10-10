@@ -3,7 +3,7 @@ import { Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
 import { ThemeProvider } from '@/context/ThemeContext';
 import './globals.css';
 
-const THEME_INIT_SCRIPT = `(function(){try{var k='ahmixen-theme';var t=localStorage.getItem(k);if(t!=='light'&&t!=='dark'){t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}var d=document.documentElement;d.classList.remove('light','dark');d.classList.add(t);}catch(e){document.documentElement.classList.add('dark');}})();`;
+const THEME_INIT_SCRIPT = `(function(){try{var k='ahmixen-theme';var t=localStorage.getItem(k);if(t!=='light'&&t!=='dark'){t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}var d=document.documentElement;d.classList.remove('light','dark');d.classList.add(t);d.style.colorScheme=t;}catch(e){document.documentElement.classList.add('dark');document.documentElement.style.colorScheme='dark';}})();`;
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -60,7 +60,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body
-        className={`${plusJakarta.className} antialiased selection:bg-purple-600 selection:text-white`}
+        className={`${plusJakarta.className} font-sans antialiased selection:bg-brand selection:text-white`}
       >
         <ThemeProvider>{children}</ThemeProvider>
       </body>

@@ -15,14 +15,15 @@ export const Registration: React.FC<RegistrationProps> = ({ onOpenRegister }) =>
   return (
     <section
       id="pricing"
-      className="py-10 sm:py-12 md:py-14 bg-[var(--bg-secondary)]/50 border-y border-[var(--border-subtle)]"
+      className="section-y bg-transparent"
+      aria-labelledby="pricing-heading"
     >
-      <div className="max-w-lg mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-lg page-x">
         <Reveal className="text-center mb-6 sm:mb-8 space-y-2">
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+          <h2 id="pricing-heading" className="type-title text-ink">
             Reserve Your <span className="gradient-text-ahmixen">Seat</span>
           </h2>
-          <p className="text-sm text-[var(--text-secondary)]">
+          <p className="type-caption">
             Frontend reservation form — payment integration comes later.
           </p>
         </Reveal>

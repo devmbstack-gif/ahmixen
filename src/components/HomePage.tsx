@@ -1,26 +1,105 @@
 'use client';
 
 import React, { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { Navbar } from './Navbar';
 import { Hero } from './Hero';
 import { WorkshopPreview } from './WorkshopPreview';
-import { Community } from './Community';
-import { Benefits } from './Benefits';
-import { RiseInAiJobs } from './RiseInAiJobs';
-import { WorkshopAgenda } from './WorkshopAgenda';
-import { Instructor } from './Instructor';
-import { Testimonials } from './Testimonials';
+import { StatCounters } from './StatCounters';
 import { Registration } from './Registration';
-import { FAQ } from './FAQ';
 import { Footer } from './Footer';
-import { VideoModal } from './VideoModal';
-import { RegistrationModal } from './RegistrationModal';
-import { AnimatedBackground } from './AnimatedBackground';
 import { WhatsAppFloat } from './WhatsAppFloat';
+import { SmoothScroll, useSmoothScroll } from './SmoothScroll';
+import { SectionReveal } from './Reveal';
+import { SectionPlaceholder } from './SectionPlaceholder';
 
-export const HomePage: React.FC = () => {
+/**
+ * Below-fold / heavy UI — client-only code-split.
+ * `ssr: false` avoids flaky webpack SSR chunk paths that surface as "[object Event]".
+ */
+const AnimatedBackground = dynamic(
+  () => import('./AnimatedBackground').then((m) => ({ default: m.AnimatedBackground })),
+  { ssr: false, loading: () => null }
+);
+
+const Community = dynamic(
+  () => import('./Community').then((m) => ({ default: m.Community })),
+  {
+    ssr: false,
+    loading: () => <SectionPlaceholder minHeight="28rem" label="Loading community" />,
+  }
+);
+
+const BentoFeatures = dynamic(
+  () => import('./BentoFeatures').then((m) => ({ default: m.BentoFeatures })),
+  {
+    ssr: false,
+    loading: () => <SectionPlaceholder minHeight="22rem" label="Loading features" />,
+  }
+);
+
+const RiseInAiJobs = dynamic(
+  () => import('./RiseInAiJobs').then((m) => ({ default: m.RiseInAiJobs })),
+  {
+    ssr: false,
+    loading: () => <SectionPlaceholder minHeight="20rem" label="Loading AI jobs section" />,
+  }
+);
+
+const WorkshopAgenda = dynamic(
+  () => import('./WorkshopAgenda').then((m) => ({ default: m.WorkshopAgenda })),
+  {
+    ssr: false,
+    loading: () => <SectionPlaceholder minHeight="18rem" label="Loading agenda" />,
+  }
+);
+
+const Instructor = dynamic(
+  () => import('./Instructor').then((m) => ({ default: m.Instructor })),
+  {
+    ssr: false,
+    loading: () => <SectionPlaceholder minHeight="22rem" label="Loading instructor" />,
+  }
+);
+
+const SocialProofMarquee = dynamic(
+  () => import('./SocialProofMarquee').then((m) => ({ default: m.SocialProofMarquee })),
+  {
+    ssr: false,
+    loading: () => <SectionPlaceholder minHeight="12rem" label="Loading social proof" />,
+  }
+);
+
+const Testimonials = dynamic(
+  () => import('./Testimonials').then((m) => ({ default: m.Testimonials })),
+  {
+    ssr: false,
+    loading: () => <SectionPlaceholder minHeight="16rem" label="Loading testimonials" />,
+  }
+);
+
+const FAQ = dynamic(
+  () => import('./FAQ').then((m) => ({ default: m.FAQ })),
+  {
+    ssr: false,
+    loading: () => <SectionPlaceholder minHeight="16rem" label="Loading FAQ" />,
+  }
+);
+
+const VideoModal = dynamic(
+  () => import('./VideoModal').then((m) => ({ default: m.VideoModal })),
+  { ssr: false }
+);
+
+const RegistrationModal = dynamic(
+  () => import('./RegistrationModal').then((m) => ({ default: m.RegistrationModal })),
+  { ssr: false }
+);
+
+const HomePageInner: React.FC = () => {
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [registerModalOpen, setRegisterModalOpen] = useState(false);
+  const smooth = useSmoothScroll();
 
   const handleOpenRegister = () => setRegisterModalOpen(true);
   const handleCloseRegister = () => setRegisterModalOpen(false);
@@ -28,43 +107,85 @@ export const HomePage: React.FC = () => {
   const handleCloseVideo = () => setVideoModalOpen(false);
 
   const handleExploreWorkshop = () => {
-    document.getElementById('preview')?.scrollIntoView({ behavior: 'smooth' });
+    smooth?.scrollTo('#preview', { offset: -80 });
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-transparent text-[var(--text-main)] transition-colors duration-300 antialiased selection:bg-purple-600 selection:text-white relative">
+    <div className="min-h-screen flex flex-col bg-transparent text-ink transition-colors duration-300 antialiased selection:bg-brand selection:text-white relative">
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
+
       <AnimatedBackground />
 
       <Navbar onOpenRegister={handleOpenRegister} />
 
-      <main className="flex-1">
+      <main id="main-content" className="flex-1" tabIndex={-1}>
         <Hero
           onOpenRegister={handleOpenRegister}
           onExploreWorkshop={handleExploreWorkshop}
         />
-        <WorkshopPreview
-          onOpenVideo={handleOpenVideo}
-          onOpenRegister={handleOpenRegister}
-        />
-        <Community />
-        <Benefits />
-        <RiseInAiJobs onOpenRegister={handleOpenRegister} />
-        <WorkshopAgenda />
-        <Instructor />
-        <Testimonials />
-        <Registration onOpenRegister={handleOpenRegister} />
-        <FAQ />
+        <SectionReveal>
+          <WorkshopPreview
+            onOpenVideo={handleOpenVideo}
+            onOpenRegister={handleOpenRegister}
+          />
+        </SectionReveal>
+        <SectionReveal>
+          <StatCounters />
+        </SectionReveal>
+        <SectionReveal>
+          <Community />
+        </SectionReveal>
+        <SectionReveal>
+          <BentoFeatures />
+        </SectionReveal>
+        <SectionReveal>
+          <RiseInAiJobs onOpenRegister={handleOpenRegister} />
+        </SectionReveal>
+        <SectionReveal>
+          <WorkshopAgenda />
+        </SectionReveal>
+        <SectionReveal>
+          <Instructor />
+        </SectionReveal>
+        <SectionReveal>
+          <SocialProofMarquee />
+        </SectionReveal>
+        <SectionReveal>
+          <Testimonials />
+        </SectionReveal>
+        <SectionReveal>
+          <Registration onOpenRegister={handleOpenRegister} />
+        </SectionReveal>
+        <SectionReveal>
+          <FAQ />
+        </SectionReveal>
       </main>
 
-      <Footer />
+      <SectionReveal>
+        <Footer />
+      </SectionReveal>
       <WhatsAppFloat />
 
-      <VideoModal
-        isOpen={videoModalOpen}
-        onClose={handleCloseVideo}
-        onOpenRegister={handleOpenRegister}
-      />
-      <RegistrationModal isOpen={registerModalOpen} onClose={handleCloseRegister} />
+      {videoModalOpen && (
+        <VideoModal
+          isOpen={videoModalOpen}
+          onClose={handleCloseVideo}
+          onOpenRegister={handleOpenRegister}
+        />
+      )}
+      {registerModalOpen && (
+        <RegistrationModal isOpen={registerModalOpen} onClose={handleCloseRegister} />
+      )}
     </div>
+  );
+};
+
+export const HomePage: React.FC = () => {
+  return (
+    <SmoothScroll>
+      <HomePageInner />
+    </SmoothScroll>
   );
 };

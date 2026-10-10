@@ -83,9 +83,7 @@ export const Benefits: React.FC = () => {
   const art = benefitArt[benefit.id];
 
   return (
-    <section id="benefits" className="relative py-10 sm:py-12 md:py-14 overflow-hidden">
-      <div className="benefit-stack-glow absolute inset-x-0 bottom-0 h-[70%] pointer-events-none" />
-
+    <section id="benefits" className="relative py-10 sm:py-12 md:py-14 overflow-hidden bg-transparent">
       <div className="relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <Reveal className="text-center max-w-2xl mx-auto mb-6 sm:mb-8 space-y-2">
           <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">

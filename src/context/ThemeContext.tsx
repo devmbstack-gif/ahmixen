@@ -13,6 +13,7 @@ interface ThemeContextType {
 }
 
 const STORAGE_KEY = 'ahmixen-theme';
+const THEME_ANIM_MS = 420;
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
@@ -20,6 +21,7 @@ function applyThemeClass(theme: Theme) {
   const root = document.documentElement;
   root.classList.remove('light', 'dark');
   root.classList.add(theme);
+  root.style.colorScheme = theme;
 }
 
 function resolvePreferredTheme(): Theme {
@@ -43,6 +45,47 @@ function persistTheme(theme: Theme) {
   }
 }
 
+function prefersReducedMotion() {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function runThemeChange(apply: () => void) {
+  const root = document.documentElement;
+
+  const finishAnimClass = () => {
+    root.classList.add('theme-animating');
+    window.setTimeout(() => {
+      root.classList.remove('theme-animating');
+    }, THEME_ANIM_MS);
+  };
+
+  if (prefersReducedMotion()) {
+    apply();
+    return;
+  }
+
+  const doc = document as Document & {
+    startViewTransition?: (cb: () => void) => { finished: Promise<void> };
+  };
+
+  if (typeof doc.startViewTransition === 'function') {
+    try {
+      finishAnimClass();
+      const transition = doc.startViewTransition(() => {
+        apply();
+      });
+      // Aborted/skipped transitions reject with non-Error values (e.g. Event)
+      void transition?.finished?.catch(() => undefined);
+      return;
+    } catch {
+      // Fall through to non-VT path
+    }
+  }
+
+  finishAnimClass();
+  apply();
+}
+
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Always start as 'dark' so server HTML matches the first client render.
   // Blocking script in layout still applies the real class for CSS before paint.
@@ -58,17 +101,20 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
-    applyThemeClass(newTheme);
-    persistTheme(newTheme);
+    if (newTheme === theme) return;
+    runThemeChange(() => {
+      setThemeState(newTheme);
+      applyThemeClass(newTheme);
+      persistTheme(newTheme);
+    });
   };
 
   const toggleTheme = () => {
-    setThemeState((prev) => {
-      const next = prev === 'dark' ? 'light' : 'dark';
+    const next: Theme = theme === 'dark' ? 'light' : 'dark';
+    runThemeChange(() => {
+      setThemeState(next);
       applyThemeClass(next);
       persistTheme(next);
-      return next;
     });
   };
 

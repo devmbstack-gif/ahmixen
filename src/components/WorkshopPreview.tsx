@@ -14,15 +14,16 @@ export const WorkshopPreview: React.FC<WorkshopPreviewProps> = ({
   onOpenRegister,
 }) => {
   return (
-    <section id="preview" className="py-10 sm:py-12 md:py-14 border-t border-[var(--border-subtle)]">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-        <Reveal className="text-center space-y-2">
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+    <section
+      id="preview"
+      className="pt-4 sm:pt-6 pb-[var(--section-y)] bg-transparent"
+      aria-labelledby="preview-heading"
+    >
+      <div className="container-narrow space-y-6">
+        <Reveal className="text-center">
+          <h2 id="preview-heading" className="type-title text-ink">
             Workshop <span className="gradient-text-ahmixen">Preview</span>
           </h2>
-          <p className="text-sm sm:text-base text-[var(--text-secondary)]">
-            A short look at what you&apos;ll cover in the live session.
-          </p>
         </Reveal>
 
         <Reveal delay={0.08}>
@@ -30,20 +31,22 @@ export const WorkshopPreview: React.FC<WorkshopPreviewProps> = ({
             type="button"
             onClick={onOpenVideo}
             aria-label="Play workshop teaser video"
-            className="relative w-full aspect-video rounded-2xl overflow-hidden border border-[var(--border-subtle)] bg-[var(--media-surface)] group cursor-pointer text-left"
+            className="relative w-full aspect-video rounded-2xl sm:rounded-3xl overflow-hidden border border-[var(--border-subtle)] bg-[var(--media-surface)] group cursor-pointer text-left shadow-[0_20px_50px_-24px_rgba(124,58,237,0.55)]"
           >
             <div className="absolute inset-0 tech-grid-pattern opacity-40" />
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
               <div className="relative">
                 <span className="ahmixen-play-pulse absolute inset-0 rounded-full" />
-                <div className="relative w-16 h-16 rounded-full btn-ahmixen flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-                  <Play className="w-7 h-7 text-white fill-white ml-1" />
+                <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full btn-ahmixen flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+                  <Play className="w-7 h-7 sm:w-9 sm:h-9 text-white fill-white ml-1" />
                 </div>
               </div>
-              <span className="text-sm font-semibold text-white drop-shadow">Watch teaser</span>
+              <span className="text-sm sm:text-base font-semibold text-white drop-shadow">
+                Watch teaser
+              </span>
             </div>
-            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
-              <span className="text-xs text-purple-200 font-medium">
+            <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5 bg-gradient-to-t from-black/80 to-transparent">
+              <span className="text-xs sm:text-sm text-purple-200 font-medium">
                 {WORKSHOP_CONFIG.duration} · Live interactive session
               </span>
             </div>

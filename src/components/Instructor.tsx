@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, type MouseEvent } from 'react';
+import { useRef, useState, type MouseEvent } from 'react';
 import Image from 'next/image';
 import { CheckCircle2 } from 'lucide-react';
 import {
@@ -32,6 +32,7 @@ function InstagramIcon({ className }: { className?: string }) {
 function InstructorPhoto() {
   const reduceMotion = useReducedMotion();
   const ref = useRef<HTMLDivElement>(null);
+  const [imgFailed, setImgFailed] = useState(false);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const springX = useSpring(x, { stiffness: 180, damping: 18 });
@@ -50,6 +51,13 @@ function InstructorPhoto() {
     x.set(0);
     y.set(0);
   };
+
+  const initials = INSTRUCTOR_DATA.name
+    .split(/\s+/)
+    .map((p) => p[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
     <div className="relative mx-auto w-full max-w-[280px] sm:max-w-[320px] md:max-w-none [perspective:1000px]">
@@ -74,15 +82,26 @@ function InstructorPhoto() {
             : { y: { duration: 5.5, repeat: Infinity, ease: 'easeInOut' } }
         }
       >
-        <div className="instructor-photo-frame relative aspect-[4/5] overflow-hidden rounded-2xl sm:rounded-3xl">
-          <Image
-            src={INSTRUCTOR_DATA.photo}
-            alt={INSTRUCTOR_DATA.name}
-            fill
-            sizes="(max-width: 640px) 280px, 360px"
-            className="object-cover object-top"
-            priority
-          />
+        <div className="instructor-photo-frame relative aspect-[4/5] overflow-hidden rounded-2xl sm:rounded-3xl bg-brand/20">
+          {imgFailed ? (
+            <div
+              className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-brand/40 to-brand-bright/20"
+              aria-label={INSTRUCTOR_DATA.name}
+            >
+              <span className="text-5xl font-extrabold text-white/90 tracking-tight">
+                {initials}
+              </span>
+            </div>
+          ) : (
+            <Image
+              src={INSTRUCTOR_DATA.photo}
+              alt={INSTRUCTOR_DATA.name}
+              fill
+              sizes="(max-width: 640px) 280px, 360px"
+              className="object-cover object-top"
+              onError={() => setImgFailed(true)}
+            />
+          )}
           <div className="instructor-photo-sheen pointer-events-none absolute inset-0" aria-hidden="true" />
         </div>
       </motion.div>
@@ -94,12 +113,14 @@ export const Instructor: React.FC = () => {
   const reduceMotion = useReducedMotion();
 
   return (
-    <section id="instructor" className="relative py-10 sm:py-12 md:py-14 overflow-hidden">
-      <div className="instructor-glow pointer-events-none absolute inset-0" />
-
-      <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section
+      id="instructor"
+      className="relative section-y overflow-hidden bg-transparent"
+      aria-labelledby="instructor-heading"
+    >
+      <div className="relative container-narrow">
         <Reveal className="text-center mb-6 sm:mb-8 space-y-2">
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+          <h2 id="instructor-heading" className="type-title text-ink">
             Your <span className="gradient-text-ahmixen">Instructor</span>
           </h2>
         </Reveal>

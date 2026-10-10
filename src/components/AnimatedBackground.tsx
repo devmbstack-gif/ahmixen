@@ -162,10 +162,13 @@ export const AnimatedBackground: React.FC = () => {
       aria-hidden="true"
       className="fixed inset-0 pointer-events-none -z-20 overflow-hidden select-none bg-[var(--bg-primary)] transition-colors duration-500"
     >
+      {/* Same hero look for the whole page */}
       <div className="absolute inset-0 tech-grid-pattern opacity-40 mix-blend-overlay pointer-events-none" />
 
-      {/* Ambient top glow — CSS-driven for light/dark */}
-      <div className="ahmixen-bg-ambient absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[800px] pointer-events-none" />
+      <div className="ahmixen-bg-ambient absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[min(100vh,900px)] pointer-events-none opacity-70" />
+
+      {/* Hero floor purple wash — fixed so every section shares it */}
+      <div className="hero-floor-glow absolute inset-x-0 bottom-0 h-[75%] pointer-events-none" />
 
       <div
         className="absolute inset-0 w-full h-full will-change-transform pointer-events-none"

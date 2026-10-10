@@ -13,16 +13,15 @@ export const WorkshopAgenda: React.FC = () => {
   return (
     <section
       id="agenda"
-      className="py-10 sm:py-12 md:py-14 bg-[var(--bg-secondary)]/50 border-y border-[var(--border-subtle)]"
+      className="section-y bg-transparent"
+      aria-labelledby="agenda-heading"
     >
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="container-tight max-w-3xl">
         <Reveal className="text-center max-w-2xl mx-auto mb-6 sm:mb-8 space-y-2">
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+          <h2 id="agenda-heading" className="type-title text-ink">
             Session <span className="gradient-text-ahmixen">Agenda</span>
           </h2>
-          <p className="text-sm sm:text-base text-[var(--text-secondary)]">
-            Four modules. Tap a row for a short detail.
-          </p>
+          <p className="type-body">Four modules. Tap a row for a short detail.</p>
         </Reveal>
 
         <div className="space-y-3">
@@ -33,17 +32,19 @@ export const WorkshopAgenda: React.FC = () => {
                 <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--card-bg)] overflow-hidden">
                   <button
                     type="button"
+                    id={`${module.id}-button`}
                     onClick={() => setOpenId(isOpen ? null : module.id)}
                     className="w-full flex items-center gap-4 p-4 sm:p-5 text-left cursor-pointer hover:bg-[var(--hover-fill)] transition-colors"
                     aria-expanded={isOpen}
+                    aria-controls={`${module.id}-panel`}
                   >
-                    <span className="text-xs font-mono font-bold text-purple-400 w-8 shrink-0">
+                    <span className="text-xs font-mono font-bold text-brand-soft w-8 shrink-0">
                       {module.moduleNumber}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <div className="font-bold text-[var(--text-main)]">{module.title}</div>
-                      <div className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] mt-1">
-                        <Clock className="w-3.5 h-3.5" />
+                      <div className="font-bold text-ink">{module.title}</div>
+                      <div className="flex items-center gap-1.5 text-xs text-ink-muted mt-1">
+                        <Clock className="w-3.5 h-3.5" aria-hidden="true" />
                         {module.timeRange} · {module.durationMin}
                       </div>
                     </div>
@@ -51,8 +52,9 @@ export const WorkshopAgenda: React.FC = () => {
                       animate={{ rotate: isOpen ? 180 : 0 }}
                       transition={{ duration: reduceMotion ? 0 : 0.22 }}
                       className="shrink-0"
+                      aria-hidden="true"
                     >
-                      <ChevronDown className="w-5 h-5 text-[var(--text-secondary)]" />
+                      <ChevronDown className="w-5 h-5 text-ink-muted" />
                     </motion.span>
                   </button>
 
@@ -60,15 +62,15 @@ export const WorkshopAgenda: React.FC = () => {
                     {isOpen && (
                       <motion.div
                         key="content"
-                        initial={
-                          reduceMotion ? { opacity: 1, height: 'auto' } : { height: 0, opacity: 0 }
-                        }
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={reduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
+                        id={`${module.id}-panel`}
+                        role="region"
+                        aria-labelledby={`${module.id}-button`}
+                        initial={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
                         transition={{ duration: reduceMotion ? 0.12 : 0.28, ease: [0.16, 1, 0.3, 1] }}
-                        className="overflow-hidden"
                       >
-                        <div className="px-4 sm:px-5 pb-4 sm:pb-5 text-sm text-[var(--text-secondary)] leading-relaxed border-t border-[var(--border-subtle)]">
+                        <div className="px-4 sm:px-5 pb-4 sm:pb-5 type-body border-t border-line">
                           <p className="pt-3 pl-12">{module.summary}</p>
                         </div>
                       </motion.div>
