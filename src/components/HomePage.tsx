@@ -12,6 +12,8 @@ import { WhatsAppFloat } from './WhatsAppFloat';
 import { SmoothScroll, useSmoothScroll } from './SmoothScroll';
 import { SectionReveal } from './Reveal';
 import { SectionPlaceholder } from './SectionPlaceholder';
+import type { PublicSessionDisplay } from '../lib/sessions/publicShared';
+import { useReserveFlow } from './checkout/ReserveFlowProvider';
 
 /**
  * Below-fold / heavy UI — client-only code-split.
@@ -75,18 +77,13 @@ const VideoModal = dynamic(
   { ssr: false }
 );
 
-const RegistrationModal = dynamic(
-  () => import('./RegistrationModal').then((m) => ({ default: m.RegistrationModal })),
-  { ssr: false }
-);
-
-const HomePageInner: React.FC = () => {
+const HomePageInner: React.FC<{ publicSession: PublicSessionDisplay }> = ({
+  publicSession,
+}) => {
   const [videoModalOpen, setVideoModalOpen] = useState(false);
-  const [registerModalOpen, setRegisterModalOpen] = useState(false);
   const smooth = useSmoothScroll();
+  const { startReserveFlow } = useReserveFlow();
 
-  const handleOpenRegister = () => setRegisterModalOpen(true);
-  const handleCloseRegister = () => setRegisterModalOpen(false);
   const handleOpenVideo = () => setVideoModalOpen(true);
   const handleCloseVideo = () => setVideoModalOpen(false);
 
@@ -102,17 +99,17 @@ const HomePageInner: React.FC = () => {
 
       <AnimatedBackground />
 
-      <Navbar onOpenRegister={handleOpenRegister} />
+      <Navbar />
 
       <main id="main-content" className="flex-1" tabIndex={-1}>
         <Hero
-          onOpenRegister={handleOpenRegister}
           onExploreWorkshop={handleExploreWorkshop}
+          session={publicSession}
         />
         <SectionReveal>
           <WorkshopPreview
             onOpenVideo={handleOpenVideo}
-            onOpenRegister={handleOpenRegister}
+            durationLabel={publicSession.durationLabel}
           />
         </SectionReveal>
         <SectionReveal>
@@ -137,7 +134,11 @@ const HomePageInner: React.FC = () => {
           <Testimonials />
         </SectionReveal>
         <SectionReveal>
-          <Registration onOpenRegister={handleOpenRegister} />
+          <Registration
+            seatsAvailable={publicSession.seatsAvailable}
+            showLimitedSeatsBadge={publicSession.showLimitedSeatsBadge}
+            durationLabel={publicSession.durationLabel}
+          />
         </SectionReveal>
       </main>
 
@@ -150,20 +151,24 @@ const HomePageInner: React.FC = () => {
         <VideoModal
           isOpen={videoModalOpen}
           onClose={handleCloseVideo}
-          onOpenRegister={handleOpenRegister}
+          onOpenRegister={() => {
+            handleCloseVideo();
+            window.setTimeout(() => startReserveFlow(), 0);
+          }}
+          sessionDate={publicSession.dateLong}
+          durationLabel={publicSession.durationLabel}
         />
-      )}
-      {registerModalOpen && (
-        <RegistrationModal isOpen={registerModalOpen} onClose={handleCloseRegister} />
       )}
     </div>
   );
 };
 
-export const HomePage: React.FC = () => {
+export const HomePage: React.FC<{ publicSession: PublicSessionDisplay }> = ({
+  publicSession,
+}) => {
   return (
     <SmoothScroll>
-      <HomePageInner />
+      <HomePageInner publicSession={publicSession} />
     </SmoothScroll>
   );
 };

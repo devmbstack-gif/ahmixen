@@ -10,19 +10,14 @@ import {
   useMotionTemplate,
 } from 'framer-motion';
 import { WORKSHOP_CONFIG } from '../data/workshopData';
+import type { PublicSessionDisplay } from '../lib/sessions/publicShared';
 import { Countdown } from './Countdown';
+import { useReserveFlow } from './checkout/ReserveFlowProvider';
 
 interface HeroProps {
-  onOpenRegister: () => void;
   onExploreWorkshop: () => void;
+  session: PublicSessionDisplay;
 }
-
-const metaItems = [
-  { icon: Calendar, label: `On ${WORKSHOP_CONFIG.dateShort}`, live: false },
-  { icon: Hourglass, label: WORKSHOP_CONFIG.durationLabel, live: false },
-  { icon: Video, label: WORKSHOP_CONFIG.sessionLabel, live: true },
-  { icon: Clock, label: WORKSHOP_CONFIG.time, live: false },
-];
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -30,8 +25,14 @@ function splitWords(text: string) {
   return text.trim().split(/\s+/).filter(Boolean);
 }
 
-export const Hero: React.FC<HeroProps> = ({ onOpenRegister, onExploreWorkshop }) => {
+export const Hero: React.FC<HeroProps> = ({
+  onExploreWorkshop,
+  session,
+}) => {
   const reduceMotion = useReducedMotion();
+  const { startReserveFlow, reserveCta } = useReserveFlow();
+  const heroCtaLabel =
+    reserveCta.label === 'Reserve' ? 'Reserve My Seat' : reserveCta.label;
   const sectionRef = useRef<HTMLElement | null>(null);
   const ctaRef = useRef<HTMLButtonElement | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -56,6 +57,16 @@ export const Hero: React.FC<HeroProps> = ({ onOpenRegister, onExploreWorkshop })
   const line2Words = useMemo(
     () => splitWords(WORKSHOP_CONFIG.titleHighlight),
     []
+  );
+
+  const metaItems = useMemo(
+    () => [
+      { icon: Calendar, label: `On ${session.dateShort}`, live: false },
+      { icon: Hourglass, label: session.durationLabel, live: false },
+      { icon: Video, label: WORKSHOP_CONFIG.sessionLabel, live: true },
+      { icon: Clock, label: session.timeLabel, live: false },
+    ],
+    [session.dateShort, session.durationLabel, session.timeLabel]
   );
 
   const [particleCount, setParticleCount] = useState(10);
@@ -244,11 +255,15 @@ export const Hero: React.FC<HeroProps> = ({ onOpenRegister, onExploreWorkshop })
           transition={{ delay: reduceMotion ? 0 : 0.78 }}
           className="mt-7 md:mt-8 flex flex-col items-center gap-3"
         >
-          <span className="hero-urgency-badge">
-            <span className="hero-urgency-dot" aria-hidden="true" />
-            Limited seats · {WORKSHOP_CONFIG.seatsRemaining} left
-          </span>
-          <Countdown />
+          {session.showLimitedSeatsBadge && (
+            <span className="hero-urgency-badge">
+              <span className="hero-urgency-dot" aria-hidden="true" />
+              {session.seatsAvailable > 0
+                ? `Limited seats · ${session.seatsAvailable} left`
+                : 'Sold out'}
+            </span>
+          )}
+          <Countdown startsAt={session.startsAt} />
         </motion.div>
 
         <motion.div
@@ -262,8 +277,12 @@ export const Hero: React.FC<HeroProps> = ({ onOpenRegister, onExploreWorkshop })
             ref={ctaRef}
             type="button"
             id="hero-reserve-cta"
-            onClick={onOpenRegister}
-            className="btn-ahmixen btn-magnetic relative py-3.5 px-8 sm:px-10 rounded-full font-bold text-base sm:text-lg inline-flex items-center justify-center gap-2 cursor-pointer"
+            onClick={() => {
+              if (!reserveCta.disabled) startReserveFlow();
+            }}
+            disabled={reserveCta.disabled}
+            aria-disabled={reserveCta.disabled}
+            className="btn-ahmixen btn-magnetic relative py-3.5 px-8 sm:px-10 rounded-full font-bold text-base sm:text-lg inline-flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             style={
               reduceMotion
                 ? undefined
@@ -291,8 +310,8 @@ export const Hero: React.FC<HeroProps> = ({ onOpenRegister, onExploreWorkshop })
             }}
           >
             <span className="relative z-[2] inline-flex items-center gap-2">
-              Reserve My Seat
-              <ArrowRight className="w-5 h-5" />
+              {heroCtaLabel}
+              {!reserveCta.disabled ? <ArrowRight className="w-5 h-5" /> : null}
             </span>
           </motion.button>
           <button

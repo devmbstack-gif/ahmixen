@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { WORKSHOP_CONFIG } from '../data/workshopData';
 
 type TimeLeft = {
   days: number;
@@ -13,10 +12,10 @@ type TimeLeft = {
 };
 
 const EASE = [0.16, 1, 0.3, 1] as const;
-const TARGET_MS = new Date(WORKSHOP_CONFIG.startsAt).getTime();
 
-function getTimeLeft(now = Date.now()): TimeLeft {
-  const diff = Math.max(0, TARGET_MS - now);
+function getTimeLeft(targetMs: number, now = Date.now()): TimeLeft {
+  const safeTarget = Number.isFinite(targetMs) ? targetMs : now;
+  const diff = Math.max(0, safeTarget - now);
   const totalSec = Math.floor(diff / 1000);
   return {
     days: Math.floor(totalSec / 86400),
@@ -63,16 +62,20 @@ const units: { key: keyof Omit<TimeLeft, 'done'>; label: string }[] = [
   { key: 'seconds', label: 'Sec' },
 ];
 
-export const Countdown: React.FC<{ className?: string }> = ({ className = '' }) => {
-  const [time, setTime] = useState<TimeLeft>(() => getTimeLeft());
+export const Countdown: React.FC<{ className?: string; startsAt: string }> = ({
+  className = '',
+  startsAt,
+}) => {
+  const targetMs = useMemo(() => new Date(startsAt).getTime(), [startsAt]);
+  const [time, setTime] = useState<TimeLeft>(() => getTimeLeft(targetMs));
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    setTime(getTimeLeft());
-    const id = window.setInterval(() => setTime(getTimeLeft()), 1000);
+    setTime(getTimeLeft(targetMs));
+    const id = window.setInterval(() => setTime(getTimeLeft(targetMs)), 1000);
     return () => window.clearInterval(id);
-  }, []);
+  }, [targetMs]);
 
   if (!mounted) {
     return (

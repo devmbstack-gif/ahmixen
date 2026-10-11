@@ -17,6 +17,8 @@ interface VideoModalProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenRegister: () => void;
+  sessionDate: string;
+  durationLabel: string;
   videoTitle?: string;
   videoDuration?: string;
 }
@@ -25,6 +27,8 @@ export const VideoModal: React.FC<VideoModalProps> = ({
   isOpen,
   onClose,
   onOpenRegister,
+  sessionDate,
+  durationLabel,
   videoTitle = `${WORKSHOP_CONFIG.brandName} Workshop Teaser & Walkthrough Preview`,
   videoDuration = '02:30',
 }) => {
@@ -146,11 +150,11 @@ export const VideoModal: React.FC<VideoModalProps> = ({
                 </div>
 
                 <h4 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-                  Watch What You&apos;ll Build in 2.5 Hours
+                  Watch What You&apos;ll Build in {durationLabel}
                 </h4>
 
                 <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">
-                  Experience the live workshop curriculum overview. This player is ready for video embed (Loom / YouTube / Vimeo). The full live session streams interactively on {WORKSHOP_CONFIG.date}.
+                  Experience the live workshop curriculum overview. This player is ready for video embed (Loom / YouTube / Vimeo). The full live session streams interactively on {sessionDate}.
                 </p>
 
                 {/* Big Central Play/Pause Trigger */}
@@ -232,6 +236,7 @@ export const VideoModal: React.FC<VideoModalProps> = ({
               <button
                 type="button"
                 onClick={() => {
+                  setIsPlaying(false);
                   onClose();
                   onOpenRegister();
                 }}

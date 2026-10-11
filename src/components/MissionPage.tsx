@@ -15,11 +15,6 @@ const AnimatedBackground = dynamic(
   { ssr: false, loading: () => null }
 );
 
-const RegistrationModal = dynamic(
-  () => import('./RegistrationModal').then((m) => ({ default: m.RegistrationModal })),
-  { ssr: false }
-);
-
 const EASE = [0.16, 1, 0.3, 1] as const;
 const VIEWPORT = { once: true, amount: 0.1 } as const;
 
@@ -584,7 +579,6 @@ function OtherStat({
 }
 
 export const MissionPage: React.FC = () => {
-  const [registerOpen, setRegisterOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const reduceMotion = useReducedMotion();
 
@@ -595,7 +589,7 @@ export const MissionPage: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-transparent text-ink transition-colors duration-300 antialiased selection:bg-brand selection:text-white relative">
       <AnimatedBackground />
-      <Navbar onOpenRegister={() => setRegisterOpen(true)} />
+      <Navbar />
 
       <main className="mission-page flex-1">
         <section className="mission-editorial" aria-labelledby="mission-hero-heading">
@@ -609,13 +603,6 @@ export const MissionPage: React.FC = () => {
       </main>
 
       <Footer />
-
-      {registerOpen && (
-        <RegistrationModal
-          isOpen={registerOpen}
-          onClose={() => setRegisterOpen(false)}
-        />
-      )}
     </div>
   );
 };

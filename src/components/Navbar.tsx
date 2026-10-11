@@ -8,18 +8,21 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { ThemeToggle } from './ThemeToggle';
 import { AhmiXenLogo } from './AhmiXenLogo';
 import { NAV_LINKS } from '../data/navLinks';
-
-interface NavbarProps {
-  onOpenRegister: () => void;
-}
+import { useReserveFlow } from './checkout/ReserveFlowProvider';
 
 const NAV_ITEMS = [{ label: 'Home', href: '/' }, ...NAV_LINKS] as const;
 
-export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
+export const Navbar: React.FC = () => {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [hoveredHref, setHoveredHref] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
   const reduceMotion = useReducedMotion();
+  const { startReserveFlow, reserveCta } = useReserveFlow();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -38,6 +41,16 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
 
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname === href;
+
+  const onReserve = () => {
+    if (reserveDisabled) return;
+    startReserveFlow();
+  };
+
+  // Keep SSR/client first paint identical; apply sold-out/closed labels after mount.
+  const reserveDisabled = mounted ? reserveCta.disabled : false;
+  const reserveLabel =
+    !mounted || reserveCta.label === 'Reserve' ? 'Reserve' : reserveCta.label;
 
   return (
     <header className="nav-bar nav-bar-top relative z-50">
@@ -81,11 +94,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
             <ThemeToggle />
             <button
               type="button"
-              onClick={onOpenRegister}
-              className="btn-ahmixen nav-focus inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold cursor-pointer"
+              onClick={onReserve}
+              disabled={reserveDisabled}
+              aria-disabled={reserveDisabled}
+              className="btn-ahmixen nav-focus inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Reserve
-              <ArrowRight className="w-3.5 h-3.5" />
+              {reserveLabel}
+              {!reserveDisabled ? <ArrowRight className="w-3.5 h-3.5" /> : null}
             </button>
           </div>
 
@@ -136,13 +151,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
             </nav>
             <button
               type="button"
+              disabled={reserveDisabled}
               onClick={() => {
                 setMobileMenuOpen(false);
-                onOpenRegister();
+                onReserve();
               }}
-              className="btn-ahmixen nav-focus w-full py-3 rounded-xl font-semibold mt-2"
+              className="btn-ahmixen nav-focus w-full py-3 rounded-xl font-semibold mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Reserve
+              {reserveLabel}
             </button>
           </div>
         </div>

@@ -14,13 +14,7 @@ const AnimatedBackground = dynamic(
   { ssr: false, loading: () => null }
 );
 
-const RegistrationModal = dynamic(
-  () => import('./RegistrationModal').then((m) => ({ default: m.RegistrationModal })),
-  { ssr: false }
-);
-
 export const TestimonialsPage: React.FC = () => {
-  const [registerOpen, setRegisterOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const cardRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const reviews = getAllReviews();
@@ -42,7 +36,7 @@ export const TestimonialsPage: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-transparent text-ink transition-colors duration-300 antialiased selection:bg-brand selection:text-white relative">
       <AnimatedBackground />
 
-      <Navbar onOpenRegister={() => setRegisterOpen(true)} />
+      <Navbar />
 
       <main className="testimonials-page flex-1">
         <div className="container-narrow testimonials-page-inner">
@@ -88,13 +82,6 @@ export const TestimonialsPage: React.FC = () => {
         onClose={closeModal}
         onChangeIndex={setActiveIndex}
       />
-
-      {registerOpen && (
-        <RegistrationModal
-          isOpen={registerOpen}
-          onClose={() => setRegisterOpen(false)}
-        />
-      )}
     </div>
   );
 };

@@ -3,26 +3,40 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/run-dev.mjs",
     "build": "next build",
     "start": "next start",
-    "lint": "oxlint"
+    "lint": "oxlint",
+    "seed:admin": "tsx scripts/seed-admin.ts",
+    "seed:session": "tsx scripts/seed-session.ts",
+    "seed:payment": "tsx scripts/seed-payment.ts",
+    "seed:orders": "tsx scripts/seed-orders.ts",
+    "seed:orders:clear": "tsx scripts/seed-orders-clear.ts",
+    "migrate:redemptions": "tsx scripts/migrate-redemptions.ts",
+    "test:checkout": "tsx scripts/test-checkout.ts",
+    "test:checkout:clear": "tsx scripts/test-checkout-clear.ts"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.3.3",
+    "bcryptjs": "^3.0.3",
     "framer-motion": "^14.0.0",
+    "jose": "^6.2.12",
     "lenis": "^1.3.26",
     "lucide-react": "^1.54.0",
+    "mongoose": "^9.11.1",
     "next": "^15.5.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "tailwindcss": "^4.3.3"
+    "tailwindcss": "^4.3.3",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "oxlint": "^1.81.0",
+    "tsx": "^4.23.15",
     "typescript": "~5.9.2"
   }
 }

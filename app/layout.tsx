@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
 import { ThemeProvider } from '@/context/ThemeContext';
+import { ReserveFlowProvider } from '@/components/checkout/ReserveFlowProvider';
 import './globals.css';
 
 const THEME_INIT_SCRIPT = `(function(){try{var k='ahmixen-theme';var t=localStorage.getItem(k);if(t!=='light'&&t!=='dark'){t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}var d=document.documentElement;d.classList.remove('light','dark');d.classList.add(t);d.style.colorScheme=t;}catch(e){document.documentElement.classList.add('dark');document.documentElement.style.colorScheme='dark';}})();`;
@@ -62,7 +63,9 @@ export default function RootLayout({
       <body
         className={`${plusJakarta.className} font-sans antialiased selection:bg-brand selection:text-white`}
       >
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <ReserveFlowProvider>{children}</ReserveFlowProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

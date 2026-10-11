@@ -14,6 +14,12 @@ dist-ssr
 out
 *.local
 
+# Env / secrets
+.env
+.env.*
+!.env.example
+tsconfig.tsbuildinfo
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -3,16 +3,21 @@
 import { Play, ArrowRight } from 'lucide-react';
 import { WORKSHOP_CONFIG } from '../data/workshopData';
 import { Reveal } from './Reveal';
+import { useReserveFlow } from './checkout/ReserveFlowProvider';
 
 interface WorkshopPreviewProps {
   onOpenVideo: () => void;
-  onOpenRegister: () => void;
+  durationLabel: string;
 }
 
 export const WorkshopPreview: React.FC<WorkshopPreviewProps> = ({
   onOpenVideo,
-  onOpenRegister,
+  durationLabel,
 }) => {
+  const { startReserveFlow, reserveCta } = useReserveFlow();
+  const label =
+    reserveCta.label === 'Reserve' ? 'Reserve My Seat' : reserveCta.label;
+
   return (
     <section
       id="preview"
@@ -47,7 +52,7 @@ export const WorkshopPreview: React.FC<WorkshopPreviewProps> = ({
             </div>
             <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5 bg-gradient-to-t from-black/80 to-transparent">
               <span className="text-xs sm:text-sm text-purple-200 font-medium">
-                {WORKSHOP_CONFIG.duration} · Live interactive session
+                {durationLabel || WORKSHOP_CONFIG.duration} · Live interactive session
               </span>
             </div>
           </button>
@@ -56,11 +61,15 @@ export const WorkshopPreview: React.FC<WorkshopPreviewProps> = ({
         <Reveal delay={0.12} className="flex justify-center">
           <button
             type="button"
-            onClick={onOpenRegister}
-            className="btn-ahmixen py-3 px-7 rounded-xl font-semibold text-sm inline-flex items-center gap-2 cursor-pointer"
+            onClick={() => {
+              if (!reserveCta.disabled) startReserveFlow();
+            }}
+            disabled={reserveCta.disabled}
+            aria-disabled={reserveCta.disabled}
+            className="btn-ahmixen py-3 px-7 rounded-xl font-semibold text-sm inline-flex items-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Reserve My Seat
-            <ArrowRight className="w-4 h-4" />
+            {label}
+            {!reserveCta.disabled ? <ArrowRight className="w-4 h-4" /> : null}
           </button>
         </Reveal>
       </div>
