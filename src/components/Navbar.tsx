@@ -13,6 +13,8 @@ interface NavbarProps {
   onOpenRegister: () => void;
 }
 
+const NAV_ITEMS = [{ label: 'Home', href: '/' }, ...NAV_LINKS] as const;
+
 export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -34,7 +36,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
     };
   }, [mobileMenuOpen]);
 
-  const isActive = (href: string) => pathname !== '/' && pathname === href;
+  const isActive = (href: string) =>
+    href === '/' ? pathname === '/' : pathname === href;
 
   return (
     <header className="nav-bar nav-bar-top relative z-50">
@@ -50,7 +53,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
               aria-label="Main"
               onMouseLeave={() => setHoveredHref(null)}
             >
-              {NAV_LINKS.map((link) => {
+              {NAV_ITEMS.map((link) => {
                 const active = isActive(link.href);
                 const showHoverPill = !reduceMotion && hoveredHref === link.href;
                 return (
@@ -112,7 +115,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
             onClick={(e) => e.stopPropagation()}
           >
             <nav className="space-y-1" aria-label="Main">
-              {NAV_LINKS.map((link) => {
+              {NAV_ITEMS.map((link) => {
                 const active = isActive(link.href);
                 return (
                   <Link

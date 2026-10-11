@@ -11,6 +11,7 @@ import {
   MonitorPlay,
 } from 'lucide-react';
 import { WORKSHOP_CONFIG } from '../data/workshopData';
+import { instructor } from '../data/instructor';
 
 interface VideoModalProps {
   isOpen: boolean;
@@ -219,7 +220,7 @@ export const VideoModal: React.FC<VideoModalProps> = ({
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-xs text-[var(--text-secondary)]">
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-purple-400" />
-                  Live Q&A with Ahmad Raza
+                  Live Q&A with {instructor.name}
                 </span>
                 <span className="hidden sm:inline text-[var(--text-muted)]">•</span>
                 <span className="flex items-center gap-1.5">
@@ -234,7 +235,7 @@ export const VideoModal: React.FC<VideoModalProps> = ({
                   onClose();
                   onOpenRegister();
                 }}
-                className="btn-ahmixen w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                className="btn-ahmixen w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>Reserve Your Seat Now</span>
                 <ArrowRight className="w-4 h-4" />

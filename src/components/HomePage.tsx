@@ -125,7 +125,7 @@ const HomePageInner: React.FC = () => {
           <BentoFeatures />
         </SectionReveal>
         <SectionReveal>
-          <RiseInAiJobs onOpenRegister={handleOpenRegister} />
+          <RiseInAiJobs />
         </SectionReveal>
         <SectionReveal>
           <WorkshopAgenda />

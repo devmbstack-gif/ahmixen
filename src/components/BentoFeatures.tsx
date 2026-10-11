@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useRef,
   useState,
   type ComponentType,
   type KeyboardEvent,
@@ -52,9 +53,25 @@ const EASE = [0.16, 1, 0.3, 1] as const;
 export const BentoFeatures: React.FC = () => {
   const reduceMotion = useReducedMotion();
   const baseId = useId();
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [edgeFade, setEdgeFade] = useState({ left: false, right: true });
   const total = BENTO_FEATURES.length;
+
+  const updateEdgeFade = useCallback(() => {
+    const list = listRef.current;
+    if (!list || window.matchMedia('(min-width: 1024px)').matches) {
+      setEdgeFade({ left: false, right: false });
+      return;
+    }
+    const maxScroll = list.scrollWidth - list.clientWidth;
+    setEdgeFade({
+      left: list.scrollLeft > 4,
+      right: maxScroll > 4 && list.scrollLeft < maxScroll - 4,
+    });
+  }, []);
 
   const select = useCallback(
     (index: number, focusTab = false) => {
@@ -76,6 +93,30 @@ export const BentoFeatures: React.FC = () => {
     }, INTERVAL_MS);
     return () => window.clearInterval(id);
   }, [reduceMotion, paused, total, active]);
+
+  useEffect(() => {
+    if (window.matchMedia('(min-width: 1024px)').matches) return;
+    const tab = tabRefs.current[active];
+    if (!tab) return;
+    tab.scrollIntoView({
+      inline: 'center',
+      block: 'nearest',
+      behavior: reduceMotion ? 'auto' : 'smooth',
+    });
+    updateEdgeFade();
+  }, [active, reduceMotion, updateEdgeFade]);
+
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    updateEdgeFade();
+    list.addEventListener('scroll', updateEdgeFade, { passive: true });
+    window.addEventListener('resize', updateEdgeFade);
+    return () => {
+      list.removeEventListener('scroll', updateEdgeFade);
+      window.removeEventListener('resize', updateEdgeFade);
+    };
+  }, [updateEdgeFade]);
 
   const onListKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
@@ -126,7 +167,14 @@ export const BentoFeatures: React.FC = () => {
             }}
           >
             <div
-              className="learn-list"
+              ref={listRef}
+              className={[
+                'learn-list',
+                edgeFade.left ? 'has-fade-left' : '',
+                edgeFade.right ? 'has-fade-right' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
               role="tablist"
               aria-label="What you'll learn"
               onKeyDown={onListKeyDown}
@@ -140,6 +188,9 @@ export const BentoFeatures: React.FC = () => {
                 return (
                   <button
                     key={item.id}
+                    ref={(el) => {
+                      tabRefs.current[index] = el;
+                    }}
                     type="button"
                     role="tab"
                     id={tabId}

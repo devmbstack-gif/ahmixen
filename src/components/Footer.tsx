@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { ArrowUp } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { WORKSHOP_CONFIG, INSTRUCTOR_DATA } from '../data/workshopData';
+import { WORKSHOP_CONFIG } from '../data/workshopData';
+import { instructor } from '../data/instructor';
 import { NAV_LINKS } from '../data/navLinks';
 import { AhmiXenLogo } from './AhmiXenLogo';
 
@@ -47,6 +48,9 @@ export const Footer: React.FC = () => {
               <AhmiXenLogo className="text-2xl sm:text-3xl" />
             </Link>
             <p className="site-footer-tagline">Practical AI workshops for professionals.</p>
+            <p className="site-footer-copy hidden lg:block">
+              &copy; {new Date().getFullYear()} {WORKSHOP_CONFIG.brandName}
+            </p>
           </div>
 
           <nav className="site-footer-nav" aria-label="Footer">
@@ -66,41 +70,36 @@ export const Footer: React.FC = () => {
             </a>
             <div className="site-footer-socials">
               <a
-                href={INSTRUCTOR_DATA.linkedinUrl}
+                href={instructor.linkedin}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={`${INSTRUCTOR_DATA.name} on LinkedIn`}
+                aria-label={`${instructor.name} on LinkedIn`}
                 className="site-footer-social nav-focus"
               >
                 <LinkedInIcon className="w-5 h-5" />
               </a>
               <a
-                href={INSTRUCTOR_DATA.instagramUrl}
+                href={instructor.instagram}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={`${INSTRUCTOR_DATA.name} on Instagram`}
+                aria-label={`${instructor.name} on Instagram`}
                 className="site-footer-social nav-focus"
               >
                 <InstagramIcon className="w-5 h-5" />
               </a>
             </div>
+            <button
+              type="button"
+              onClick={scrollToTop}
+              aria-label="Back to top"
+              className="site-footer-top nav-focus"
+            >
+              <ArrowUp className="w-4 h-4" aria-hidden="true" />
+            </button>
+            <p className="site-footer-copy site-footer-copy-mobile lg:hidden">
+              &copy; {new Date().getFullYear()} {WORKSHOP_CONFIG.brandName}
+            </p>
           </div>
-        </div>
-
-        <div className="site-footer-divider" aria-hidden="true" />
-
-        <div className="site-footer-bottom">
-          <p className="site-footer-copy">
-            &copy; {new Date().getFullYear()} {WORKSHOP_CONFIG.brandName}
-          </p>
-          <button
-            type="button"
-            onClick={scrollToTop}
-            aria-label="Back to top"
-            className="site-footer-top nav-focus"
-          >
-            <ArrowUp className="w-4 h-4" aria-hidden="true" />
-          </button>
         </div>
       </motion.div>
     </footer>

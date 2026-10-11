@@ -16,7 +16,7 @@ export const WorkshopPreview: React.FC<WorkshopPreviewProps> = ({
   return (
     <section
       id="preview"
-      className="pt-4 sm:pt-6 pb-[var(--section-y)] bg-transparent"
+      className="pt-8 md:pt-10 lg:pt-6 pb-[var(--section-y)] bg-transparent"
       aria-labelledby="preview-heading"
     >
       <div className="container-narrow space-y-6">

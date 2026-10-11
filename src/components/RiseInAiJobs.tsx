@@ -1,15 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { ArrowRight, ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Reveal } from './Reveal';
-import { WORKSHOP_CONFIG } from '../data/workshopData';
 import { PROOF_ITEMS, type ProofItem } from '../data/proofItems';
-
-interface RiseInAiJobsProps {
-  onOpenRegister: () => void;
-}
 
 const ROTATIONS = [-2, 0, 2] as const;
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -121,7 +116,7 @@ function ProofCard({
   );
 }
 
-export const RiseInAiJobs: React.FC<RiseInAiJobsProps> = ({ onOpenRegister }) => {
+export const RiseInAiJobs: React.FC = () => {
   const reduceMotion = useReducedMotion();
 
   return (
@@ -151,22 +146,6 @@ export const RiseInAiJobs: React.FC<RiseInAiJobsProps> = ({ onOpenRegister }) =>
             />
           ))}
         </div>
-
-        <Reveal delay={0.12} className="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <motion.button
-            type="button"
-            onClick={onOpenRegister}
-            className="btn-ahmixen py-3.5 px-8 rounded-2xl font-bold text-base inline-flex items-center justify-center gap-2 cursor-pointer"
-            whileHover={reduceMotion ? undefined : { scale: 1.02 }}
-            whileTap={reduceMotion ? undefined : { scale: 0.98 }}
-          >
-            <span>Reserve Your Seat — {WORKSHOP_CONFIG.priceEarlyBird.amount}</span>
-            <ArrowRight className="w-5 h-5" />
-          </motion.button>
-          <p className="text-xs text-[var(--text-muted)] sm:ml-1">
-            {WORKSHOP_CONFIG.dateShort} · {WORKSHOP_CONFIG.time}
-          </p>
-        </Reveal>
       </div>
     </section>
   );

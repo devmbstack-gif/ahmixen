@@ -3,16 +3,10 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { CheckCircle2 } from 'lucide-react';
-import { motion, useReducedMotion } from 'framer-motion';
-import { INSTRUCTOR_DATA } from '../data/workshopData';
-
-/** New instructor photo in /public — do not rename or move */
-const INSTRUCTOR_PHOTO = '/pic 1.jpeg';
+import { motion, useInView, useReducedMotion } from 'framer-motion';
+import { instructor, visibleInstructorStats } from '../data/instructor';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
-const STAT_YEARS = INSTRUCTOR_DATA.highlights[0];
-const STAT_TRAINED = INSTRUCTOR_DATA.highlights[1];
-const CHIP_FOCUS = INSTRUCTOR_DATA.highlights[2];
 
 function LinkedInIcon({ className }: { className?: string }) {
   return (
@@ -62,29 +56,22 @@ function formatCount(n: number) {
   return n.toLocaleString('en-US');
 }
 
-function parseStat(text: string): { target: number; suffix: string; label: string } | null {
-  const m = text.match(/^([\d,]+)(\+?)(\s.+)$/);
-  if (!m) return null;
-  const target = Number(m[1].replace(/,/g, ''));
-  if (Number.isNaN(target)) return null;
-  return { target, suffix: m[2], label: m[3].trim() };
-}
-
 function StatBlock({
-  text,
+  value,
+  suffix,
+  label,
   active,
   reduceMotion,
   delay,
 }: {
-  text: string;
+  value: number;
+  suffix: string;
+  label: string;
   active: boolean;
   reduceMotion: boolean | null;
   delay: number;
 }) {
-  const parsed = parseStat(text);
-  const count = useCountUp(parsed?.target ?? 0, active && parsed !== null, reduceMotion);
-
-  if (!parsed) return null;
+  const count = useCountUp(value, active, reduceMotion);
 
   return (
     <motion.div
@@ -96,28 +83,42 @@ function StatBlock({
     >
       <span className="instructor-stat-number">
         {formatCount(count)}
-        {parsed.suffix}
+        {suffix}
       </span>
-      <span className="instructor-stat-label">{parsed.label}</span>
+      <span className="instructor-stat-label">{label}</span>
     </motion.div>
   );
 }
 
 function InstructorPortrait() {
   const reduceMotion = useReducedMotion();
+  const ref = useRef<HTMLDivElement | null>(null);
+  const inView = useInView(ref, { once: true, amount: 0.05, margin: '80px 0px' });
+  const [forceShow, setForceShow] = useState(false);
+
+  useEffect(() => {
+    if (reduceMotion) {
+      setForceShow(true);
+      return;
+    }
+    const t = window.setTimeout(() => setForceShow(true), 1000);
+    return () => window.clearTimeout(t);
+  }, [reduceMotion]);
+
+  const show = Boolean(reduceMotion || inView || forceShow);
 
   return (
     <motion.div
+      ref={ref}
       className="instructor-photo-wrap"
       initial={reduceMotion ? false : { opacity: 0, y: 22 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.05, margin: '80px 0px' }}
+      animate={{ opacity: show ? 1 : 0, y: show ? 0 : 22 }}
       transition={{ duration: reduceMotion ? 0.01 : 0.55, ease: EASE }}
     >
       <div className="instructor-photo-frame">
         <Image
-          src={encodeURI(INSTRUCTOR_PHOTO)}
-          alt={INSTRUCTOR_DATA.name}
+          src={encodeURI(instructor.photo)}
+          alt={instructor.name}
           fill
           sizes="(max-width: 768px) 416px, (max-width: 1024px) 480px, 544px"
           className="instructor-photo-img"
@@ -134,8 +135,9 @@ export const Instructor: React.FC = () => {
   const statsRef = useRef<HTMLDivElement | null>(null);
   const [statsActive, setStatsActive] = useState(false);
 
-  const firstName = INSTRUCTOR_DATA.name.split(' ')[0] ?? INSTRUCTOR_DATA.name;
-  const lastName = INSTRUCTOR_DATA.name.split(' ').slice(1).join(' ');
+  const nameParts = instructor.name.split(' ').filter(Boolean);
+  const lastName = nameParts[nameParts.length - 1] ?? instructor.name;
+  const nameBefore = nameParts.slice(0, -1).join(' ');
 
   useEffect(() => {
     const el = statsRef.current;
@@ -173,11 +175,11 @@ export const Instructor: React.FC = () => {
               transition={{ duration: reduceMotion ? 0.01 : 0.5, delay: reduceMotion ? 0 : 0.12, ease: EASE }}
             >
               <h3 className="instructor-name">
-                {firstName}{' '}
+                {nameBefore ? `${nameBefore} ` : ''}
                 <span className="gradient-text-ahmixen">{lastName}</span>
               </h3>
-              <p className="instructor-title text-purple-400 mt-1">
-                {INSTRUCTOR_DATA.title}
+              <p className="instructor-title mt-1">
+                {instructor.title}
               </p>
             </motion.div>
 
@@ -188,22 +190,21 @@ export const Instructor: React.FC = () => {
               viewport={{ once: true, amount: 0.4 }}
               transition={{ duration: reduceMotion ? 0.01 : 0.5, delay: reduceMotion ? 0 : 0.2, ease: EASE }}
             >
-              {INSTRUCTOR_DATA.bio}
+              {instructor.bio}
             </motion.p>
 
             <div ref={statsRef} className="instructor-stats">
-              <StatBlock
-                text={STAT_YEARS}
-                active={statsActive}
-                reduceMotion={reduceMotion}
-                delay={0.26}
-              />
-              <StatBlock
-                text={STAT_TRAINED}
-                active={statsActive}
-                reduceMotion={reduceMotion}
-                delay={0.34}
-              />
+              {visibleInstructorStats.map((stat, i) => (
+                <StatBlock
+                  key={stat.label}
+                  value={stat.value}
+                  suffix={stat.suffix}
+                  label={stat.label}
+                  active={statsActive}
+                  reduceMotion={reduceMotion}
+                  delay={0.26 + i * 0.08}
+                />
+              ))}
             </div>
 
             <motion.div
@@ -214,15 +215,15 @@ export const Instructor: React.FC = () => {
               transition={{ duration: reduceMotion ? 0.01 : 0.45, delay: reduceMotion ? 0 : 0.42, ease: EASE }}
             >
               <CheckCircle2 className="w-4 h-4 text-purple-400 shrink-0" aria-hidden="true" />
-              <span>{CHIP_FOCUS}</span>
+              <span>{instructor.chip}</span>
             </motion.div>
 
             <div className="pt-1 flex items-center justify-center md:justify-start gap-3">
               <motion.a
-                href={INSTRUCTOR_DATA.linkedinUrl}
+                href={instructor.linkedin}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={`${INSTRUCTOR_DATA.name} on LinkedIn`}
+                aria-label={`${instructor.name} on LinkedIn`}
                 className="instructor-social"
                 whileHover={reduceMotion ? undefined : { y: -3, scale: 1.06 }}
                 whileTap={reduceMotion ? undefined : { scale: 0.96 }}
@@ -230,10 +231,10 @@ export const Instructor: React.FC = () => {
                 <LinkedInIcon className="w-5 h-5" />
               </motion.a>
               <motion.a
-                href={INSTRUCTOR_DATA.instagramUrl}
+                href={instructor.instagram}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={`${INSTRUCTOR_DATA.name} on Instagram`}
+                aria-label={`${instructor.name} on Instagram`}
                 className="instructor-social"
                 whileHover={reduceMotion ? undefined : { y: -3, scale: 1.06 }}
                 whileTap={reduceMotion ? undefined : { scale: 0.96 }}

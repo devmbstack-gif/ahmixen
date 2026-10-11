@@ -115,40 +115,9 @@ export const Hero: React.FC<HeroProps> = ({ onOpenRegister, onExploreWorkshop })
     <section
       ref={sectionRef}
       id="hero"
-      className="hero-premium relative min-h-[100svh] flex items-center pt-24 pb-8 md:pt-28 md:pb-10 bg-transparent overflow-hidden"
+      className="hero-premium relative flex items-center pt-24 pb-8 md:pt-28 md:pb-10 lg:min-h-[100svh] bg-transparent overflow-hidden"
       aria-labelledby="hero-heading"
     >
-      {/* Aurora / mesh blobs */}
-      <div className="hero-aurora pointer-events-none absolute inset-0" aria-hidden="true">
-        <motion.div
-          className="hero-aurora-blob hero-aurora-blob-a"
-          animate={
-            reduceMotion
-              ? undefined
-              : { x: [0, 40, -20, 0], y: [0, -30, 20, 0], scale: [1, 1.08, 0.96, 1] }
-          }
-          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.div
-          className="hero-aurora-blob hero-aurora-blob-b"
-          animate={
-            reduceMotion
-              ? undefined
-              : { x: [0, -50, 30, 0], y: [0, 40, -25, 0], scale: [1, 0.94, 1.1, 1] }
-          }
-          transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.div
-          className="hero-aurora-blob hero-aurora-blob-c"
-          animate={
-            reduceMotion
-              ? undefined
-              : { x: [0, 25, -35, 0], y: [0, -20, 35, 0], scale: [1, 1.12, 0.98, 1] }
-          }
-          transition={{ duration: 26, repeat: Infinity, ease: 'easeInOut' }}
-        />
-      </div>
-
       {/* Floating particles */}
       {mounted && !reduceMotion && (
         <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
@@ -294,7 +263,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenRegister, onExploreWorkshop })
             type="button"
             id="hero-reserve-cta"
             onClick={onOpenRegister}
-            className="btn-ahmixen btn-magnetic relative py-3.5 px-8 sm:px-10 rounded-full font-bold text-base sm:text-lg inline-flex items-center justify-center gap-2 cursor-pointer shadow-[0_12px_40px_-10px_rgba(168,85,247,0.75)]"
+            className="btn-ahmixen btn-magnetic relative py-3.5 px-8 sm:px-10 rounded-full font-bold text-base sm:text-lg inline-flex items-center justify-center gap-2 cursor-pointer"
             style={
               reduceMotion
                 ? undefined

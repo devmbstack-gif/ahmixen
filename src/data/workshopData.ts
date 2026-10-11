@@ -1,3 +1,5 @@
+import { instructor } from './instructor';
+
 export interface WorkshopInfo {
   brandName: string;
   tagline: string;
@@ -121,7 +123,12 @@ export interface LandingStat {
 }
 
 export const LANDING_STATS: LandingStat[] = [
-  { id: 'trained', value: 1200, suffix: '+', label: 'Professionals trained' },
+  {
+    id: 'trained',
+    value: instructor.stats.find((s) => s.label === 'students trained')?.value ?? 100,
+    suffix: instructor.stats.find((s) => s.label === 'students trained')?.suffix ?? '+',
+    label: 'Students trained',
+  },
   { id: 'hours', value: 2.5, decimals: 1, suffix: 'h', label: 'Live workshop' },
   { id: 'rating', value: 4.9, decimals: 1, suffix: '★', label: 'Average rating' },
   { id: 'modules', value: 4, suffix: '', label: 'Hands-on modules' },
@@ -305,17 +312,18 @@ export interface InstructorProfile {
 }
 
 export const INSTRUCTOR_DATA: InstructorProfile = {
-  name: 'Ahmad Raza',
-  title: 'Lead AI Practitioner & Founder, AhmiXen',
-  bio: 'Ahmad teaches practical AI — prompts, agents, and automation you can use at work the same day. Hands-on, zero fluff, built for beginners and busy professionals.',
+  name: instructor.name,
+  title: instructor.title,
+  bio: instructor.bio,
   highlights: [
-    '7+ years in tech',
-    '1,200+ professionals trained',
-    'Focus on real workflows, not theory',
+    ...instructor.stats
+      .filter((s) => s.visible)
+      .map((s) => `${s.value}${s.suffix} ${s.label}`),
+    instructor.chip,
   ],
-  photo: '/instructor/ahmad-raza.jpg',
-  linkedinUrl: 'https://www.linkedin.com/in/hafizahmadali',
-  instagramUrl: 'https://www.instagram.com/ahmimindset/',
+  photo: instructor.photo,
+  linkedinUrl: instructor.linkedin,
+  instagramUrl: instructor.instagram,
 };
 
 export interface FAQItem {

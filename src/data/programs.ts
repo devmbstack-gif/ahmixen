@@ -1,3 +1,5 @@
+import { instructor } from './instructor';
+
 export type ProgramCard = {
   id: string;
   title: string;
@@ -13,7 +15,7 @@ export const PROGRAMS: readonly ProgramCard[] = [
   {
     id: 'course-1',
     title: 'AI Workshop',
-    instructor: 'Ahmad Raza',
+    instructor: instructor.name,
     badges: ['2.5 Hours', 'Live Session'],
     price: '$29',
     image: '/course1.jpeg',
@@ -22,7 +24,7 @@ export const PROGRAMS: readonly ProgramCard[] = [
   {
     id: 'course-2',
     title: 'AI Workshop',
-    instructor: 'Ahmad Raza',
+    instructor: instructor.name,
     badges: ['2.5 Hours', 'Live Session'],
     price: '$29',
     image: '/course2.jpeg',
@@ -31,7 +33,7 @@ export const PROGRAMS: readonly ProgramCard[] = [
   {
     id: 'course-3',
     title: 'AI Workshop',
-    instructor: 'Ahmad Raza',
+    instructor: instructor.name,
     badges: ['2.5 Hours', 'Live Session'],
     price: '$29',
     image: '/course3.jpeg',
