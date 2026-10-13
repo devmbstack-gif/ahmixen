@@ -1,21 +1,29 @@
 import React from 'react';
+import Image from 'next/image';
 
 interface AhmiXenLogoProps {
   className?: string;
 }
 
 /**
- * Transparent text wordmark — no image plate / black background.
- * "Ahmi" follows theme; "Xen" keeps brand purple gradient in both modes.
+ * Official AhmiXen wordmark from /public/ahmixen-logo.png.
+ * Height follows the parent font-size via h-[1em] so existing
+ * text-* size classes on className keep working.
  */
 export const AhmiXenLogo: React.FC<AhmiXenLogoProps> = ({ className = '' }) => {
   return (
     <span
-      className={`inline-flex items-baseline font-extrabold tracking-tight leading-none select-none ${className}`}
+      className={`ahmixen-logo inline-flex items-center leading-none select-none ${className}`}
       aria-label="AhmiXen"
     >
-      <span className="text-[var(--text-main)]">Ahmi</span>
-      <span className="ahmixen-logo-xen">Xen</span>
+      <Image
+        src="/ahmixen-logo.png"
+        alt="AhmiXen"
+        width={960}
+        height={191}
+        className="ahmixen-logo-img h-[1em] w-auto"
+        priority
+      />
     </span>
   );
 };

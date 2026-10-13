@@ -1,7 +1,7 @@
-import { AdminStub } from '@/components/admin/AdminStub';
+import { LeadsListClient } from '@/components/admin/leads/LeadsListClient';
 
 export const metadata = { title: 'Leads' };
 
 export default function Page() {
-  return <AdminStub title="Leads" />;
+  return <LeadsListClient />;
 }

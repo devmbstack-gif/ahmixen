@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import { LANDING_STATS, type LandingStat } from '../data/workshopData';
+import type { StatsContentData } from '@/lib/content/landingSchemas';
 import { Reveal } from './Reveal';
 
 function formatStat(stat: LandingStat, current: number) {
@@ -57,10 +58,13 @@ const StatCell: React.FC<{
   );
 };
 
-export const StatCounters: React.FC = () => {
+export const StatCounters: React.FC<{ content?: StatsContentData }> = ({
+  content,
+}) => {
   const reduceMotion = useReducedMotion();
   const ref = useRef<HTMLElement | null>(null);
   const [active, setActive] = useState(false);
+  const stats = (content?.items as LandingStat[]) || LANDING_STATS;
 
   useEffect(() => {
     const el = ref.current;
@@ -88,7 +92,7 @@ export const StatCounters: React.FC = () => {
       <div className="container-narrow">
         <Reveal>
           <div className="stat-counter-row grid grid-cols-2 md:grid-cols-4 gap-px rounded-2xl overflow-hidden">
-            {LANDING_STATS.map((stat) => (
+            {stats.map((stat) => (
               <StatCell
                 key={stat.id}
                 stat={stat}

@@ -1,6 +1,11 @@
 /**
- * Removes only isTestData orders, their GridFS proofs, holds and confirmed seats.
- * Never runs destructive cleanup without the same guards as seed:orders.
+ * Removes test/harness bookings (and matching leads), their GridFS proofs,
+ * holds and confirmed seats. Schemas and real production records are untouched.
+ *
+ * Matches:
+ * - isTestData: true
+ * - *@checkout-test.invalid
+ * - *.test@example.com (legacy seed names)
  *
  * Usage: npm run seed:orders:clear
  */
@@ -8,12 +13,17 @@ import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import mongoose from 'mongoose';
 import { Order } from '../src/models/Order';
+import { Lead } from '../src/models/Lead';
+import { CouponRedemption } from '../src/models/CouponRedemption';
+import { Testimonial } from '../src/models/Testimonial';
 import { deleteProof } from '../src/lib/orders/gridfs';
 import {
   releaseConfirmedSeat,
   releaseHold,
 } from '../src/lib/orders/seats';
 import { ensureOrderIndexes } from '../src/lib/orders/syncIndexes';
+
+const TEST_EMAIL_RE = /(@checkout-test\.invalid$|\.test@example\.com$)/i;
 
 function loadEnvFile(filename: string) {
   const path = resolve(process.cwd(), filename);
@@ -51,13 +61,21 @@ function assertSeedAllowed(uri: string) {
 
 async function clearTestOrders() {
   await ensureOrderIndexes();
-  const docs = await Order.find({ isTestData: true });
+  const orderFilter = {
+    $or: [
+      { isTestData: true },
+      { 'customer.emailNormalized': TEST_EMAIL_RE },
+    ],
+  };
+  const docs = await Order.find(orderFilter);
   let releasedHolds = 0;
   let releasedConfirmed = 0;
   let proofs = 0;
+  const orderIds: string[] = [];
 
   for (const doc of docs) {
     const id = String(doc._id);
+    orderIds.push(id);
     if (doc.status === 'approved') {
       await releaseConfirmedSeat(doc.sessionId);
       releasedConfirmed += 1;
@@ -77,9 +95,21 @@ async function clearTestOrders() {
     }
   }
 
-  const del = await Order.deleteMany({ isTestData: true });
+  const redemptions = orderIds.length
+    ? await CouponRedemption.deleteMany({ orderId: { $in: orderIds } })
+    : { deletedCount: 0 };
+  const del = await Order.deleteMany(orderFilter);
+  const leads = await Lead.deleteMany({ emailNormalized: TEST_EMAIL_RE });
+  // Placeholder reviews inserted by seed:content (createdBy: 'seed')
+  const seededTestimonials = await Testimonial.deleteMany({
+    createdBy: 'seed',
+  });
+
   return {
     deleted: del.deletedCount ?? 0,
+    leadsDeleted: leads.deletedCount ?? 0,
+    redemptionsDeleted: redemptions.deletedCount ?? 0,
+    seededTestimonialsDeleted: seededTestimonials.deletedCount ?? 0,
     releasedHolds,
     releasedConfirmed,
     proofs,

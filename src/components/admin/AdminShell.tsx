@@ -5,9 +5,9 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { LogOut, Menu, X } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { ThemeToggle } from '@/components/ThemeToggle';
 import { AhmiXenLogo } from '@/components/AhmiXenLogo';
-import { ADMIN_NAV, titleForPath } from './admin-nav';
+import { AdminAtmosphere } from './AdminAtmosphere';
+import { ADMIN_NAV } from './admin-nav';
 
 type AdminShellProps = {
   adminName: string;
@@ -22,7 +22,6 @@ export function AdminShell({ adminName, children }: AdminShellProps) {
   const [loggingOut, setLoggingOut] = useState(false);
   const drawerId = useId();
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
-  const title = titleForPath(pathname);
 
   useEffect(() => {
     setDrawerOpen(false);
@@ -75,7 +74,7 @@ export function AdminShell({ adminName, children }: AdminShellProps) {
   };
 
   const nav = (
-    <nav aria-label="Admin" className="flex flex-col gap-1 p-3">
+    <nav aria-label="Admin navigation" className="flex flex-col gap-1 p-3">
       {ADMIN_NAV.map((item) => {
         const active =
           item.href === '/admin'
@@ -98,14 +97,14 @@ export function AdminShell({ adminName, children }: AdminShellProps) {
   );
 
   return (
-    <div className="admin-shell bg-[var(--bg-primary)] text-[var(--text-main)]">
+    <div className="admin-shell text-[var(--text-main)]">
+      <AdminAtmosphere />
       {/* Desktop sidebar — fixed to viewport; only nav list scrolls if needed */}
-      <aside className="admin-sidebar admin-sidebar-desktop hidden lg:flex">
-        <div className="admin-sidebar-brand px-4 py-4 border-b border-[var(--border-subtle)] shrink-0">
+      <aside className="admin-sidebar admin-sidebar-desktop hidden lg:flex relative z-10">
+        <div className="admin-sidebar-brand">
           <Link href="/admin" className="nav-focus inline-flex" aria-label="Admin home">
             <AhmiXenLogo className="text-xl" />
           </Link>
-          <p className="mt-1 text-xs text-[var(--text-muted)]">Admin</p>
         </div>
         <div className="admin-sidebar-nav flex-1 min-h-0 overflow-y-auto">{nav}</div>
       </aside>
@@ -129,8 +128,15 @@ export function AdminShell({ adminName, children }: AdminShellProps) {
             transition={{ duration: reduceMotion ? 0 : 0.22 }}
             className="admin-sidebar relative z-10 flex h-full w-[min(18rem,88vw)] shadow-xl"
           >
-            <div className="flex items-center justify-between px-4 py-4 border-b border-[var(--border-subtle)]">
-              <AhmiXenLogo className="text-lg" />
+            <div className="admin-drawer-header">
+              <Link
+                href="/admin"
+                className="nav-focus inline-flex"
+                aria-label="Admin home"
+                onClick={() => setDrawerOpen(false)}
+              >
+                <AhmiXenLogo className="text-xl" />
+              </Link>
               <button
                 ref={closeBtnRef}
                 type="button"
@@ -146,7 +152,7 @@ export function AdminShell({ adminName, children }: AdminShellProps) {
         </div>
       )}
 
-      <div className="admin-main">
+      <div className="admin-main relative z-10">
         <header className="admin-topbar">
           <div className="flex items-center gap-2 min-w-0">
             <button
@@ -159,10 +165,8 @@ export function AdminShell({ adminName, children }: AdminShellProps) {
             >
               <Menu className="w-5 h-5" aria-hidden="true" />
             </button>
-            <h1 className="text-base sm:text-lg font-bold truncate">{title}</h1>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
-            <ThemeToggle />
             <span className="hidden sm:inline text-sm text-[var(--text-secondary)] max-w-[10rem] truncate">
               {adminName}
             </span>

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { ArrowUpRight, Star } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { getLandingReviews, type Review } from '../data/reviews';
+import type { Review } from '../data/reviews';
 import { ReviewCard } from './ReviewCard';
 import { Reveal } from './Reveal';
 
@@ -76,9 +76,8 @@ function FeaturedCard({ review, reduceMotion }: { review: Review; reduceMotion: 
   );
 }
 
-export const Testimonials: React.FC = () => {
+export const Testimonials: React.FC<{ reviews: Review[] }> = ({ reviews }) => {
   const reduceMotion = useReducedMotion();
-  const reviews = getLandingReviews();
 
   if (reviews.length === 0) return null;
 

@@ -37,7 +37,7 @@ export async function POST(request: Request, ctx: Ctx) {
 
     const { token } = await ctx.params;
     if (!token || token.length < 32) {
-      return publicError('not_found', 'Order not found', 404);
+      return publicError('not_found', 'Booking not found', 404);
     }
 
     const ipRule = PUBLIC_RATE_LIMITS.proofIp;
@@ -108,7 +108,7 @@ export async function POST(request: Request, ctx: Ctx) {
     await connectToDatabase();
     const order = await Order.findOne({ publicToken: token });
     if (!order) {
-      return publicError('not_found', 'Order not found', 404);
+      return publicError('not_found', 'Booking not found', 404);
     }
 
     if (
@@ -126,7 +126,7 @@ export async function POST(request: Request, ctx: Ctx) {
     if (uploadCount >= 3) {
       return publicError(
         'upload_limit',
-        'You have reached the upload limit for this order',
+        'You have reached the upload limit for this booking',
         409
       );
     }

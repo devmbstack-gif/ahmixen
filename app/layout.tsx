@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import { Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
-import { ThemeProvider } from '@/context/ThemeContext';
 import { ReserveFlowProvider } from '@/components/checkout/ReserveFlowProvider';
 import './globals.css';
 
-const THEME_INIT_SCRIPT = `(function(){try{var k='ahmixen-theme';var t=localStorage.getItem(k);if(t!=='light'&&t!=='dark'){t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}var d=document.documentElement;d.classList.remove('light','dark');d.classList.add(t);d.style.colorScheme=t;}catch(e){document.documentElement.classList.add('dark');document.documentElement.style.colorScheme='dark';}})();`;
+/** Dark-only site — clear any legacy light preference before paint. */
+const THEME_INIT_SCRIPT = `(function(){try{localStorage.removeItem('ahmixen-theme');var d=document.documentElement;d.classList.remove('light');d.classList.add('dark');d.style.colorScheme='dark';}catch(e){document.documentElement.classList.add('dark');document.documentElement.style.colorScheme='dark';}})();`;
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -63,9 +63,7 @@ export default function RootLayout({
       <body
         className={`${plusJakarta.className} font-sans antialiased selection:bg-brand selection:text-white`}
       >
-        <ThemeProvider>
-          <ReserveFlowProvider>{children}</ReserveFlowProvider>
-        </ThemeProvider>
+        <ReserveFlowProvider>{children}</ReserveFlowProvider>
       </body>
     </html>
   );

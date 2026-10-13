@@ -73,8 +73,8 @@ export const WORKSHOP_CONFIG: WorkshopInfo = {
     currency: 'USD',
     label: 'Standard Registration',
   },
-  contactEmail: 'workshops@ahmixen.com',
-  whatsappNumber: '923001234567',
+  contactEmail: 'info@ahmixen.com',
+  whatsappNumber: '923390212102',
   whatsappPrefill:
     "Hi AhmiXen! I'd like to know more about the live AI workshop.",
 };

@@ -88,7 +88,7 @@ export function AdminLoginForm() {
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
-            className="absolute right-1.5 top-1/2 -translate-y-1/2 admin-icon-btn nav-focus"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 inline-flex items-center justify-center rounded-md border-0 bg-transparent p-1 text-[var(--text-secondary)] hover:text-[var(--text-main)] nav-focus cursor-pointer"
             aria-label={showPassword ? 'Hide password' : 'Show password'}
           >
             {showPassword ? (

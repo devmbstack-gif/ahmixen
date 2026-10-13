@@ -5,6 +5,7 @@ import { ArrowUpRight } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Reveal } from './Reveal';
 import { PROOF_ITEMS, type ProofItem } from '../data/proofItems';
+import type { AiJobsContentData } from '@/lib/content/landingSchemas';
 
 const ROTATIONS = [-2, 0, 2] as const;
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -116,8 +117,14 @@ function ProofCard({
   );
 }
 
-export const RiseInAiJobs: React.FC = () => {
+export const RiseInAiJobs: React.FC<{ content?: AiJobsContentData }> = ({
+  content,
+}) => {
   const reduceMotion = useReducedMotion();
+  const items = (content?.items as ProofItem[]) || PROOF_ITEMS;
+  const eyebrow = content?.eyebrow ?? 'The AI job shift';
+  const headingBefore = content?.headingBefore ?? 'Jobs are moving to';
+  const headingAccent = content?.headingAccent ?? 'AI-ready people';
 
   return (
     <section
@@ -128,16 +135,16 @@ export const RiseInAiJobs: React.FC = () => {
       <div className="relative container-narrow">
         <Reveal className="text-center max-w-2xl mx-auto mb-10 sm:mb-12 space-y-3">
           <p className="inline-flex px-3.5 py-1.5 rounded-full purple-badge type-micro">
-            The AI job shift
+            {eyebrow}
           </p>
           <h2 id="rise-ai-jobs-heading" className="type-title text-ink">
-            Jobs are moving to{' '}
-            <span className="gradient-text-ahmixen">AI-ready people</span>
+            {headingBefore}{' '}
+            <span className="gradient-text-ahmixen">{headingAccent}</span>
           </h2>
         </Reveal>
 
         <div className="proof-row mb-10">
-          {PROOF_ITEMS.map((item, index) => (
+          {items.map((item, index) => (
             <ProofCard
               key={`${item.publisher}-${item.number}-${item.headline}`}
               item={item}

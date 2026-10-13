@@ -1,8 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Archive, Eye, EyeOff, Pencil, Plus, Search } from 'lucide-react';
+import { Archive, Eye, EyeOff, Pencil, Plus } from 'lucide-react';
+import { SearchInput } from '../SearchInput';
+import { SkeletonListPage } from '../skeletons';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { AdminPlanDTO } from '@/lib/plans/serialize';
 import { formatMoneyLabel } from '@/lib/plans/money';
@@ -133,6 +135,8 @@ export function PlansListClient() {
   const reduceMotion = useReducedMotion();
   const [plans, setPlans] = useState<AdminPlanDTO[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const hasLoadedOnce = useRef(false);
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('all');
   const [toast, setToast] = useState<{ message: string; tone?: 'ok' | 'error' } | null>(
@@ -142,7 +146,8 @@ export function PlansListClient() {
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    if (hasLoadedOnce.current) setRefreshing(true);
+    else setLoading(true);
     try {
       const params = new URLSearchParams();
       if (q.trim()) params.set('q', q.trim());
@@ -152,10 +157,12 @@ export function PlansListClient() {
       if (!res.ok) throw new Error('Failed');
       const data = (await res.json()) as { plans: AdminPlanDTO[] };
       setPlans(data.plans);
+      hasLoadedOnce.current = true;
     } catch {
       setToast({ message: 'Could not load plans', tone: 'error' });
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [q, status]);
 
@@ -385,19 +392,12 @@ export function PlansListClient() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-2 flex-1 min-w-0">
-        <label className="relative flex-1 min-w-0">
-          <span className="sr-only">Search plans</span>
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]"
-            aria-hidden="true"
-          />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search by name"
-            className="admin-input pl-9"
-          />
-        </label>
+        <SearchInput
+          className="flex-1"
+          value={q}
+          onChange={setQ}
+          aria-label="Search plans"
+        />
         <label className="sm:w-48">
           <span className="sr-only">Filter by status</span>
           <select
@@ -413,11 +413,7 @@ export function PlansListClient() {
         </label>
       </div>
 
-      {loading && (
-        <p className="text-sm text-[var(--text-muted)]" aria-live="polite">
-          Loading…
-        </p>
-      )}
+      {loading && <SkeletonListPage rows={5} cols={5} />}
 
       {empty && !loading && (
         <div className="admin-card text-center py-10">
@@ -435,7 +431,11 @@ export function PlansListClient() {
       )}
 
       {!loading && rows.length > 0 && (
-        <section className="admin-card admin-sessions-section p-4">
+        <section
+          className={`admin-card admin-sessions-section p-4${
+            refreshing ? ' admin-list-dimmed' : ''
+          }`}
+        >
           <div className="flex items-center justify-between gap-2 pb-3">
             <h3 className="text-base font-semibold">Plans</h3>
             <span className="text-sm text-[var(--text-muted)]">{rows.length}</span>

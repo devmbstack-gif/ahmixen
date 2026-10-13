@@ -19,7 +19,7 @@ export async function approveOrder(
 ): Promise<TransitionResult> {
   const existing = await Order.findById(orderId);
   if (!existing) {
-    return { ok: false, status: 400, error: 'Order not found' };
+    return { ok: false, status: 400, error: 'Booking not found' };
   }
   if (existing.status !== 'pending_verification') {
     return { ok: false, status: 409, error: 'Already handled' };
@@ -106,7 +106,7 @@ export async function rejectOrder(
 ): Promise<TransitionResult> {
   const existing = await Order.findById(orderId);
   if (!existing) {
-    return { ok: false, status: 400, error: 'Order not found' };
+    return { ok: false, status: 400, error: 'Booking not found' };
   }
   if (
     existing.status !== 'pending_verification' &&
@@ -200,7 +200,7 @@ export async function cancelOrder(
 ): Promise<TransitionResult> {
   const existing = await Order.findById(orderId);
   if (!existing) {
-    return { ok: false, status: 400, error: 'Order not found' };
+    return { ok: false, status: 400, error: 'Booking not found' };
   }
   if (existing.status !== 'approved') {
     return {
@@ -228,7 +228,7 @@ export async function cancelOrder(
               type: 'cancelled',
               at: new Date(),
               adminId,
-              note: note.trim() || 'Order cancelled — seat released',
+              note: note.trim() || 'Booking cancelled — seat released',
             },
           },
         },

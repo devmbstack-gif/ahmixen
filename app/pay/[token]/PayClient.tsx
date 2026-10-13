@@ -477,7 +477,7 @@ function ApprovedState({
           {formatSessionPktLine(order.session.startsAt, order.session.timezone)}
         </p>
       ) : null}
-      <p className="text-sm">Order {order.orderNumber}</p>
+      <p className="text-sm">Booking {order.orderNumber}</p>
       <button
         type="button"
         onClick={onCopyLink}
@@ -539,7 +539,7 @@ function AwaitingPayment({
           {replaceMode ? 'Replace screenshot' : 'Complete your payment'}
         </h1>
         <p className="text-sm text-[var(--text-secondary)]">
-          Order {order.orderNumber}
+          Booking {order.orderNumber}
         </p>
         {!replaceMode && mmss ? (
           <p

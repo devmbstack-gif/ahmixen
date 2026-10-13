@@ -1,5 +1,7 @@
 /**
- * Placeholder reviews. Replace with real approved reviews before launch.
+ * Static review fallbacks for the public site when the testimonials
+ * collection is empty. Keep this array empty in production — manage
+ * real reviews from Admin → Testimonials.
  */
 
 export type ReviewStatus = 'approved' | 'pending' | 'hidden';
@@ -20,44 +22,8 @@ export type Review = {
 
 export const LANDING_REVIEW_LIMIT = 4;
 
-export const REVIEWS: Review[] = [
-  {
-    id: 't1',
-    name: 'Sarah Jenkins',
-    role: 'Founder',
-    text: 'Clear, practical, and straight to the point. I finally know what to focus on with AI.',
-    rating: 5,
-    featured: true,
-    status: 'approved',
-  },
-  {
-    id: 't2',
-    name: 'Tariq Mehmood',
-    role: 'Software Engineer',
-    text: 'No fluff. Real agent workflows I could apply the same week at work.',
-    rating: 5,
-    featured: false,
-    status: 'approved',
-  },
-  {
-    id: 't3',
-    name: 'Elena Rostova',
-    role: 'Marketing Lead',
-    text: 'I have zero coding background and still left with something useful running.',
-    rating: 5,
-    featured: false,
-    status: 'approved',
-  },
-  {
-    id: 't4',
-    name: 'Marcus Chen',
-    role: 'Product Designer',
-    text: 'Best few hours I’ve spent learning AI. Simple explanations, real demos.',
-    rating: 5,
-    featured: false,
-    status: 'approved',
-  },
-];
+/** No placeholder reviews — production content comes from the database. */
+export const REVIEWS: Review[] = [];
 
 /** Landing section source — swap for a DB query later; UI stays the same. */
 export function getLandingReviews(): Review[] {

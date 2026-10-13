@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   Archive,
@@ -11,7 +11,6 @@ import {
   Pencil,
   Play,
   Plus,
-  Search,
 } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { AdminCouponDTO } from '@/lib/coupons/serialize';
@@ -19,6 +18,8 @@ import type { CouponComputedState } from '@/lib/coupons/state';
 import { AdminIconAction } from '../AdminIconAction';
 import { AdminToast } from '../AdminToast';
 import { AdminConfirmDialog } from '../AdminConfirmDialog';
+import { SearchInput } from '../SearchInput';
+import { SkeletonListPage } from '../skeletons';
 
 function stateMeaning(state: CouponComputedState) {
   if (state === 'active') return 'Active — customers can use this code';
@@ -174,6 +175,8 @@ export function CouponsListClient() {
   const reduceMotion = useReducedMotion();
   const [coupons, setCoupons] = useState<AdminCouponDTO[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const hasLoadedOnce = useRef(false);
   const [q, setQ] = useState('');
   const [state, setState] = useState('all');
   const [toast, setToast] = useState<{ message: string; tone?: 'ok' | 'error' } | null>(
@@ -187,7 +190,8 @@ export function CouponsListClient() {
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    if (hasLoadedOnce.current) setRefreshing(true);
+    else setLoading(true);
     try {
       const params = new URLSearchParams();
       if (q.trim()) params.set('q', q.trim());
@@ -197,10 +201,12 @@ export function CouponsListClient() {
       if (!res.ok) throw new Error('Failed');
       const data = (await res.json()) as { coupons: AdminCouponDTO[] };
       setCoupons(data.coupons);
+      hasLoadedOnce.current = true;
     } catch {
       setToast({ message: 'Could not load coupons', tone: 'error' });
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [q, state]);
 
@@ -475,19 +481,12 @@ export function CouponsListClient() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-2 flex-1 min-w-0">
-        <label className="relative flex-1 min-w-0">
-          <span className="sr-only">Search coupons</span>
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]"
-            aria-hidden="true"
-          />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search by code"
-            className="admin-input pl-9"
-          />
-        </label>
+        <SearchInput
+          className="flex-1"
+          value={q}
+          onChange={setQ}
+          aria-label="Search coupons"
+        />
         <label className="sm:w-52">
           <span className="sr-only">Filter by status</span>
           <select
@@ -506,11 +505,7 @@ export function CouponsListClient() {
         </label>
       </div>
 
-      {loading && (
-        <p className="text-sm text-[var(--text-muted)]" aria-live="polite">
-          Loading…
-        </p>
-      )}
+      {loading && <SkeletonListPage rows={5} cols={5} />}
 
       {empty && !loading && (
         <div className="admin-card text-center py-10">
@@ -528,7 +523,11 @@ export function CouponsListClient() {
       )}
 
       {!loading && rows.length > 0 && (
-        <section className="admin-card admin-sessions-section p-4">
+        <section
+          className={`admin-card admin-sessions-section p-4${
+            refreshing ? ' admin-list-dimmed' : ''
+          }`}
+        >
           <div className="flex items-center justify-between gap-2 pb-3">
             <h3 className="text-base font-semibold">Coupons</h3>
             <span className="text-sm text-[var(--text-muted)]">{rows.length}</span>

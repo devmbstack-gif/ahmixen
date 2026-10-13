@@ -2,7 +2,7 @@
 
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import {
   CheckoutApiError,
@@ -20,14 +20,13 @@ type Props = {
   onDone: () => void;
 };
 
-type FieldErrors = Partial<
-  Record<'name' | 'email' | 'phone' | 'profession' | 'message', string>
->;
+type FieldErrors = Partial<Record<'name' | 'email' | 'phone', string>>;
 
 export function DiscountPopup({ open, label, onClose, onDone }: Props) {
   const reduceMotion = useReducedMotion();
   const titleId = useId();
   const errId = useId();
+  const statusId = useId();
   const panelRef = useRef<HTMLDivElement | null>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -38,8 +37,6 @@ export function DiscountPopup({ open, label, onClose, onDone }: Props) {
     name: '',
     email: '',
     phone: '',
-    profession: '',
-    message: '',
     website: '',
   });
 
@@ -64,7 +61,7 @@ export function DiscountPopup({ open, label, onClose, onDone }: Props) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (e.key === 'Escape' && !sending) {
         e.preventDefault();
         onClose();
       }
@@ -88,7 +85,7 @@ export function DiscountPopup({ open, label, onClose, onDone }: Props) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
+  }, [open, onClose, sending]);
 
   if (!mounted || !open) return null;
 
@@ -124,11 +121,6 @@ export function DiscountPopup({ open, label, onClose, onDone }: Props) {
         ? 'Enter your WhatsApp number with country code, for example +92 300 1234567'
         : undefined
     );
-    if (form.message.length > 200) {
-      check('message', 'Message is too long');
-    } else if (!blurField || blurField === 'message') {
-      delete next.message;
-    }
     setErrors(next);
     return next;
   };
@@ -150,8 +142,8 @@ export function DiscountPopup({ open, label, onClose, onDone }: Props) {
           name: form.name.trim(),
           email: form.email.trim(),
           phone: form.phone.trim(),
-          profession: form.profession.trim(),
-          message: form.message.trim(),
+          profession: '',
+          message: '',
           website: form.website,
           utm,
           referrer,
@@ -161,7 +153,7 @@ export function DiscountPopup({ open, label, onClose, onDone }: Props) {
         name: form.name.trim(),
         email: form.email.trim().toLowerCase(),
         phone: form.phone.trim(),
-        profession: form.profession.trim(),
+        profession: '',
         couponCode: data.popupCoupon?.code || '',
       });
       setPopupDone();
@@ -178,51 +170,56 @@ export function DiscountPopup({ open, label, onClose, onDone }: Props) {
   };
 
   const noThanks = () => {
+    if (sending) return;
     setPopupDone();
     onDone();
   };
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-4"
+      className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-3 sm:p-4"
       role="presentation"
     >
       <button
         type="button"
         className="absolute inset-0 bg-[var(--overlay-soft)] backdrop-blur-sm"
         aria-label="Close"
-        onClick={onClose}
+        onClick={() => {
+          if (!sending) onClose();
+        }}
       />
       <motion.div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative w-full max-w-md rounded-2xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-5 sm:p-6 shadow-none"
+        aria-busy={sending}
+        className="relative w-full max-w-sm rounded-2xl border border-[var(--border-subtle)] bg-[var(--card-bg)] p-4 sm:p-5 shadow-none max-h-[min(92svh,36rem)] overflow-y-auto"
         initial={reduceMotion ? false : { opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
       >
-        <div className="flex items-start justify-between gap-3 mb-4">
+        <div className="flex items-start justify-between gap-3 mb-3">
           <div>
-            <h2 id={titleId} className="text-xl font-bold text-[var(--text-main)]">
+            <h2 id={titleId} className="text-lg font-bold text-[var(--text-main)]">
               Unlock {label}
             </h2>
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">
+            <p className="mt-0.5 text-sm text-[var(--text-secondary)]">
               Share your details and your coupon will be applied automatically.
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border-subtle)] text-[var(--text-main)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
+            disabled={sending}
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--border-subtle)] text-[var(--text-main)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:opacity-50"
             aria-label="Close"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        <form onSubmit={submit} className="space-y-3" noValidate>
+        <form onSubmit={submit} className="space-y-2.5" noValidate>
           <input
             type="text"
             name="website"
@@ -235,17 +232,13 @@ export function DiscountPopup({ open, label, onClose, onDone }: Props) {
             style={{ clip: 'rect(0,0,0,0)' }}
           />
 
-          <Field
-            id="popup-name"
-            label="Full name"
-            error={errors.name}
-            required
-          >
+          <Field id="popup-name" label="Full name" error={errors.name} required>
             <input
               id="popup-name"
               name="name"
               autoComplete="name"
               value={form.name}
+              disabled={sending}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               onBlur={() => validate('name')}
               aria-invalid={Boolean(errors.name)}
@@ -267,6 +260,7 @@ export function DiscountPopup({ open, label, onClose, onDone }: Props) {
               autoComplete="tel"
               inputMode="tel"
               value={form.phone}
+              disabled={sending}
               onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
               onBlur={() => validate('phone')}
               aria-invalid={Boolean(errors.phone)}
@@ -277,57 +271,19 @@ export function DiscountPopup({ open, label, onClose, onDone }: Props) {
             />
           </Field>
 
-          <Field
-            id="popup-email"
-            label="Email address"
-            error={errors.email}
-            required
-          >
+          <Field id="popup-email" label="Email address" error={errors.email} required>
             <input
               id="popup-email"
               name="email"
               type="email"
               autoComplete="email"
               value={form.email}
+              disabled={sending}
               onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
               onBlur={() => validate('email')}
               aria-invalid={Boolean(errors.email)}
               aria-describedby={errors.email ? 'popup-email-err' : undefined}
               className="checkout-input"
-            />
-          </Field>
-
-          <Field id="popup-profession" label="Profession" error={errors.profession}>
-            <input
-              id="popup-profession"
-              name="profession"
-              autoComplete="organization-title"
-              value={form.profession}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, profession: e.target.value }))
-              }
-              className="checkout-input"
-            />
-          </Field>
-
-          <Field
-            id="popup-message"
-            label="Anything you'd like us to know?"
-            error={errors.message}
-          >
-            <textarea
-              id="popup-message"
-              name="message"
-              rows={3}
-              maxLength={200}
-              value={form.message}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, message: e.target.value }))
-              }
-              onBlur={() => validate('message')}
-              aria-invalid={Boolean(errors.message)}
-              aria-describedby={errors.message ? 'popup-message-err' : undefined}
-              className="checkout-input min-h-[5rem] resize-y"
             />
           </Field>
 
@@ -337,18 +293,38 @@ export function DiscountPopup({ open, label, onClose, onDone }: Props) {
             </p>
           ) : null}
 
+          {sending ? (
+            <p
+              id={statusId}
+              role="status"
+              aria-live="polite"
+              className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-muted)] px-3 py-2.5 text-sm text-[var(--text-secondary)]"
+            >
+              Please wait — we&apos;re applying your coupon. Checkout will open next.
+              Don&apos;t close this window.
+            </p>
+          ) : null}
+
           <button
             type="submit"
             disabled={sending}
-            className="btn-ahmixen w-full min-h-10 py-3 rounded-xl font-semibold disabled:opacity-60"
+            aria-describedby={sending ? statusId : undefined}
+            className="btn-ahmixen w-full min-h-10 py-2.5 rounded-xl font-semibold disabled:opacity-80 inline-flex items-center justify-center gap-2"
           >
-            {sending ? 'Applying…' : 'Apply my coupon'}
+            {sending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden="true" />
+                Applying coupon…
+              </>
+            ) : (
+              'Apply my coupon'
+            )}
           </button>
           <button
             type="button"
             onClick={noThanks}
             disabled={sending}
-            className="w-full min-h-10 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-main)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 rounded-lg"
+            className="w-full min-h-9 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-main)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 rounded-lg disabled:opacity-50"
           >
             No thanks, continue without discount
           </button>

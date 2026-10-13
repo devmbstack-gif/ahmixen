@@ -1,7 +1,7 @@
-import { AdminStub } from '@/components/admin/AdminStub';
+import { MediaLibraryClient } from '@/components/admin/media/MediaLibraryClient';
 
 export const metadata = { title: 'Media' };
 
 export default function Page() {
-  return <AdminStub title="Media" />;
+  return <MediaLibraryClient />;
 }

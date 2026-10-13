@@ -2,11 +2,17 @@ import { NextResponse } from 'next/server';
 import mongoose from 'mongoose';
 import { Order } from '@/models/Order';
 import { Session } from '@/models/Session';
+import { Lead } from '@/models/Lead';
 import { serverError, withAdminRead } from '@/lib/sessions/api-helpers';
 import { ensureOrderIndexes } from '@/lib/orders/syncIndexes';
 import { expireStaleOrders } from '@/lib/orders/expire';
 import { serializeAdminOrderList } from '@/lib/orders/serialize';
 import { formatMoneyLabel } from '@/lib/plans/money';
+import {
+  parseCouponEnd,
+  parseCouponStart,
+  toLocalDateString,
+} from '@/lib/coupons/dates';
 
 export async function GET() {
   const gate = await withAdminRead();
@@ -16,9 +22,18 @@ export async function GET() {
     await ensureOrderIndexes();
     await expireStaleOrders();
 
-    const [pendingCount, recentDocs] = await Promise.all([
+    const todayPkt = toLocalDateString(new Date());
+    const dayStart = parseCouponStart(todayPkt);
+    const dayEnd = parseCouponEnd(todayPkt);
+
+    const [pendingCount, recentDocs, newLeadsToday] = await Promise.all([
       Order.countDocuments({ status: 'pending_verification' }),
       Order.find({}).sort({ createdAt: -1 }).limit(5).lean(),
+      dayStart && dayEnd
+        ? Lead.countDocuments({
+            firstSeenAt: { $gte: dayStart, $lte: dayEnd },
+          })
+        : Promise.resolve(0),
     ]);
 
     const sessionIds = Array.from(new Set(recentDocs.map((d) => d.sessionId)));
@@ -62,6 +77,7 @@ export async function GET() {
 
     return NextResponse.json({
       pendingPayments: pendingCount,
+      newLeadsToday,
       recentOrders,
     });
   } catch (err) {

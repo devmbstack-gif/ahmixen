@@ -4,7 +4,7 @@ import { useEffect, useId, useRef } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Star, X } from 'lucide-react';
 import type { Review } from '../../data/reviews';
-import { getVideoSource } from '../../lib/video';
+import { getVideoSource, videoEmbedAllow } from '../../lib/video';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -148,10 +148,16 @@ export function ReviewDetailModal({ reviews, index, onClose, onChangeIndex }: Pr
                 ) : (
                   <iframe
                     key={source.embedUrl}
-                    src={source.embedUrl}
+                    src={
+                      source.type === 'youtube'
+                        ? `${source.embedUrl}?autoplay=1&rel=0`
+                        : `${source.embedUrl}?autoplay=1`
+                    }
                     title={review.name}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allow={videoEmbedAllow()}
                     allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="strict-origin-when-cross-origin"
                     className="tp-modal-video-el"
                   />
                 )}

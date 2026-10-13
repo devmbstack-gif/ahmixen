@@ -6,7 +6,6 @@ export type NavLink = {
 /** Single source of truth for navbar + footer site links */
 export const NAV_LINKS: readonly NavLink[] = [
   { label: 'Programs', href: '/programs' },
-  { label: 'AI Tools', href: '/ai-tools' },
   { label: 'Testimonials', href: '/testimonials' },
   { label: 'Our Mission', href: '/our-mission' },
 ] as const;

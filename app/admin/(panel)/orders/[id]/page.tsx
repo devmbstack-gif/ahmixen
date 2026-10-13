@@ -10,7 +10,7 @@ import { expireStaleOrders } from '@/lib/orders/expire';
 import { serializeAdminOrderDetail } from '@/lib/orders/serialize';
 import { getSeatSummary } from '@/lib/sessions/seats';
 
-export const metadata = { title: 'Order detail' };
+export const metadata = { title: 'Booking detail' };
 
 type Props = { params: Promise<{ id: string }> };
 

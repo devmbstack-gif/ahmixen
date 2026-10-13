@@ -1,14 +1,28 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { ArrowUpRight, GraduationCap } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
-import { MISSION } from '../data/mission';
-import { instructor, visibleInstructorStats } from '../data/instructor';
+import type { MissionContent } from '../data/mission';
+import type { Instructor as InstructorData } from '../data/instructor';
+
+type MissionCtx = {
+  MISSION: MissionContent;
+  instructor: InstructorData;
+  visibleInstructorStats: InstructorData['stats'];
+};
+
+const MissionPageContext = createContext<MissionCtx | null>(null);
+
+function useMissionContent(): MissionCtx {
+  const ctx = useContext(MissionPageContext);
+  if (!ctx) throw new Error('Mission page context missing');
+  return ctx;
+}
 
 const AnimatedBackground = dynamic(
   () => import('./AnimatedBackground').then((m) => ({ default: m.AnimatedBackground })),
@@ -102,6 +116,7 @@ function ArcGroupMotion({ className, sizes }: { className: string; sizes: string
 }
 
 function MissionIdentity() {
+  const { instructor } = useMissionContent();
   const nameParts = instructor.name.split(' ').filter(Boolean);
   const lastName = nameParts[nameParts.length - 1] ?? instructor.name;
   const nameBefore = nameParts.slice(0, -1).join(' ');
@@ -118,6 +133,7 @@ function MissionIdentity() {
 }
 
 function MissionStory() {
+  const { MISSION } = useMissionContent();
   return (
     <>
       <p className="mission-story-text">{MISSION.story.text}</p>
@@ -135,6 +151,7 @@ function MissionStory() {
 }
 
 function MissionSocials() {
+  const { instructor } = useMissionContent();
   return (
     <div className="mission-socials">
       <a
@@ -160,6 +177,7 @@ function MissionSocials() {
 }
 
 function MissionPhoto() {
+  const { instructor } = useMissionContent();
   return (
     <div className="mission-photo-frame">
       <Image
@@ -177,6 +195,7 @@ function MissionPhoto() {
 
 /** Plain HTML for SSR + first client paint — identical on both sides. */
 function MissionEditorialStatic() {
+  const { MISSION, instructor, visibleInstructorStats } = useMissionContent();
   const titleLines = MISSION.title.split(' ');
   const [featuredStat, ...otherStats] = visibleInstructorStats;
 
@@ -283,6 +302,7 @@ function MissionEditorialStatic() {
 }
 
 function MissionEditorialMotion({ reduceMotion }: { reduceMotion: boolean }) {
+  const { MISSION, instructor, visibleInstructorStats } = useMissionContent();
   const playMotion = !reduceMotion;
   const [statsActive, setStatsActive] = useState(reduceMotion);
   const titleLines = MISSION.title.split(' ');
@@ -578,31 +598,41 @@ function OtherStat({
   );
 }
 
-export const MissionPage: React.FC = () => {
+export const MissionPage: React.FC<{
+  mission: MissionContent;
+  instructor: InstructorData;
+}> = ({ mission, instructor }) => {
   const [mounted, setMounted] = useState(false);
   const reduceMotion = useReducedMotion();
+  const ctx: MissionCtx = {
+    MISSION: mission,
+    instructor,
+    visibleInstructorStats: instructor.stats.filter((s) => s.visible),
+  };
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col bg-transparent text-ink transition-colors duration-300 antialiased selection:bg-brand selection:text-white relative">
-      <AnimatedBackground />
-      <Navbar />
+    <MissionPageContext.Provider value={ctx}>
+      <div className="min-h-screen flex flex-col bg-transparent text-ink transition-colors duration-300 antialiased selection:bg-brand selection:text-white relative">
+        <AnimatedBackground />
+        <Navbar />
 
-      <main className="mission-page flex-1">
-        <section className="mission-editorial" aria-labelledby="mission-hero-heading">
-          {/* Static shell hydrates 1:1; motion mounts only after client ready */}
-          {!mounted ? (
-            <MissionEditorialStatic />
-          ) : (
-            <MissionEditorialMotion reduceMotion={!!reduceMotion} />
-          )}
-        </section>
-      </main>
+        <main className="mission-page flex-1">
+          <section className="mission-editorial" aria-labelledby="mission-hero-heading">
+            {/* Static shell hydrates 1:1; motion mounts only after client ready */}
+            {!mounted ? (
+              <MissionEditorialStatic />
+            ) : (
+              <MissionEditorialMotion reduceMotion={!!reduceMotion} />
+            )}
+          </section>
+        </main>
 
-      <Footer />
-    </div>
+        <Footer instructor={instructor} />
+      </div>
+    </MissionPageContext.Provider>
   );
 };

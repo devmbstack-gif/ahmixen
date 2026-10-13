@@ -1,22 +1,18 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 import { ArrowRight, Calendar, Clock, Hourglass, Video } from 'lucide-react';
-import {
-  motion,
-  useReducedMotion,
-  useMotionValue,
-  useSpring,
-  useMotionTemplate,
-} from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { WORKSHOP_CONFIG } from '../data/workshopData';
 import type { PublicSessionDisplay } from '../lib/sessions/publicShared';
+import type { HeroContentData } from '@/lib/content/landingSchemas';
 import { Countdown } from './Countdown';
 import { useReserveFlow } from './checkout/ReserveFlowProvider';
 
 interface HeroProps {
   onExploreWorkshop: () => void;
   session: PublicSessionDisplay;
+  content: HeroContentData & { headlineLine1Resolved: string };
 }
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -28,35 +24,22 @@ function splitWords(text: string) {
 export const Hero: React.FC<HeroProps> = ({
   onExploreWorkshop,
   session,
+  content,
 }) => {
   const reduceMotion = useReducedMotion();
   const { startReserveFlow, reserveCta } = useReserveFlow();
   const heroCtaLabel =
-    reserveCta.label === 'Reserve' ? 'Reserve My Seat' : reserveCta.label;
-  const sectionRef = useRef<HTMLElement | null>(null);
-  const ctaRef = useRef<HTMLButtonElement | null>(null);
-  const [mounted, setMounted] = useState(false);
-
-  const spotX = useMotionValue(50);
-  const spotY = useMotionValue(40);
-  const smoothX = useSpring(spotX, { stiffness: 80, damping: 22, mass: 0.4 });
-  const smoothY = useSpring(spotY, { stiffness: 80, damping: 22, mass: 0.4 });
-  const spotlightBg = useMotionTemplate`radial-gradient(560px circle at ${smoothX}% ${smoothY}%, rgba(192, 132, 252, 0.22) 0%, rgba(147, 51, 234, 0.1) 28%, transparent 58%)`;
-
-  const magX = useMotionValue(0);
-  const magY = useMotionValue(0);
-  const magSpringX = useSpring(magX, { stiffness: 220, damping: 18, mass: 0.35 });
-  const magSpringY = useSpring(magY, { stiffness: 220, damping: 18, mass: 0.35 });
-  const magScale = useMotionValue(1);
-  const magSpringScale = useSpring(magScale, { stiffness: 260, damping: 20, mass: 0.3 });
+    reserveCta.label === 'Reserve'
+      ? content.primaryCtaLabel
+      : reserveCta.label;
 
   const line1Words = useMemo(
-    () => splitWords(`${WORKSHOP_CONFIG.titlePrefix} ${WORKSHOP_CONFIG.titleDuration}`),
-    []
+    () => splitWords(content.headlineLine1Resolved),
+    [content.headlineLine1Resolved]
   );
   const line2Words = useMemo(
-    () => splitWords(WORKSHOP_CONFIG.titleHighlight),
-    []
+    () => splitWords(content.headlineLine2),
+    [content.headlineLine2]
   );
 
   const metaItems = useMemo(
@@ -68,47 +51,6 @@ export const Hero: React.FC<HeroProps> = ({
     ],
     [session.dateShort, session.durationLabel, session.timeLabel]
   );
-
-  const [particleCount, setParticleCount] = useState(10);
-
-  useEffect(() => {
-    setMounted(true);
-    const mq = window.matchMedia('(min-width: 768px)');
-    const sync = () => setParticleCount(mq.matches ? 16 : 8);
-    sync();
-    mq.addEventListener('change', sync);
-    return () => mq.removeEventListener('change', sync);
-  }, []);
-
-  const particles = useMemo(
-    () =>
-      Array.from({ length: particleCount }, (_, i) => ({
-        id: i,
-        left: `${(i * 37 + 11) % 100}%`,
-        top: `${(i * 53 + 7) % 100}%`,
-        size: 2 + (i % 3),
-        delay: (i % 8) * 0.35,
-        duration: 6 + (i % 5),
-      })),
-    [particleCount]
-  );
-
-  useEffect(() => {
-    if (reduceMotion) return;
-    const el = sectionRef.current;
-    if (!el) return;
-
-    const onMove = (e: MouseEvent) => {
-      const rect = el.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width) * 100;
-      const y = ((e.clientY - rect.top) / rect.height) * 100;
-      spotX.set(Math.max(0, Math.min(100, x)));
-      spotY.set(Math.max(0, Math.min(100, y)));
-    };
-
-    el.addEventListener('mousemove', onMove, { passive: true });
-    return () => el.removeEventListener('mousemove', onMove);
-  }, [reduceMotion, spotX, spotY]);
 
   const wordInitial = reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 28 };
   const wordAnimate = { opacity: 1, y: 0 };
@@ -124,54 +66,12 @@ export const Hero: React.FC<HeroProps> = ({
 
   return (
     <section
-      ref={sectionRef}
       id="hero"
-      className="hero-premium relative flex items-center pt-24 pb-8 md:pt-28 md:pb-10 lg:min-h-[100svh] bg-transparent overflow-hidden"
+      className="hero-premium relative flex items-center py-16 md:py-20 lg:py-24 bg-transparent overflow-hidden"
       aria-labelledby="hero-heading"
     >
-      {/* Floating particles */}
-      {mounted && !reduceMotion && (
-        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-          {particles.map((p) => (
-            <motion.span
-              key={p.id}
-              className="hero-float-particle absolute rounded-full"
-              style={{
-                left: p.left,
-                top: p.top,
-                width: p.size,
-                height: p.size,
-              }}
-              animate={{
-                y: [0, -18, 8, 0],
-                x: [0, 10, -6, 0],
-                opacity: [0.15, 0.55, 0.25, 0.15],
-              }}
-              transition={{
-                duration: p.duration,
-                delay: p.delay,
-                repeat: Infinity,
-                ease: 'easeInOut',
-              }}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Mouse-follow spotlight */}
-      {!reduceMotion && (
-        <motion.div
-          className="hero-spotlight pointer-events-none absolute inset-0"
-          style={{ background: spotlightBg }}
-          aria-hidden="true"
-        />
-      )}
-
       <div className="relative z-10 w-full container-page text-center">
-        <h1
-          id="hero-heading"
-          className="type-display uppercase"
-        >
+        <h2 id="hero-heading" className="type-display uppercase">
           <span className="block sm:whitespace-nowrap">
             {line1Words.map((word, i) => (
               <motion.span
@@ -197,7 +97,9 @@ export const Hero: React.FC<HeroProps> = ({
                 animate={wordAnimate}
                 transition={{
                   duration: reduceMotion ? 0 : 0.55,
-                  delay: reduceMotion ? 0 : 0.06 + (line1Words.length + i) * 0.08,
+                  delay: reduceMotion
+                    ? 0
+                    : 0.06 + (line1Words.length + i) * 0.08,
                   ease: EASE,
                 }}
                 className="hero-gradient-text inline-block mr-[0.28em] last:mr-0"
@@ -206,7 +108,7 @@ export const Hero: React.FC<HeroProps> = ({
               </motion.span>
             ))}
           </span>
-        </h1>
+        </h2>
 
         <motion.div
           initial="hidden"
@@ -216,10 +118,10 @@ export const Hero: React.FC<HeroProps> = ({
           className="mt-7 md:mt-8 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3"
         >
           <span className="inline-flex items-center bg-[var(--primary-purple)] text-white font-extrabold text-base sm:text-xl md:text-2xl px-3.5 sm:px-4 py-1.5 rounded-md leading-tight shadow-[0_8px_28px_-8px_rgba(124,58,237,0.65)]">
-            {WORKSHOP_CONFIG.calloutQuestion}
+            {content.badgeText}
           </span>
           <span className="hero-gradient-text font-extrabold text-base sm:text-xl md:text-2xl leading-tight">
-            {WORKSHOP_CONFIG.calloutAnswer}
+            {content.badgeSuffix}
           </span>
         </motion.div>
 
@@ -274,7 +176,6 @@ export const Hero: React.FC<HeroProps> = ({
           className="mt-7 md:mt-8 flex flex-col items-center gap-4"
         >
           <motion.button
-            ref={ctaRef}
             type="button"
             id="hero-reserve-cta"
             onClick={() => {
@@ -282,32 +183,7 @@ export const Hero: React.FC<HeroProps> = ({
             }}
             disabled={reserveCta.disabled}
             aria-disabled={reserveCta.disabled}
-            className="btn-ahmixen btn-magnetic relative py-3.5 px-8 sm:px-10 rounded-full font-bold text-base sm:text-lg inline-flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-            style={
-              reduceMotion
-                ? undefined
-                : { x: magSpringX, y: magSpringY, scale: magSpringScale }
-            }
-            onMouseMove={(e) => {
-              if (reduceMotion || !ctaRef.current) return;
-              const rect = ctaRef.current.getBoundingClientRect();
-              const offsetX = e.clientX - (rect.left + rect.width / 2);
-              const offsetY = e.clientY - (rect.top + rect.height / 2);
-              magX.set(offsetX * 0.32);
-              magY.set(offsetY * 0.32);
-              magScale.set(1.06);
-            }}
-            onMouseLeave={() => {
-              magX.set(0);
-              magY.set(0);
-              magScale.set(1);
-            }}
-            onPointerDown={() => {
-              if (!reduceMotion) magScale.set(0.97);
-            }}
-            onPointerUp={() => {
-              if (!reduceMotion) magScale.set(1.06);
-            }}
+            className="btn-ahmixen relative py-3.5 px-8 sm:px-10 rounded-full font-bold text-base sm:text-lg inline-flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <span className="relative z-[2] inline-flex items-center gap-2">
               {heroCtaLabel}
@@ -320,7 +196,7 @@ export const Hero: React.FC<HeroProps> = ({
             onClick={onExploreWorkshop}
             className="text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-main)] underline-offset-4 hover:underline cursor-pointer"
           >
-            Watch preview
+            {content.secondaryLinkLabel}
           </button>
         </motion.div>
       </div>

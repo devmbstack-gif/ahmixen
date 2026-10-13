@@ -31,7 +31,6 @@ export function ReserveClient() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [profession, setProfession] = useState('');
   const [website, setWebsite] = useState('');
   const [couponInput, setCouponInput] = useState('');
   const [coupon, setCoupon] = useState<CouponPreview | null>(null);
@@ -56,7 +55,6 @@ export function ReserveClient() {
           setName(prefill.name);
           setEmail(prefill.email);
           setPhone(prefill.phone);
-          setProfession(prefill.profession);
           if (prefill.couponCode) setCouponInput(prefill.couponCode);
         }
         if (data.plans[0]) setPlanId(data.plans[0].id);
@@ -168,7 +166,7 @@ export function ReserveClient() {
           name: name.trim(),
           email: email.trim(),
           phone: phone.trim(),
-          profession: profession.trim(),
+          profession: '',
           couponCode: coupon?.code || '',
           utm,
           website,
@@ -300,15 +298,6 @@ export function ReserveClient() {
                   aria-describedby={
                     fieldErrors.phone ? 'res-phone-err' : 'res-phone-hint'
                   }
-                />
-              </Field>
-              <Field label="Profession" id="res-profession">
-                <input
-                  id="res-profession"
-                  className="checkout-input"
-                  value={profession}
-                  onChange={(e) => setProfession(e.target.value)}
-                  autoComplete="organization-title"
                 />
               </Field>
             </section>
@@ -555,7 +544,7 @@ function SummaryCard({
 }) {
   return (
     <div className="checkout-card space-y-3">
-      <h2 className="text-base font-semibold">Order summary</h2>
+      <h2 className="text-base font-semibold">Booking summary</h2>
       <p className="text-sm text-[var(--text-secondary)]">{planName}</p>
       <dl className="space-y-2 text-sm">
         <div className="flex justify-between gap-3">

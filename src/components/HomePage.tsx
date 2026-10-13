@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import dynamic from 'next/dynamic';
 import { Navbar } from './Navbar';
+import { IntroHero } from './IntroHero';
 import { Hero } from './Hero';
 import { WorkshopPreview } from './WorkshopPreview';
 import { StatCounters } from './StatCounters';
@@ -13,7 +14,14 @@ import { SmoothScroll, useSmoothScroll } from './SmoothScroll';
 import { SectionReveal } from './Reveal';
 import { SectionPlaceholder } from './SectionPlaceholder';
 import type { PublicSessionDisplay } from '../lib/sessions/publicShared';
-import { useReserveFlow } from './checkout/ReserveFlowProvider';
+import type { Review } from '../data/reviews';
+import type { Instructor as InstructorData } from '../data/instructor';
+import type { HeroContentData } from '@/lib/content/landingSchemas';
+import type { IntroContentData } from '@/lib/content/landingSchemas';
+import type { PreviewContentData } from '@/lib/content/landingSchemas';
+import type { AiJobsContentData } from '@/lib/content/landingSchemas';
+import type { AgendaContentData } from '@/lib/content/landingSchemas';
+import type { StatsContentData } from '@/lib/content/landingSchemas';
 
 /**
  * Below-fold / heavy UI — client-only code-split.
@@ -29,14 +37,6 @@ const Community = dynamic(
   {
     ssr: false,
     loading: () => <SectionPlaceholder minHeight="28rem" label="Loading community" />,
-  }
-);
-
-const BentoFeatures = dynamic(
-  () => import('./BentoFeatures').then((m) => ({ default: m.BentoFeatures })),
-  {
-    ssr: false,
-    loading: () => <SectionPlaceholder minHeight="22rem" label="Loading features" />,
   }
 );
 
@@ -72,20 +72,22 @@ const Testimonials = dynamic(
   }
 );
 
-const VideoModal = dynamic(
-  () => import('./VideoModal').then((m) => ({ default: m.VideoModal })),
-  { ssr: false }
-);
+export type HomeLandingContent = {
+  intro: IntroContentData & { photoUrl: string; photoAlt: string };
+  hero: HeroContentData & { headlineLine1Resolved: string };
+  preview: PreviewContentData & { posterUrl: string | null };
+  aiJobs: AiJobsContentData;
+  agenda: AgendaContentData;
+  stats: StatsContentData;
+};
 
-const HomePageInner: React.FC<{ publicSession: PublicSessionDisplay }> = ({
-  publicSession,
-}) => {
-  const [videoModalOpen, setVideoModalOpen] = useState(false);
+const HomePageInner: React.FC<{
+  publicSession: PublicSessionDisplay;
+  instructor: InstructorData;
+  reviews: Review[];
+  landing: HomeLandingContent;
+}> = ({ publicSession, instructor, reviews, landing }) => {
   const smooth = useSmoothScroll();
-  const { startReserveFlow } = useReserveFlow();
-
-  const handleOpenVideo = () => setVideoModalOpen(true);
-  const handleCloseVideo = () => setVideoModalOpen(false);
 
   const handleExploreWorkshop = () => {
     smooth?.scrollTo('#preview', { offset: -80 });
@@ -102,36 +104,37 @@ const HomePageInner: React.FC<{ publicSession: PublicSessionDisplay }> = ({
       <Navbar />
 
       <main id="main-content" className="flex-1" tabIndex={-1}>
+        <IntroHero content={landing.intro} />
         <Hero
           onExploreWorkshop={handleExploreWorkshop}
           session={publicSession}
+          content={landing.hero}
         />
         <SectionReveal>
           <WorkshopPreview
-            onOpenVideo={handleOpenVideo}
+            videoUrl={landing.preview.videoUrl}
             durationLabel={publicSession.durationLabel}
+            heading={landing.preview.heading}
+            posterUrl={landing.preview.posterUrl}
           />
         </SectionReveal>
         <SectionReveal>
-          <StatCounters />
+          <StatCounters content={landing.stats} />
         </SectionReveal>
         <SectionReveal>
           <Community />
         </SectionReveal>
         <SectionReveal>
-          <BentoFeatures />
+          <RiseInAiJobs content={landing.aiJobs} />
         </SectionReveal>
         <SectionReveal>
-          <RiseInAiJobs />
+          <WorkshopAgenda content={landing.agenda} />
         </SectionReveal>
         <SectionReveal>
-          <WorkshopAgenda />
+          <Instructor data={instructor} />
         </SectionReveal>
         <SectionReveal>
-          <Instructor />
-        </SectionReveal>
-        <SectionReveal>
-          <Testimonials />
+          <Testimonials reviews={reviews} />
         </SectionReveal>
         <SectionReveal>
           <Registration
@@ -143,32 +146,27 @@ const HomePageInner: React.FC<{ publicSession: PublicSessionDisplay }> = ({
       </main>
 
       <SectionReveal>
-        <Footer />
+        <Footer instructor={instructor} />
       </SectionReveal>
       <WhatsAppFloat />
-
-      {videoModalOpen && (
-        <VideoModal
-          isOpen={videoModalOpen}
-          onClose={handleCloseVideo}
-          onOpenRegister={() => {
-            handleCloseVideo();
-            window.setTimeout(() => startReserveFlow(), 0);
-          }}
-          sessionDate={publicSession.dateLong}
-          durationLabel={publicSession.durationLabel}
-        />
-      )}
     </div>
   );
 };
 
-export const HomePage: React.FC<{ publicSession: PublicSessionDisplay }> = ({
-  publicSession,
-}) => {
+export const HomePage: React.FC<{
+  publicSession: PublicSessionDisplay;
+  instructor: InstructorData;
+  reviews: Review[];
+  landing: HomeLandingContent;
+}> = ({ publicSession, instructor, reviews, landing }) => {
   return (
     <SmoothScroll>
-      <HomePageInner publicSession={publicSession} />
+      <HomePageInner
+        publicSession={publicSession}
+        instructor={instructor}
+        reviews={reviews}
+        landing={landing}
+      />
     </SmoothScroll>
   );
 };

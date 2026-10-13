@@ -18,13 +18,14 @@ import {
   Monitor,
   Pencil,
   Plus,
-  Search,
 } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { AdminSessionDTO } from '@/lib/sessions/serialize';
 import { SeatsBar } from './SeatsBar';
 import { AdminToast } from '../AdminToast';
 import { AdminConfirmDialog } from '../AdminConfirmDialog';
+import { SearchInput } from '../SearchInput';
+import { SkeletonListPage } from '../skeletons';
 
 function statusLabel(status: string) {
   return status.charAt(0).toUpperCase() + status.slice(1);
@@ -319,6 +320,8 @@ export function SessionsListClient() {
   const reduceMotion = useReducedMotion();
   const [sessions, setSessions] = useState<AdminSessionDTO[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const hasLoadedOnce = useRef(false);
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('all');
   const [toast, setToast] = useState<{ message: string; tone?: 'ok' | 'error' } | null>(
@@ -331,7 +334,8 @@ export function SessionsListClient() {
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    if (hasLoadedOnce.current) setRefreshing(true);
+    else setLoading(true);
     try {
       const params = new URLSearchParams();
       if (q.trim()) params.set('q', q.trim());
@@ -341,10 +345,12 @@ export function SessionsListClient() {
       if (!res.ok) throw new Error('Failed');
       const data = (await res.json()) as { sessions: AdminSessionDTO[] };
       setSessions(data.sessions);
+      hasLoadedOnce.current = true;
     } catch {
       setToast({ message: 'Could not load sessions', tone: 'error' });
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [q, status]);
 
@@ -556,21 +562,23 @@ export function SessionsListClient() {
       transition={{ duration: reduceMotion ? 0 : 0.3 }}
       className="space-y-4"
     >
+      <div className="flex flex-col sm:flex-row sm:items-start gap-3 justify-between">
+        <div className="min-w-0">
+          <h2 className="text-lg font-semibold">Live Sessions</h2>
+          <p className="text-sm text-[var(--text-secondary)] mt-0.5">
+            Create and manage workshop sessions shown on the site.
+          </p>
+        </div>
+      </div>
+
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
         <div className="flex flex-col sm:flex-row gap-2 flex-1 min-w-0">
-          <label className="relative flex-1 min-w-0">
-            <span className="sr-only">Search sessions</span>
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]"
-              aria-hidden="true"
-            />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search by title"
-              className="admin-input pl-9"
-            />
-          </label>
+          <SearchInput
+            className="flex-1"
+            value={q}
+            onChange={setQ}
+            aria-label="Search sessions"
+          />
           <label className="sm:w-48">
             <span className="sr-only">Filter by status</span>
             <select
@@ -596,11 +604,7 @@ export function SessionsListClient() {
         </Link>
       </div>
 
-      {loading && (
-        <p className="text-sm text-[var(--text-muted)]" aria-live="polite">
-          Loading…
-        </p>
-      )}
+      {loading && <SkeletonListPage showCards rows={4} cols={4} />}
 
       {empty && !loading && (
         <div className="admin-card text-center py-10">
@@ -617,36 +621,40 @@ export function SessionsListClient() {
         </div>
       )}
 
-      {!loading && status !== 'archived' && activeUpcoming.length > 0 && (
-        <section className="admin-card admin-sessions-section p-4">
-          <div className="flex items-center justify-between gap-2 pb-3">
-            <h2 className="text-base font-semibold">Active and upcoming</h2>
-            <span className="text-sm text-[var(--text-muted)]">
-              {activeUpcoming.length}
-            </span>
-          </div>
-          <div className="hidden lg:block">{renderDesktopTable(activeUpcoming)}</div>
-          <div className="lg:hidden">{renderMobileCards(activeUpcoming)}</div>
-        </section>
-      )}
+      {!loading && (activeUpcoming.length > 0 || closedCompleted.length > 0) && (
+        <div className={refreshing ? 'admin-list-dimmed space-y-4' : 'space-y-4'}>
+          {status !== 'archived' && activeUpcoming.length > 0 && (
+            <section className="admin-card admin-sessions-section p-4">
+              <div className="flex items-center justify-between gap-2 pb-3">
+                <h2 className="text-base font-semibold">Active and upcoming</h2>
+                <span className="text-sm text-[var(--text-muted)]">
+                  {activeUpcoming.length}
+                </span>
+              </div>
+              <div className="hidden lg:block">{renderDesktopTable(activeUpcoming)}</div>
+              <div className="lg:hidden">{renderMobileCards(activeUpcoming)}</div>
+            </section>
+          )}
 
-      {!loading && closedCompleted.length > 0 && (
-        <section className="admin-card admin-sessions-section p-4">
-          <div className="flex items-center justify-between gap-2 pb-3">
-            <h2 className="text-base font-semibold text-[var(--text-secondary)]">
-              {sectionTitle}
-            </h2>
-            <span className="text-sm text-[var(--text-muted)]">
-              {closedCompleted.length}
-            </span>
-          </div>
-          <div className="hidden lg:block">
-            {renderDesktopTable(closedCompleted, true)}
-          </div>
-          <div className="lg:hidden">
-            {renderMobileCards(closedCompleted, true)}
-          </div>
-        </section>
+          {closedCompleted.length > 0 && (
+            <section className="admin-card admin-sessions-section p-4">
+              <div className="flex items-center justify-between gap-2 pb-3">
+                <h2 className="text-base font-semibold text-[var(--text-secondary)]">
+                  {sectionTitle}
+                </h2>
+                <span className="text-sm text-[var(--text-muted)]">
+                  {closedCompleted.length}
+                </span>
+              </div>
+              <div className="hidden lg:block">
+                {renderDesktopTable(closedCompleted, true)}
+              </div>
+              <div className="lg:hidden">
+                {renderMobileCards(closedCompleted, true)}
+              </div>
+            </section>
+          )}
+        </div>
       )}
 
       <AdminToast message={toast?.message ?? null} tone={toast?.tone} />

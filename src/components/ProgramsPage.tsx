@@ -7,8 +7,8 @@ import { GraduationCap } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
-import { PROGRAMS } from '../data/programs';
 import type { PublicSessionDisplay } from '../lib/sessions/publicShared';
+import type { ProgramCardPublic } from '@/lib/content/landingPublic';
 
 const AnimatedBackground = dynamic(
   () => import('./AnimatedBackground').then((m) => ({ default: m.AnimatedBackground })),
@@ -17,9 +17,10 @@ const AnimatedBackground = dynamic(
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-export const ProgramsPage: React.FC<{ publicSession: PublicSessionDisplay }> = ({
-  publicSession,
-}) => {
+export const ProgramsPage: React.FC<{
+  publicSession: PublicSessionDisplay;
+  cards: ProgramCardPublic[];
+}> = ({ publicSession, cards }) => {
   const reduceMotion = useReducedMotion();
 
   return (
@@ -33,7 +34,7 @@ export const ProgramsPage: React.FC<{ publicSession: PublicSessionDisplay }> = (
           <h1 className="programs-heading purple-badge">Programs</h1>
 
           <ul className="programs-grid">
-            {PROGRAMS.map((program, index) => {
+            {cards.map((program, index) => {
               const badges = program.badges.map((badge, badgeIndex) =>
                 badgeIndex === 0 ? publicSession.durationLabel : badge
               );
@@ -54,7 +55,7 @@ export const ProgramsPage: React.FC<{ publicSession: PublicSessionDisplay }> = (
                   <Link href={program.href} className="program-card nav-focus">
                     <div className="program-card-media">
                       <Image
-                        src={program.image}
+                        src={program.posterUrl}
                         alt={program.title}
                         fill
                         sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 420px"
@@ -78,10 +79,12 @@ export const ProgramsPage: React.FC<{ publicSession: PublicSessionDisplay }> = (
                       <div className="program-card-meta">
                         <div className="program-card-title-row">
                           <h2 className="program-card-title">{program.title}</h2>
-                          <span className="program-card-price">{program.price}</span>
+                          <span className="program-card-price">
+                            {program.priceLabel}
+                          </span>
                         </div>
                         <p className="program-card-instructor">
-                          Instructor: {program.instructor}
+                          Instructor: {program.instructorLine}
                         </p>
                       </div>
                     </div>

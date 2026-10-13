@@ -17,6 +17,8 @@ type AdminIconActionProps = {
   disabled?: boolean;
   onClick?: () => void;
   href?: string;
+  /** Open href in a new tab (WhatsApp, mailto, etc.). */
+  external?: boolean;
   accent?: boolean;
   danger?: boolean;
   children: ReactNode;
@@ -28,6 +30,7 @@ export function AdminIconAction({
   disabled,
   onClick,
   href,
+  external,
   accent,
   danger,
   children,
@@ -87,7 +90,26 @@ export function AdminIconAction({
         )
       : null;
 
-  const control = href ? (
+  const control = href && external ? (
+    <a
+      href={href}
+      className={className}
+      aria-label={ariaLabel}
+      aria-disabled={disabled || undefined}
+      tabIndex={disabled ? -1 : 0}
+      target="_blank"
+      rel="noopener noreferrer"
+      onMouseEnter={show}
+      onMouseLeave={hide}
+      onFocus={show}
+      onBlur={hide}
+      onClick={(e) => {
+        if (disabled) e.preventDefault();
+      }}
+    >
+      {children}
+    </a>
+  ) : href ? (
     <Link
       href={href}
       className={className}

@@ -349,9 +349,9 @@ export function CouponForm({
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-x-4 gap-y-3 lg:gap-y-4">
-          {/* Row 1 */}
-          <div className="admin-field col-span-1 md:col-span-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-x-4 gap-y-4">
+          {/* Row 1: code | note */}
+          <div className="admin-field sm:col-span-1 lg:col-span-6">
             <label htmlFor="coupon-code" className="admin-field-label">
               Coupon code
             </label>
@@ -393,7 +393,7 @@ export function CouponForm({
             )}
           </div>
 
-          <div className="admin-field col-span-1 md:col-span-6">
+          <div className="admin-field sm:col-span-1 lg:col-span-6">
             <label htmlFor="coupon-note" className="admin-field-label">
               Internal note
             </label>
@@ -407,17 +407,21 @@ export function CouponForm({
             />
           </div>
 
-          {/* Row 2 */}
-          <div className="admin-field col-span-1 md:col-span-4">
+          {/* Row 2: type | amount | currency | applies */}
+          <div className="admin-field sm:col-span-1 lg:col-span-3">
             <span className="admin-field-label">Discount type</span>
-            <div className="admin-type-toggle" role="group" aria-label="Discount type">
+            <div
+              className="admin-type-toggle is-compact"
+              role="group"
+              aria-label="Discount type"
+            >
               <button
                 type="button"
                 className={`admin-type-option nav-focus ${form.discountType === 'percent' ? 'is-active' : ''}`}
                 aria-pressed={form.discountType === 'percent'}
                 onClick={() => setField('discountType', 'percent')}
               >
-                Percentage
+                Percent
               </button>
               <button
                 type="button"
@@ -425,12 +429,12 @@ export function CouponForm({
                 aria-pressed={form.discountType === 'fixed'}
                 onClick={() => setField('discountType', 'fixed')}
               >
-                Fixed amount
+                Fixed
               </button>
             </div>
           </div>
 
-          <div className="admin-field col-span-1 md:col-span-4">
+          <div className="admin-field sm:col-span-1 lg:col-span-3">
             <label htmlFor="coupon-amount" className="admin-field-label">
               Amount
             </label>
@@ -463,7 +467,7 @@ export function CouponForm({
             )}
           </div>
 
-          <div className="admin-field col-span-1 md:col-span-4">
+          <div className="admin-field sm:col-span-1 lg:col-span-3">
             <label htmlFor="coupon-currency" className="admin-field-label">
               Currency
             </label>
@@ -492,8 +496,7 @@ export function CouponForm({
             )}
           </div>
 
-          {/* Row 3 */}
-          <div className="admin-field col-span-1 md:col-span-6">
+          <div className="admin-field sm:col-span-1 lg:col-span-3">
             <label htmlFor="coupon-plan" className="admin-field-label">
               Applies to
             </label>
@@ -517,7 +520,8 @@ export function CouponForm({
             )}
           </div>
 
-          <div className="admin-field col-span-1 md:col-span-6">
+          {/* Row 3: per email | total uses | starts | ends */}
+          <div className="admin-field sm:col-span-1 lg:col-span-3">
             <label htmlFor="coupon-per-email" className="admin-field-label">
               Uses per email
             </label>
@@ -540,39 +544,7 @@ export function CouponForm({
             )}
           </div>
 
-          {/* Row 4 */}
-          <div className="admin-field col-span-1 md:col-span-6 lg:col-span-3">
-            <label htmlFor="coupon-starts" className="admin-field-label">
-              Starts on
-            </label>
-            <input
-              id="coupon-starts"
-              type="date"
-              className="admin-input h-10"
-              value={form.startsAt}
-              onChange={(e) => setField('startsAt', e.target.value)}
-            />
-          </div>
-
-          <div className="admin-field col-span-1 md:col-span-6 lg:col-span-3">
-            <label htmlFor="coupon-ends" className="admin-field-label">
-              Ends on
-            </label>
-            <input
-              id="coupon-ends"
-              type="date"
-              className="admin-input h-10"
-              value={form.endsAt}
-              onChange={(e) => setField('endsAt', e.target.value)}
-            />
-            {errors.endsAt && (
-              <p className="text-xs text-red-500" role="alert">
-                {errors.endsAt}
-              </p>
-            )}
-          </div>
-
-          <div className="admin-field col-span-1 md:col-span-6 lg:col-span-3">
+          <div className="admin-field sm:col-span-1 lg:col-span-3">
             <label htmlFor="coupon-limit" className="admin-field-label">
               Total uses allowed
             </label>
@@ -595,7 +567,39 @@ export function CouponForm({
             )}
           </div>
 
-          <div className="admin-field col-span-1 md:col-span-6 lg:col-span-3">
+          <div className="admin-field sm:col-span-1 lg:col-span-3">
+            <label htmlFor="coupon-starts" className="admin-field-label">
+              Starts on
+            </label>
+            <input
+              id="coupon-starts"
+              type="date"
+              className="admin-input h-10"
+              value={form.startsAt}
+              onChange={(e) => setField('startsAt', e.target.value)}
+            />
+          </div>
+
+          <div className="admin-field sm:col-span-1 lg:col-span-3">
+            <label htmlFor="coupon-ends" className="admin-field-label">
+              Ends on
+            </label>
+            <input
+              id="coupon-ends"
+              type="date"
+              className="admin-input h-10"
+              value={form.endsAt}
+              onChange={(e) => setField('endsAt', e.target.value)}
+            />
+            {errors.endsAt && (
+              <p className="text-xs text-red-500" role="alert">
+                {errors.endsAt}
+              </p>
+            )}
+          </div>
+
+          {/* Row 4: status | popup checkbox */}
+          <div className="admin-field sm:col-span-1 lg:col-span-3">
             <label htmlFor="coupon-status" className="admin-field-label">
               Status
             </label>
@@ -612,12 +616,11 @@ export function CouponForm({
             </select>
           </div>
 
-          {/* Row 5 */}
-          <div className="admin-field col-span-1 md:col-span-12">
+          <div className="admin-field sm:col-span-1 lg:col-span-9 lg:self-end">
             <span className="admin-field-label" aria-hidden="true">
               &nbsp;
             </span>
-            <label className="admin-check-field nav-focus">
+            <label className="admin-check-field nav-focus h-10">
               <input
                 type="checkbox"
                 checked={form.isPopupCoupon}

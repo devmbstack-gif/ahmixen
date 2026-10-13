@@ -11,6 +11,7 @@ import {
 } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { BENTO_FEATURES } from '../data/workshopData';
+import type { LearnContentData } from '@/lib/content/landingSchemas';
 import { Reveal } from './Reveal';
 import {
   AgentsIcon,
@@ -50,7 +51,9 @@ const SCENES: Record<string, ComponentType> = {
 const INTERVAL_MS = 4000;
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-export const BentoFeatures: React.FC = () => {
+export const BentoFeatures: React.FC<{ content?: LearnContentData }> = ({
+  content,
+}) => {
   const reduceMotion = useReducedMotion();
   const baseId = useId();
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -58,7 +61,23 @@ export const BentoFeatures: React.FC = () => {
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
   const [edgeFade, setEdgeFade] = useState({ left: false, right: true });
-  const total = BENTO_FEATURES.length;
+  const features = (content?.items || BENTO_FEATURES).map((item, i) => ({
+    ...BENTO_FEATURES[i]!,
+    ...item,
+    id: (item.id || BENTO_FEATURES[i]?.id || 'fundamentals') as string,
+    title: item.title,
+    description: item.description,
+  }));
+  const total = features.length;
+  const eyebrow = content?.eyebrow ?? "What you'll learn";
+  const heading = content?.heading ?? 'Skills that stick — in one live session';
+  const headingParts = heading.split(/\s+[—–-]\s+/);
+  const headingBefore =
+    headingParts.length > 1
+      ? headingParts.slice(0, -1).join(' — ')
+      : heading;
+  const headingAccent =
+    headingParts.length > 1 ? headingParts[headingParts.length - 1] : '';
 
   const updateEdgeFade = useCallback(() => {
     const list = listRef.current;
@@ -79,11 +98,11 @@ export const BentoFeatures: React.FC = () => {
       setActive(next);
       if (focusTab) {
         requestAnimationFrame(() => {
-          document.getElementById(`${baseId}-tab-${BENTO_FEATURES[next].id}`)?.focus();
+          document.getElementById(`${baseId}-tab-${features[next]?.id}`)?.focus();
         });
       }
     },
-    [total, baseId]
+    [total, baseId, features]
   );
 
   useEffect(() => {
@@ -134,7 +153,7 @@ export const BentoFeatures: React.FC = () => {
     }
   };
 
-  const feature = BENTO_FEATURES[active];
+  const feature = features[active]!;
   const Scene = SCENES[feature.id] ?? FundamentalsScene;
 
   return (
@@ -146,11 +165,17 @@ export const BentoFeatures: React.FC = () => {
       <div className="container-page">
         <Reveal className="text-center max-w-2xl mx-auto mb-8 sm:mb-10 space-y-2">
           <p className="inline-flex px-3.5 py-1.5 rounded-full purple-badge type-micro">
-            What you&apos;ll learn
+            {eyebrow}
           </p>
           <h2 id="bento-heading" className="type-title text-ink">
-            Skills that stick —{' '}
-            <span className="gradient-text-ahmixen">in one live session</span>
+            {headingAccent ? (
+              <>
+                {headingBefore}{' '}
+                <span className="gradient-text-ahmixen">{headingAccent}</span>
+              </>
+            ) : (
+              headingBefore
+            )}
           </h2>
         </Reveal>
 
@@ -179,7 +204,7 @@ export const BentoFeatures: React.FC = () => {
               aria-label="What you'll learn"
               onKeyDown={onListKeyDown}
             >
-              {BENTO_FEATURES.map((item, index) => {
+              {features.map((item, index) => {
                 const Icon = LIST_ICONS[item.id] ?? FundamentalsIcon;
                 const isActive = index === active;
                 const tabId = `${baseId}-tab-${item.id}`;

@@ -22,7 +22,16 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
   if (cache.conn) return cache.conn;
 
   if (!cache.promise) {
-    cache.promise = mongoose.connect(uri, { bufferCommands: false });
+    cache.promise = mongoose
+      .connect(uri, {
+        bufferCommands: false,
+        serverSelectionTimeoutMS: 5_000,
+      })
+      .catch((err) => {
+        // Allow a later request to retry instead of sticking on a rejected promise.
+        cache.promise = null;
+        throw err;
+      });
   }
 
   cache.conn = await cache.promise;

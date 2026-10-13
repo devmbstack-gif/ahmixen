@@ -27,7 +27,7 @@ export async function GET(request: Request, ctx: Ctx) {
 
     const { token } = await ctx.params;
     if (!token || token.length < 32) {
-      return publicError('not_found', 'Order not found', 404);
+      return publicError('not_found', 'Booking not found', 404);
     }
 
     await connectToDatabase();
@@ -35,7 +35,7 @@ export async function GET(request: Request, ctx: Ctx) {
 
     const doc = await Order.findOne({ publicToken: token }).lean();
     if (!doc) {
-      return publicError('not_found', 'Order not found', 404);
+      return publicError('not_found', 'Booking not found', 404);
     }
 
     const session = await Session.findById(doc.sessionId)

@@ -23,7 +23,7 @@ export type AdminNavItem = {
 export const ADMIN_NAV: AdminNavItem[] = [
   { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
   { label: 'Live Sessions', href: '/admin/sessions', icon: CalendarDays },
-  { label: 'Orders & Payments', href: '/admin/orders', icon: CreditCard },
+  { label: 'Bookings & Payments', href: '/admin/orders', icon: CreditCard },
   { label: 'Reservations', href: '/admin/reservations', icon: Ticket },
   { label: 'Leads', href: '/admin/leads', icon: Users },
   { label: 'Coupons', href: '/admin/coupons', icon: Tag },

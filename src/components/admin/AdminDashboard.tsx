@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import Link from 'next/link';
-import { adminMockNewLeadsToday } from '@/data/admin-mock';
 import type { AdminSessionDTO } from '@/lib/sessions/serialize';
+import { SkeletonDashboard, SkeletonTable, SkeletonRoot } from './skeletons';
 
 type RecentOrder = {
   id: string;
@@ -37,6 +37,7 @@ export function AdminDashboard({ spotlight }: AdminDashboardProps) {
   const heldPct = seats && seats.total ? (seats.held / seats.total) * 100 : 0;
 
   const [pendingPayments, setPendingPayments] = useState<number | null>(null);
+  const [newLeadsToday, setNewLeadsToday] = useState<number | null>(null);
   const [recentOrders, setRecentOrders] = useState<RecentOrder[] | null>(null);
 
   useEffect(() => {
@@ -48,10 +49,12 @@ export function AdminDashboard({ spotlight }: AdminDashboardProps) {
         const data = await res.json();
         if (cancelled) return;
         setPendingPayments(data.pendingPayments ?? 0);
+        setNewLeadsToday(data.newLeadsToday ?? 0);
         setRecentOrders(data.recentOrders ?? []);
       } catch {
         if (!cancelled) {
           setPendingPayments(0);
+          setNewLeadsToday(0);
           setRecentOrders([]);
         }
       }
@@ -61,6 +64,8 @@ export function AdminDashboard({ spotlight }: AdminDashboardProps) {
     };
   }, []);
 
+  const statsLoading = pendingPayments == null || newLeadsToday == null;
+
   return (
     <motion.div
       initial={reduceMotion ? false : { opacity: 0, y: 10 }}
@@ -68,6 +73,17 @@ export function AdminDashboard({ spotlight }: AdminDashboardProps) {
       transition={{ duration: reduceMotion ? 0 : 0.35 }}
       className="space-y-6"
     >
+      <div className="min-w-0">
+        <h2 className="text-lg font-semibold">Dashboard</h2>
+        <p className="text-sm text-[var(--text-secondary)] mt-0.5">
+          Overview of sessions, seats, and recent bookings.
+        </p>
+      </div>
+
+      {statsLoading && recentOrders == null ? (
+        <SkeletonDashboard />
+      ) : (
+        <>
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <article className="admin-card">
           <p className="admin-stat-label">Upcoming session</p>
@@ -139,22 +155,27 @@ export function AdminDashboard({ spotlight }: AdminDashboardProps) {
             {pendingPayments == null ? '…' : pendingPayments}
           </p>
           <p className="mt-2 text-xs text-[var(--text-muted)]">
-            Needs review — open Orders
+            Needs review — open Bookings
           </p>
         </Link>
 
-        <article className="admin-card">
+        <Link
+          href="/admin/leads"
+          className="admin-card block nav-focus hover:border-[var(--border-highlight)] transition-colors"
+        >
           <p className="admin-stat-label">New leads today</p>
           <p className="mt-2 text-3xl font-extrabold tracking-tight">
-            {adminMockNewLeadsToday}
+            {newLeadsToday == null ? '…' : newLeadsToday}
           </p>
-        </article>
+          <p className="mt-2 text-xs text-[var(--text-muted)]">
+            First seen today — open Leads
+          </p>
+        </Link>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_16rem] gap-4">
-        <section className="admin-card overflow-hidden">
+      <section className="admin-card overflow-hidden">
           <div className="flex items-center justify-between gap-2 mb-3">
-            <h2 className="text-base font-bold">Recent orders</h2>
+            <h2 className="text-base font-bold">Recent bookings</h2>
             <Link
               href="/admin/orders"
               className="text-sm font-semibold text-[var(--primary-purple)] nav-focus"
@@ -163,10 +184,12 @@ export function AdminDashboard({ spotlight }: AdminDashboardProps) {
             </Link>
           </div>
           {recentOrders == null ? (
-            <p className="text-sm text-[var(--text-muted)]">Loading…</p>
+            <SkeletonRoot>
+              <SkeletonTable rows={5} cols={6} />
+            </SkeletonRoot>
           ) : recentOrders.length === 0 ? (
             <div className="py-6 text-center">
-              <p className="font-semibold">No orders yet</p>
+              <p className="font-semibold">No bookings yet</p>
               <p className="mt-1 text-sm text-[var(--text-secondary)]">
                 New reservations will show up here.
               </p>
@@ -176,7 +199,7 @@ export function AdminDashboard({ spotlight }: AdminDashboardProps) {
               <table className="admin-table min-w-[36rem] w-full">
                 <thead>
                   <tr>
-                    <th scope="col">Order</th>
+                    <th scope="col">Booking</th>
                     <th scope="col">Name</th>
                     <th scope="col">Plan</th>
                     <th scope="col">Amount</th>
@@ -217,29 +240,8 @@ export function AdminDashboard({ spotlight }: AdminDashboardProps) {
             </div>
           )}
         </section>
-
-        <aside className="admin-card">
-          <h2 className="text-base font-bold mb-3">Seats</h2>
-          {seats ? (
-            <dl className="space-y-3 text-sm">
-              <div className="flex justify-between gap-3">
-                <dt className="text-[var(--text-secondary)]">Confirmed</dt>
-                <dd className="font-semibold">{seats.confirmed}</dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-[var(--text-secondary)]">Held</dt>
-                <dd className="font-semibold">{seats.held}</dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-[var(--text-secondary)]">Available</dt>
-                <dd className="font-semibold">{seats.available}</dd>
-              </div>
-            </dl>
-          ) : (
-            <p className="text-sm text-[var(--text-secondary)]">No session selected</p>
-          )}
-        </aside>
-      </div>
+        </>
+      )}
     </motion.div>
   );
 }

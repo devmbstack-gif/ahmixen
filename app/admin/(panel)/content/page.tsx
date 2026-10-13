@@ -1,7 +1,7 @@
-import { AdminStub } from '@/components/admin/AdminStub';
+import { ContentListClient } from '@/components/admin/content/ContentListClient';
 
 export const metadata = { title: 'Landing Content' };
 
 export default function Page() {
-  return <AdminStub title="Landing Content" />;
+  return <ContentListClient />;
 }

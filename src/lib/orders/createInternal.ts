@@ -101,7 +101,7 @@ export async function createOrderInternal(
       adminNote: '',
       events: input.events?.length
         ? input.events
-        : [{ type: 'created', at: new Date(), note: 'Order created' }],
+        : [{ type: 'created', at: new Date(), note: 'Booking created' }],
       isTestData: Boolean(input.isTestData),
       version: 1,
     });

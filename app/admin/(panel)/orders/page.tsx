@@ -3,7 +3,7 @@ import { connectToDatabase } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth/admin-session';
 import { Session } from '@/models/Session';
 
-export const metadata = { title: 'Orders & Payments' };
+export const metadata = { title: 'Bookings & Payments' };
 
 export default async function Page() {
   await requireAdmin();

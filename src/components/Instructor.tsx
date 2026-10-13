@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { CheckCircle2 } from 'lucide-react';
 import { motion, useInView, useReducedMotion } from 'framer-motion';
-import { instructor, visibleInstructorStats } from '../data/instructor';
+import type { Instructor as InstructorData } from '../data/instructor';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -90,7 +90,7 @@ function StatBlock({
   );
 }
 
-function InstructorPortrait() {
+function InstructorPortrait({ data }: { data: InstructorData }) {
   const reduceMotion = useReducedMotion();
   const ref = useRef<HTMLDivElement | null>(null);
   const inView = useInView(ref, { once: true, amount: 0.05, margin: '80px 0px' });
@@ -117,8 +117,8 @@ function InstructorPortrait() {
     >
       <div className="instructor-photo-frame">
         <Image
-          src={encodeURI(instructor.photo)}
-          alt={instructor.name}
+          src={encodeURI(data.photo)}
+          alt={data.name}
           fill
           sizes="(max-width: 768px) 416px, (max-width: 1024px) 480px, 544px"
           className="instructor-photo-img"
@@ -130,13 +130,14 @@ function InstructorPortrait() {
   );
 }
 
-export const Instructor: React.FC = () => {
+export const Instructor: React.FC<{ data: InstructorData }> = ({ data }) => {
   const reduceMotion = useReducedMotion();
   const statsRef = useRef<HTMLDivElement | null>(null);
   const [statsActive, setStatsActive] = useState(false);
+  const visibleInstructorStats = data.stats.filter((s) => s.visible);
 
-  const nameParts = instructor.name.split(' ').filter(Boolean);
-  const lastName = nameParts[nameParts.length - 1] ?? instructor.name;
+  const nameParts = data.name.split(' ').filter(Boolean);
+  const lastName = nameParts[nameParts.length - 1] ?? data.name;
   const nameBefore = nameParts.slice(0, -1).join(' ');
 
   useEffect(() => {
@@ -179,7 +180,7 @@ export const Instructor: React.FC = () => {
                 <span className="gradient-text-ahmixen">{lastName}</span>
               </h3>
               <p className="instructor-title mt-1">
-                {instructor.title}
+                {data.title}
               </p>
             </motion.div>
 
@@ -190,7 +191,7 @@ export const Instructor: React.FC = () => {
               viewport={{ once: true, amount: 0.4 }}
               transition={{ duration: reduceMotion ? 0.01 : 0.5, delay: reduceMotion ? 0 : 0.2, ease: EASE }}
             >
-              {instructor.bio}
+              {data.bio}
             </motion.p>
 
             <div ref={statsRef} className="instructor-stats">
@@ -215,15 +216,15 @@ export const Instructor: React.FC = () => {
               transition={{ duration: reduceMotion ? 0.01 : 0.45, delay: reduceMotion ? 0 : 0.42, ease: EASE }}
             >
               <CheckCircle2 className="w-4 h-4 text-purple-400 shrink-0" aria-hidden="true" />
-              <span>{instructor.chip}</span>
+              <span>{data.chip}</span>
             </motion.div>
 
             <div className="pt-1 flex items-center justify-center md:justify-start gap-3">
               <motion.a
-                href={instructor.linkedin}
+                href={data.linkedin}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={`${instructor.name} on LinkedIn`}
+                aria-label={`${data.name} on LinkedIn`}
                 className="instructor-social"
                 whileHover={reduceMotion ? undefined : { y: -3, scale: 1.06 }}
                 whileTap={reduceMotion ? undefined : { scale: 0.96 }}
@@ -231,10 +232,10 @@ export const Instructor: React.FC = () => {
                 <LinkedInIcon className="w-5 h-5" />
               </motion.a>
               <motion.a
-                href={instructor.instagram}
+                href={data.instagram}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={`${instructor.name} on Instagram`}
+                aria-label={`${data.name} on Instagram`}
                 className="instructor-social"
                 whileHover={reduceMotion ? undefined : { y: -3, scale: 1.06 }}
                 whileTap={reduceMotion ? undefined : { scale: 0.96 }}
@@ -245,7 +246,7 @@ export const Instructor: React.FC = () => {
           </div>
 
           <div className="order-1 md:order-2 flex justify-center md:justify-end">
-            <InstructorPortrait />
+            <InstructorPortrait data={data} />
           </div>
         </div>
       </div>

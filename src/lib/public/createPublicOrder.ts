@@ -233,7 +233,7 @@ export async function createPublicOrder(
             isLive: isLiveForStatus('awaiting_payment'),
             rejectionReason: '',
             adminNote: '',
-            events: [{ type: 'created', at: new Date(), note: 'Order created' }],
+            events: [{ type: 'created', at: new Date(), note: 'Booking created' }],
             utm: {
               source: input.utm?.source || '',
               medium: input.utm?.medium || '',

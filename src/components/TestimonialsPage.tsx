@@ -7,17 +7,20 @@ import { Navbar } from './Navbar';
 import { Footer } from './Footer';
 import { TestimonialsCatalogCard } from './testimonials/TestimonialsCatalogCard';
 import { ReviewDetailModal } from './testimonials/ReviewDetailModal';
-import { getAllReviews } from '../data/reviews';
+import type { Review } from '../data/reviews';
+import type { Instructor as InstructorData } from '../data/instructor';
 
 const AnimatedBackground = dynamic(
   () => import('./AnimatedBackground').then((m) => ({ default: m.AnimatedBackground })),
   { ssr: false, loading: () => null }
 );
 
-export const TestimonialsPage: React.FC = () => {
+export const TestimonialsPage: React.FC<{
+  reviews: Review[];
+  instructor: InstructorData;
+}> = ({ reviews, instructor }) => {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const cardRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const reviews = getAllReviews();
 
   const averageLabel =
     reviews.length > 0
@@ -74,7 +77,7 @@ export const TestimonialsPage: React.FC = () => {
         </div>
       </main>
 
-      <Footer />
+      <Footer instructor={instructor} />
 
       <ReviewDetailModal
         reviews={reviews}

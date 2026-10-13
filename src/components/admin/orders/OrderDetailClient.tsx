@@ -31,12 +31,12 @@ function statusDotClass(status: AdminOrderDetailDTO['status']) {
 }
 
 function eventLabel(type: string) {
-  if (type === 'created') return 'Order created';
+  if (type === 'created') return 'Booking created';
   if (type === 'proof_uploaded') return 'Payment screenshot uploaded';
   if (type === 'approved') return 'Payment approved';
   if (type === 'rejected') return 'Payment rejected';
-  if (type === 'expired') return 'Order expired';
-  if (type === 'cancelled') return 'Order cancelled';
+  if (type === 'expired') return 'Booking expired';
+  if (type === 'cancelled') return 'Booking cancelled';
   if (type === 'note') return 'Admin note updated';
   return type;
 }
@@ -174,11 +174,11 @@ export function OrderDetailClient({ initial }: { initial: AdminOrderDetailDTO })
         return;
       }
       if (!res.ok) {
-        setToast({ message: data.error || 'Could not reject order', tone: 'error' });
+        setToast({ message: data.error || 'Could not reject booking', tone: 'error' });
         return;
       }
       setOrder(data.order);
-      setToast({ message: 'Order rejected — seat hold released' });
+      setToast({ message: 'Booking rejected — seat hold released' });
       router.refresh();
     } finally {
       setBusy(false);
@@ -475,7 +475,7 @@ export function OrderDetailClient({ initial }: { initial: AdminOrderDetailDTO })
             className="admin-card relative z-10 w-full max-w-md space-y-3"
           >
             <h2 id="reject-title" className="text-lg font-bold">
-              Reject this order?
+              Reject this booking?
             </h2>
             <p className="text-sm text-[var(--text-secondary)]">
               Their seat hold will be released so someone else can book.

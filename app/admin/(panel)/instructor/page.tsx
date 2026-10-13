@@ -1,7 +1,7 @@
-import { AdminStub } from '@/components/admin/AdminStub';
+import { InstructorMissionClient } from '@/components/admin/instructor/InstructorMissionClient';
 
 export const metadata = { title: 'Instructor & Mission' };
 
 export default function Page() {
-  return <AdminStub title="Instructor & Mission" />;
+  return <InstructorMissionClient />;
 }

@@ -37,6 +37,8 @@ const LeadSchema = new Schema(
     submissionsCount: { type: Number, default: 1, min: 1 },
     firstSeenAt: { type: Date, default: Date.now },
     lastSeenAt: { type: Date, default: Date.now },
+    adminNote: { type: String, default: '', trim: true, maxlength: 500 },
+    version: { type: Number, default: 1, min: 1 },
   },
   {
     timestamps: true,

@@ -130,26 +130,15 @@ export const Benefits: React.FC = () => {
                 >
                   <div className="relative flex-1 min-h-0 benefit-carousel-art">
                     {art && (
-                      <>
-                        <Image
-                          src={art.dark}
-                          alt=""
-                          fill
-                          sizes="(max-width: 640px) 100vw, 720px"
-                          quality={95}
-                          className="benefit-art-dark object-contain object-center p-3 sm:p-4"
-                          priority={index < 2}
-                        />
-                        <Image
-                          src={art.light}
-                          alt=""
-                          fill
-                          sizes="(max-width: 640px) 100vw, 720px"
-                          quality={95}
-                          className="benefit-art-light object-contain object-center p-3 sm:p-4"
-                          priority={index < 2}
-                        />
-                      </>
+                      <Image
+                        src={art.dark}
+                        alt=""
+                        fill
+                        sizes="(max-width: 640px) 100vw, 720px"
+                        quality={95}
+                        className="benefit-art-dark object-contain object-center p-3 sm:p-4"
+                        priority={index < 2}
+                      />
                     )}
                   </div>
 

@@ -4,14 +4,20 @@ import React, { useState } from 'react';
 import { ChevronDown, Clock } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { WORKSHOP_AGENDA } from '../data/workshopData';
+import type { AgendaContentData } from '@/lib/content/landingSchemas';
 import { Reveal } from './Reveal';
 
-/** Flip to false to restore full interactive agenda */
-const AGENDA_COMING_SOON = true;
-
-export const WorkshopAgenda: React.FC = () => {
+export const WorkshopAgenda: React.FC<{ content?: AgendaContentData }> = ({
+  content,
+}) => {
   const [openId, setOpenId] = useState<string | null>(null);
   const reduceMotion = useReducedMotion();
+  const comingSoon = content?.comingSoon ?? true;
+  const items = content?.items || WORKSHOP_AGENDA;
+  const heading = content?.heading ?? 'Session Agenda';
+  const headingParts = heading.split(/\s+/);
+  const last = headingParts[headingParts.length - 1] || '';
+  const before = headingParts.slice(0, -1).join(' ');
 
   return (
     <section
@@ -22,14 +28,15 @@ export const WorkshopAgenda: React.FC = () => {
       <div className="container-tight max-w-3xl">
         <Reveal className="text-center max-w-2xl mx-auto mb-6 sm:mb-8">
           <h2 id="agenda-heading" className="type-title text-ink">
-            Session <span className="gradient-text-ahmixen">Agenda</span>
+            {before ? `${before} ` : ''}
+            <span className="gradient-text-ahmixen">{last}</span>
           </h2>
         </Reveal>
 
         <div className="agenda-body-wrap relative">
           <div
-            className={AGENDA_COMING_SOON ? 'agenda-locked' : undefined}
-            {...(AGENDA_COMING_SOON
+            className={comingSoon ? 'agenda-locked' : undefined}
+            {...(comingSoon
               ? ({ inert: true, 'aria-hidden': true } as React.HTMLAttributes<HTMLDivElement>)
               : {})}
           >
@@ -38,8 +45,8 @@ export const WorkshopAgenda: React.FC = () => {
             </p>
 
         <div className="space-y-3">
-          {WORKSHOP_AGENDA.map((module, index) => {
-            const isOpen = !AGENDA_COMING_SOON && openId === module.id;
+          {items.map((module, index) => {
+            const isOpen = !comingSoon && openId === module.id;
             return (
               <Reveal key={module.id} delay={index * 0.05}>
                 <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--card-bg)] overflow-hidden">
@@ -47,10 +54,10 @@ export const WorkshopAgenda: React.FC = () => {
                     type="button"
                     id={`${module.id}-button`}
                     onClick={() => {
-                      if (AGENDA_COMING_SOON) return;
+                      if (comingSoon) return;
                       setOpenId(isOpen ? null : module.id);
                     }}
-                    tabIndex={AGENDA_COMING_SOON ? -1 : undefined}
+                    tabIndex={comingSoon ? -1 : undefined}
                     className="w-full flex items-center gap-4 p-4 sm:p-5 text-left cursor-pointer hover:bg-[var(--hover-fill)] transition-colors"
                     aria-expanded={isOpen}
                     aria-controls={`${module.id}-panel`}
@@ -100,7 +107,7 @@ export const WorkshopAgenda: React.FC = () => {
         </div>
           </div>
 
-          {AGENDA_COMING_SOON && (
+          {comingSoon && (
             <div className="agenda-coming-soon-overlay" aria-live="polite">
               <span
                 className={`agenda-coming-soon-pill${reduceMotion ? '' : ' agenda-coming-soon-pulse'}`}

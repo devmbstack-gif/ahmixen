@@ -1,9 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Eye, Search } from 'lucide-react';
+import { Eye } from 'lucide-react';
+import { SearchInput } from '../SearchInput';
+import { SkeletonListPage } from '../skeletons';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { AdminOrderListDTO } from '@/lib/orders/serialize';
 import { AdminIconAction } from '../AdminIconAction';
@@ -59,12 +61,15 @@ export function OrdersListClient({ sessions }: { sessions: SessionOption[] }) {
   });
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const hasLoadedOnce = useRef(false);
   const [toast, setToast] = useState<{ message: string; tone?: 'ok' | 'error' } | null>(
     null
   );
 
   const load = useCallback(async () => {
-    setLoading(true);
+    if (hasLoadedOnce.current) setRefreshing(true);
+    else setLoading(true);
     try {
       const params = new URLSearchParams();
       params.set('status', status);
@@ -78,10 +83,12 @@ export function OrdersListClient({ sessions }: { sessions: SessionOption[] }) {
       setOrders(data.orders ?? []);
       setCounts(data.counts ?? counts);
       setTotalPages(data.totalPages ?? 1);
+      hasLoadedOnce.current = true;
     } catch {
-      setToast({ message: 'Could not load orders', tone: 'error' });
+      setToast({ message: 'Could not load bookings', tone: 'error' });
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, page, q, sessionId]);
@@ -101,14 +108,14 @@ export function OrdersListClient({ sessions }: { sessions: SessionOption[] }) {
     status === 'needs_review'
       ? 'No payments waiting for review.'
       : status === 'awaiting_payment'
-        ? 'No orders are waiting for a payment screenshot.'
+        ? 'No bookings are waiting for a payment screenshot.'
         : status === 'approved'
-          ? 'No approved orders yet.'
+          ? 'No approved bookings yet.'
           : status === 'rejected'
-            ? 'No rejected orders.'
+            ? 'No rejected bookings.'
             : status === 'expired_cancelled'
-              ? 'No expired or cancelled orders.'
-              : 'No orders yet.';
+              ? 'No expired or cancelled bookings.'
+              : 'No bookings yet.';
 
   return (
     <motion.div
@@ -118,7 +125,7 @@ export function OrdersListClient({ sessions }: { sessions: SessionOption[] }) {
       className="space-y-4"
     >
       <div className="min-w-0">
-        <h2 className="text-lg font-semibold">Orders & Payments</h2>
+        <h2 className="text-lg font-semibold">Bookings & Payments</h2>
         <p className="text-sm text-[var(--text-secondary)] mt-0.5">
           Review payment screenshots and confirm seats.
         </p>
@@ -127,7 +134,7 @@ export function OrdersListClient({ sessions }: { sessions: SessionOption[] }) {
       <div
         className="admin-orders-tabs"
         role="tablist"
-        aria-label="Order status"
+        aria-label="Booking status"
       >
         {TABS.map((tab) => {
           const active = status === tab.key;
@@ -151,22 +158,15 @@ export function OrdersListClient({ sessions }: { sessions: SessionOption[] }) {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-2">
-        <label className="relative flex-1 min-w-0">
-          <span className="sr-only">Search orders</span>
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]"
-            aria-hidden="true"
-          />
-          <input
-            value={q}
-            onChange={(e) => {
-              setQ(e.target.value);
-              setPage(1);
-            }}
-            placeholder="Search by order number, name, email or phone"
-            className="admin-input pl-9"
-          />
-        </label>
+        <SearchInput
+          className="flex-1"
+          value={q}
+          onChange={(value) => {
+            setQ(value);
+            setPage(1);
+          }}
+          aria-label="Search bookings"
+        />
         <label className="sm:w-56">
           <span className="sr-only">Filter by session</span>
           <select
@@ -187,23 +187,23 @@ export function OrdersListClient({ sessions }: { sessions: SessionOption[] }) {
         </label>
       </div>
 
-      {loading && (
-        <p className="text-sm text-[var(--text-muted)]" aria-live="polite">
-          Loading…
-        </p>
-      )}
+      {loading && <SkeletonListPage showTabs rows={6} cols={6} />}
 
       {!loading && orders.length === 0 && (
         <div className="admin-card text-center py-10">
           <p className="font-semibold">{emptyCopy}</p>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
-            New orders will show up here when customers reserve a seat.
+            New bookings will show up here when customers reserve a seat.
           </p>
         </div>
       )}
 
       {!loading && orders.length > 0 && (
-        <section className="admin-card admin-sessions-section p-4">
+        <section
+          className={`admin-card admin-sessions-section p-4${
+            refreshing ? ' admin-list-dimmed' : ''
+          }`}
+        >
           <div className="hidden lg:block">
             <div className="admin-sessions-table-wrap">
               <table className="admin-table admin-sessions-table admin-orders-table">
@@ -217,7 +217,7 @@ export function OrdersListClient({ sessions }: { sessions: SessionOption[] }) {
                 </colgroup>
                 <thead>
                   <tr>
-                    <th scope="col">Order</th>
+                    <th scope="col">Booking</th>
                     <th scope="col">Customer</th>
                     <th scope="col">Plan and amount</th>
                     <th scope="col">Session</th>
@@ -303,8 +303,8 @@ export function OrdersListClient({ sessions }: { sessions: SessionOption[] }) {
                       >
                         <div className="admin-session-actions">
                           <AdminIconAction
-                            tip="View order"
-                            ariaLabel="View order"
+                            tip="View booking"
+                            ariaLabel="View booking"
                             href={`/admin/orders/${o.id}`}
                           >
                             <Eye className="w-4 h-4" aria-hidden="true" />

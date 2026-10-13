@@ -4,7 +4,10 @@ import Link from 'next/link';
 import { ArrowUp } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { WORKSHOP_CONFIG } from '../data/workshopData';
-import { instructor } from '../data/instructor';
+import {
+  instructor as staticInstructor,
+  type Instructor as InstructorData,
+} from '../data/instructor';
 import { NAV_LINKS } from '../data/navLinks';
 import { AhmiXenLogo } from './AhmiXenLogo';
 
@@ -26,7 +29,9 @@ function InstagramIcon({ className }: { className?: string }) {
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-export const Footer: React.FC = () => {
+export const Footer: React.FC<{ instructor?: InstructorData }> = ({
+  instructor = staticInstructor,
+}) => {
   const reduceMotion = useReducedMotion();
 
   const scrollToTop = () => {

@@ -11,7 +11,7 @@ import {
   MonitorPlay,
 } from 'lucide-react';
 import { WORKSHOP_CONFIG } from '../data/workshopData';
-import { instructor } from '../data/instructor';
+import { getVideoSource, videoEmbedAllow } from '@/lib/video';
 
 interface VideoModalProps {
   isOpen: boolean;
@@ -19,6 +19,8 @@ interface VideoModalProps {
   onOpenRegister: () => void;
   sessionDate: string;
   durationLabel: string;
+  instructorName: string;
+  videoUrl?: string;
   videoTitle?: string;
   videoDuration?: string;
 }
@@ -29,9 +31,12 @@ export const VideoModal: React.FC<VideoModalProps> = ({
   onOpenRegister,
   sessionDate,
   durationLabel,
+  instructorName,
+  videoUrl = '',
   videoTitle = `${WORKSHOP_CONFIG.brandName} Workshop Teaser & Walkthrough Preview`,
   videoDuration = '02:30',
 }) => {
+  const embed = videoUrl ? getVideoSource(videoUrl) : null;
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [progress, setProgress] = useState(30);
@@ -138,6 +143,29 @@ export const VideoModal: React.FC<VideoModalProps> = ({
 
             {/* Video Canvas Area */}
             <div className="relative aspect-video w-full bg-gradient-to-br from-black via-[#0d0a17] to-[#160f29] flex flex-col items-center justify-center p-6 text-center select-none overflow-hidden">
+              {embed?.type === 'file' ? (
+                <video
+                  key={embed.embedUrl}
+                  title={videoTitle}
+                  src={embed.embedUrl}
+                  className="absolute inset-0 h-full w-full bg-black object-contain"
+                  controls
+                  playsInline
+                  autoPlay
+                  preload="metadata"
+                />
+              ) : embed ? (
+                <iframe
+                  title={videoTitle}
+                  src={`${embed.embedUrl}${embed.type === 'youtube' ? '?rel=0' : ''}`}
+                  className="absolute inset-0 h-full w-full border-0"
+                  allow={videoEmbedAllow()}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                />
+              ) : (
+                <>
               {/* Subtle Ambient Background Grids & Orbs */}
               <div className="absolute inset-0 tech-grid-pattern opacity-40 pointer-events-none" />
               <div className="absolute w-80 h-80 bg-purple-600/20 rounded-full blur-[100px] pointer-events-none" />
@@ -217,6 +245,8 @@ export const VideoModal: React.FC<VideoModalProps> = ({
                   </div>
                 </div>
               </div>
+                </>
+              )}
             </div>
 
             {/* Modal Footer Reassurance & Action */}
@@ -224,7 +254,7 @@ export const VideoModal: React.FC<VideoModalProps> = ({
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-xs text-[var(--text-secondary)]">
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-purple-400" />
-                  Live Q&A with {instructor.name}
+                  Live Q&A with {instructorName}
                 </span>
                 <span className="hidden sm:inline text-[var(--text-muted)]">•</span>
                 <span className="flex items-center gap-1.5">

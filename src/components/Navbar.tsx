@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X, ArrowRight } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { ThemeToggle } from './ThemeToggle';
 import { AhmiXenLogo } from './AhmiXenLogo';
 import { NAV_LINKS } from '../data/navLinks';
 import { useReserveFlow } from './checkout/ReserveFlowProvider';
@@ -53,7 +52,7 @@ export const Navbar: React.FC = () => {
     !mounted || reserveCta.label === 'Reserve' ? 'Reserve' : reserveCta.label;
 
   return (
-    <header className="nav-bar nav-bar-top relative z-50">
+    <header className="nav-bar sticky top-0 z-50 w-full bg-transparent">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-3">
           <Link href="/" className="nav-focus flex items-center shrink-0" aria-label="AhmiXen home">
@@ -91,7 +90,6 @@ export const Navbar: React.FC = () => {
               })}
             </nav>
 
-            <ThemeToggle />
             <button
               type="button"
               onClick={onReserve}
@@ -105,7 +103,6 @@ export const Navbar: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 md:hidden">
-            <ThemeToggle />
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
