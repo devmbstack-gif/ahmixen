@@ -52,7 +52,7 @@ export const Navbar: React.FC = () => {
     !mounted || reserveCta.label === 'Reserve' ? 'Reserve' : reserveCta.label;
 
   return (
-    <header className="nav-bar sticky top-0 z-50 w-full bg-transparent">
+    <header className="nav-bar sticky top-0 z-50 w-full">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-3">
           <Link href="/" className="nav-focus flex items-center shrink-0" aria-label="AhmiXen home">
