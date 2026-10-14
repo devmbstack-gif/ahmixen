@@ -569,12 +569,70 @@ export function LeadsListClient() {
                 <dt className="text-[var(--text-muted)] text-xs">Profession</dt>
                 <dd className="mt-0.5">{detail.profession || '—'}</dd>
               </div>
-              <div className="sm:col-span-2">
-                <dt className="text-[var(--text-muted)] text-xs">Message</dt>
-                <dd className="mt-0.5 whitespace-pre-wrap">
-                  {detail.message || '—'}
-                </dd>
-              </div>
+              {detail.kind === 'workshop' ? (
+                <>
+                  <div>
+                    <dt className="text-[var(--text-muted)] text-xs">City</dt>
+                    <dd className="mt-0.5">{detail.city || '—'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[var(--text-muted)] text-xs">
+                      AI skill level
+                    </dt>
+                    <dd className="mt-0.5">
+                      {detail.skillLevelLabel || '—'}
+                    </dd>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <dt className="text-[var(--text-muted)] text-xs">
+                      Workshop
+                    </dt>
+                    <dd className="mt-0.5">
+                      {detail.programTitle || detail.programId || '—'}
+                    </dd>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <dt className="text-[var(--text-muted)] text-xs">
+                      Learning goals
+                    </dt>
+                    <dd className="mt-0.5">
+                      {detail.learningGoals.length
+                        ? detail.learningGoals.join(', ')
+                        : '—'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-[var(--text-muted)] text-xs">
+                      Payment confirmed
+                    </dt>
+                    <dd className="mt-0.5">
+                      {detail.paidConfirmed ? 'Yes Paid' : 'No'}
+                    </dd>
+                  </div>
+                  {detail.hasProof ? (
+                    <div className="sm:col-span-2">
+                      <dt className="text-[var(--text-muted)] text-xs mb-1.5">
+                        Payment screenshot
+                      </dt>
+                      <dd>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={`/api/admin/leads/${detail.id}/proof`}
+                          alt="Payment screenshot"
+                          className="max-h-56 w-auto rounded-lg border border-[var(--border-subtle)]"
+                        />
+                      </dd>
+                    </div>
+                  ) : null}
+                </>
+              ) : (
+                <div className="sm:col-span-2">
+                  <dt className="text-[var(--text-muted)] text-xs">Message</dt>
+                  <dd className="mt-0.5 whitespace-pre-wrap">
+                    {detail.message || '—'}
+                  </dd>
+                </div>
+              )}
               <div>
                 <dt className="text-[var(--text-muted)] text-xs">Source</dt>
                 <dd className="mt-0.5">{detail.sourceLabel}</dd>

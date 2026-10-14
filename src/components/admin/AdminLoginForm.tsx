@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
@@ -13,6 +13,13 @@ export function AdminLoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Warm Mongo while the admin types — first login after idle is much faster.
+  useEffect(() => {
+    void fetch('/api/admin/auth/warm', { method: 'GET', cache: 'no-store' }).catch(
+      () => undefined
+    );
+  }, []);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,8 +36,8 @@ export function AdminLoginForm() {
         setError(data.error || 'Invalid email or password');
         return;
       }
+      // Cookie is already set on the login response — skip a full refresh.
       router.replace('/admin');
-      router.refresh();
     } catch {
       setError('Something went wrong');
     } finally {

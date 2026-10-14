@@ -2,11 +2,50 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import { CheckCircle2 } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import { motion, useInView, useReducedMotion } from 'framer-motion';
-import type { Instructor as InstructorData } from '../data/instructor';
+import {
+  platformCaption,
+  splitHeadlineAccent,
+  type Instructor as InstructorData,
+  type ProofPlatform,
+} from '../data/instructor';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
+
+const INSTRUCTOR_HIGHLIGHTS = [
+  { value: '3+', label: 'Years Experience' },
+  { value: '100+', label: 'Students Trained' },
+  { value: '10+', label: 'Keynotes & Awards' },
+] as const;
+
+/** Social preview cards — images live in /public (filenames include spaces). */
+const SOCIAL_PREVIEW_CARDS = [
+  {
+    id: 'linkedin',
+    platform: 'linkedin' as const,
+    label: 'LinkedIn',
+    imageSrc: '/linkdln account.jpeg',
+    hrefKey: 'linkedin' as const,
+  },
+  {
+    id: 'instagram',
+    platform: 'instagram' as const,
+    label: 'Instagram',
+    imageSrc: '/insta account.jpeg',
+    hrefKey: 'instagram' as const,
+  },
+  {
+    id: 'youtube',
+    platform: 'youtube' as const,
+    label: 'YouTube',
+    imageSrc: '/youtube account.jpeg',
+    hrefKey: 'youtube' as const,
+  },
+] as const;
+
+/** AhmiXen AI channel (@AhmiXen) */
+const YOUTUBE_CHANNEL_HREF = 'https://www.youtube.com/@AhmiXen';
 
 function LinkedInIcon({ className }: { className?: string }) {
   return (
@@ -24,70 +63,24 @@ function InstagramIcon({ className }: { className?: string }) {
   );
 }
 
-function useCountUp(target: number, active: boolean, reduceMotion: boolean | null) {
-  const [value, setValue] = useState(reduceMotion ? target : 0);
-
-  useEffect(() => {
-    if (reduceMotion) {
-      setValue(target);
-      return;
-    }
-    if (!active) return;
-
-    const duration = 1100;
-    const start = performance.now();
-    let raf = 0;
-
-    const tick = (now: number) => {
-      const t = Math.min(1, (now - start) / duration);
-      const eased = 1 - Math.pow(1 - t, 3);
-      setValue(Math.round(target * eased));
-      if (t < 1) raf = requestAnimationFrame(tick);
-    };
-
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [active, reduceMotion, target]);
-
-  return value;
-}
-
-function formatCount(n: number) {
-  return n.toLocaleString('en-US');
-}
-
-function StatBlock({
-  value,
-  suffix,
-  label,
-  active,
-  reduceMotion,
-  delay,
-}: {
-  value: number;
-  suffix: string;
-  label: string;
-  active: boolean;
-  reduceMotion: boolean | null;
-  delay: number;
-}) {
-  const count = useCountUp(value, active, reduceMotion);
-
+function YouTubeIcon({ className }: { className?: string }) {
   return (
-    <motion.div
-      className="instructor-stat"
-      initial={reduceMotion ? false : { opacity: 0, y: 16 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.4 }}
-      transition={{ duration: reduceMotion ? 0.01 : 0.45, delay: reduceMotion ? 0 : delay, ease: EASE }}
-    >
-      <span className="instructor-stat-number">
-        {formatCount(count)}
-        {suffix}
-      </span>
-      <span className="instructor-stat-label">{label}</span>
-    </motion.div>
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M23.498 6.186a2.974 2.974 0 0 0-2.092-2.106C19.505 3.546 12 3.546 12 3.546s-7.505 0-9.406.534A2.974 2.974 0 0 0 .502 6.186C0 8.09 0 12 0 12s0 3.91.502 5.814a2.974 2.974 0 0 0 2.092 2.106C4.495 20.454 12 20.454 12 20.454s7.505 0 9.406-.534a2.974 2.974 0 0 0 2.092-2.106C24 15.91 24 12 24 12s0-3.91-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+    </svg>
   );
+}
+
+function PlatformIcon({
+  platform,
+  className,
+}: {
+  platform: ProofPlatform;
+  className?: string;
+}) {
+  if (platform === 'instagram') return <InstagramIcon className={className} />;
+  if (platform === 'youtube') return <YouTubeIcon className={className} />;
+  return <LinkedInIcon className={className} />;
 }
 
 function InstructorPortrait({ data }: { data: InstructorData }) {
@@ -111,17 +104,18 @@ function InstructorPortrait({ data }: { data: InstructorData }) {
     <motion.div
       ref={ref}
       className="instructor-photo-wrap"
-      initial={reduceMotion ? false : { opacity: 0, y: 22 }}
-      animate={{ opacity: show ? 1 : 0, y: show ? 0 : 22 }}
-      transition={{ duration: reduceMotion ? 0.01 : 0.55, ease: EASE }}
+      initial={reduceMotion || show ? false : { opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: reduceMotion ? 0.01 : 0.5, ease: EASE }}
     >
-      <div className="instructor-photo-frame">
+      <div className="instructor-photo-frame instructor-photo-frame-natural">
         <Image
           src={encodeURI(data.photo)}
           alt={data.name}
-          fill
-          sizes="(max-width: 768px) 416px, (max-width: 1024px) 480px, 544px"
-          className="instructor-photo-img"
+          width={900}
+          height={1200}
+          sizes="(max-width: 768px) 360px, (max-width: 1024px) 420px, 520px"
+          className="instructor-photo-img instructor-photo-img-natural"
           priority
           unoptimized
         />
@@ -130,124 +124,196 @@ function InstructorPortrait({ data }: { data: InstructorData }) {
   );
 }
 
+function AccentedText({
+  text,
+  accent,
+  as: Tag = 'span',
+  className,
+  accentClassName = 'instructor-accent',
+  id,
+}: {
+  text: string;
+  accent: string;
+  as?: 'h2' | 'p' | 'span';
+  className?: string;
+  accentClassName?: string;
+  id?: string;
+}) {
+  const split = splitHeadlineAccent(text, accent);
+
+  if (!split) {
+    return (
+      <Tag id={id} className={className}>
+        {text}
+      </Tag>
+    );
+  }
+
+  return (
+    <Tag id={id} className={className}>
+      {split.before}
+      <span className={accentClassName}>{split.accent}</span>
+      {split.after}
+    </Tag>
+  );
+}
+
 export const Instructor: React.FC<{ data: InstructorData }> = ({ data }) => {
   const reduceMotion = useReducedMotion();
-  const statsRef = useRef<HTMLDivElement | null>(null);
-  const [statsActive, setStatsActive] = useState(false);
-  const visibleInstructorStats = data.stats.filter((s) => s.visible);
+  const greeting = data.greeting?.trim() || "Hello I'm AHMI";
+  const greetingAccent = data.greetingAccent?.trim() || "I'm";
+  const differenceHeading =
+    data.differenceHeading?.trim() || 'What makes me different is simple:';
+  const differenceBody =
+    data.differenceBody?.trim() || data.missionQuote?.trim() || '';
 
-  const nameParts = data.name.split(' ').filter(Boolean);
-  const lastName = nameParts[nameParts.length - 1] ?? data.name;
-  const nameBefore = nameParts.slice(0, -1).join(' ');
-
-  useEffect(() => {
-    const el = statsRef.current;
-    if (!el) return;
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          setStatsActive(true);
-          io.disconnect();
-        }
-      },
-      { threshold: 0.35 }
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
+  const socialCards = SOCIAL_PREVIEW_CARDS.map((card) => ({
+    ...card,
+    href:
+      card.hrefKey === 'linkedin'
+        ? data.linkedin
+        : card.hrefKey === 'instagram'
+          ? data.instagram
+          : YOUTUBE_CHANNEL_HREF,
+  }));
 
   return (
     <section
       id="instructor"
-      className="relative section-y instructor-section bg-transparent"
+      className="relative instructor-section bg-transparent py-16 md:py-20 lg:py-24"
       aria-labelledby="instructor-heading"
     >
-      <div className="relative container-narrow instructor-container">
-        <h2 id="instructor-heading" className="sr-only">
-          Your Instructor
-        </h2>
-
-        <div className="instructor-panel grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
-          <div className="order-2 md:order-1 text-center md:text-left space-y-5">
+      <div className="relative instructor-container">
+        <div className="instructor-panel grid grid-cols-1 md:grid-cols-[minmax(0,1.35fr)_minmax(0,0.9fr)] gap-8 md:gap-10 lg:gap-14 items-start">
+          <div className="order-2 md:order-1 text-left min-w-0">
             <motion.div
-              initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+              initial={reduceMotion ? false : { opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.4 }}
-              transition={{ duration: reduceMotion ? 0.01 : 0.5, delay: reduceMotion ? 0 : 0.12, ease: EASE }}
+              viewport={{ once: true, amount: 0.1 }}
+              transition={{
+                duration: reduceMotion ? 0.01 : 0.45,
+                ease: EASE,
+              }}
             >
-              <h3 className="instructor-name">
-                {nameBefore ? `${nameBefore} ` : ''}
-                <span className="gradient-text-ahmixen">{lastName}</span>
-              </h3>
-              <p className="instructor-title mt-1">
-                {data.title}
-              </p>
+              <AccentedText
+                as="h2"
+                id="instructor-heading"
+                className="instructor-greeting"
+                text={greeting}
+                accent={greetingAccent}
+              />
+              <AccentedText
+                as="p"
+                className="instructor-headline"
+                text={data.headlineSub}
+                accent={data.headlineAccent}
+              />
             </motion.div>
 
             <motion.p
-              className="instructor-bio text-[var(--text-secondary)] leading-relaxed"
-              initial={reduceMotion ? false : { opacity: 0, y: 14 }}
+              className="instructor-bio"
+              initial={reduceMotion ? false : { opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.4 }}
-              transition={{ duration: reduceMotion ? 0.01 : 0.5, delay: reduceMotion ? 0 : 0.2, ease: EASE }}
+              viewport={{ once: true, amount: 0.1 }}
+              transition={{
+                duration: reduceMotion ? 0.01 : 0.45,
+                delay: reduceMotion ? 0 : 0.06,
+                ease: EASE,
+              }}
             >
               {data.bio}
             </motion.p>
 
-            <div ref={statsRef} className="instructor-stats">
-              {visibleInstructorStats.map((stat, i) => (
-                <StatBlock
-                  key={stat.label}
-                  value={stat.value}
-                  suffix={stat.suffix}
-                  label={stat.label}
-                  active={statsActive}
-                  reduceMotion={reduceMotion}
-                  delay={0.26 + i * 0.08}
-                />
-              ))}
-            </div>
+            {differenceBody ? (
+              <motion.div
+                className="instructor-difference text-left"
+                initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.1 }}
+                transition={{
+                  duration: reduceMotion ? 0.01 : 0.45,
+                  delay: reduceMotion ? 0 : 0.12,
+                  ease: EASE,
+                }}
+              >
+                <h3 className="instructor-difference-heading">{differenceHeading}</h3>
+                <p className="instructor-difference-body">{differenceBody}</p>
+              </motion.div>
+            ) : null}
 
-            <motion.div
-              className="instructor-chip inline-flex"
-              initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+            <motion.ul
+              className="instructor-highlights"
+              aria-label="Key highlights"
+              initial={reduceMotion ? false : { opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.4 }}
-              transition={{ duration: reduceMotion ? 0.01 : 0.45, delay: reduceMotion ? 0 : 0.42, ease: EASE }}
+              viewport={{ once: true, amount: 0.15 }}
+              transition={{
+                duration: reduceMotion ? 0.01 : 0.4,
+                delay: reduceMotion ? 0 : 0.16,
+                ease: EASE,
+              }}
             >
-              <CheckCircle2 className="w-4 h-4 text-purple-400 shrink-0" aria-hidden="true" />
-              <span>{data.chip}</span>
-            </motion.div>
-
-            <div className="pt-1 flex items-center justify-center md:justify-start gap-3">
-              <motion.a
-                href={data.linkedin}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`${data.name} on LinkedIn`}
-                className="instructor-social"
-                whileHover={reduceMotion ? undefined : { y: -3, scale: 1.06 }}
-                whileTap={reduceMotion ? undefined : { scale: 0.96 }}
-              >
-                <LinkedInIcon className="w-5 h-5" />
-              </motion.a>
-              <motion.a
-                href={data.instagram}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`${data.name} on Instagram`}
-                className="instructor-social"
-                whileHover={reduceMotion ? undefined : { y: -3, scale: 1.06 }}
-                whileTap={reduceMotion ? undefined : { scale: 0.96 }}
-              >
-                <InstagramIcon className="w-5 h-5" />
-              </motion.a>
-            </div>
+              {INSTRUCTOR_HIGHLIGHTS.map((item) => (
+                <li key={item.label} className="instructor-highlight-pill">
+                  <span className="instructor-highlight-value">{item.value}</span>
+                  <span className="instructor-highlight-label">{item.label}</span>
+                </li>
+              ))}
+            </motion.ul>
           </div>
 
-          <div className="order-1 md:order-2 flex justify-center md:justify-end">
+          <div className="instructor-photo-col order-1 md:order-2">
             <InstructorPortrait data={data} />
           </div>
+        </div>
+
+        <div
+          className="instructor-proof-grid"
+          aria-label="Proof and social images"
+        >
+          {socialCards.map((card, i) => (
+            <motion.a
+              key={card.id}
+              href={card.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="instructor-proof-card group nav-focus"
+              aria-label={`Preview ${card.label} (opens in a new tab)`}
+              initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.1 }}
+              transition={{
+                duration: reduceMotion ? 0.01 : 0.4,
+                delay: reduceMotion ? 0 : i * 0.06,
+                ease: EASE,
+              }}
+            >
+              <span className="instructor-proof-media">
+                <Image
+                  src={encodeURI(card.imageSrc)}
+                  alt={`${card.label} account preview`}
+                  width={640}
+                  height={400}
+                  loading="lazy"
+                  sizes="(max-width: 640px) 80vw, (max-width: 1024px) 33vw, 320px"
+                  className="instructor-proof-img"
+                  unoptimized
+                />
+                <span className="instructor-proof-overlay" aria-hidden="true">
+                  <span className="instructor-proof-eye">
+                    <Eye className="h-5 w-5" strokeWidth={2.25} />
+                  </span>
+                </span>
+              </span>
+              <span className="instructor-proof-chip">
+                <PlatformIcon
+                  platform={card.platform}
+                  className="h-3.5 w-3.5 shrink-0"
+                />
+                <span>{platformCaption(card.platform)}</span>
+              </span>
+            </motion.a>
+          ))}
         </div>
       </div>
     </section>

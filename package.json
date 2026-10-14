@@ -17,6 +17,8 @@
     "seed:orders": "tsx scripts/seed-orders.ts",
     "seed:orders:clear": "tsx scripts/seed-orders-clear.ts",
     "seed:content": "tsx scripts/seed-content.ts",
+    "seed:plan": "tsx scripts/seed-plan.ts",
+    "proof:plan-landing": "tsx scripts/proof-plan-landing-index.ts",
     "migrate:redemptions": "tsx scripts/migrate-redemptions.ts",
     "test:checkout": "tsx scripts/test-checkout.ts",
     "test:checkout:clear": "tsx scripts/test-checkout-clear.ts"
@@ -31,6 +33,7 @@
     "lucide-react": "^1.54.0",
     "mongoose": "^9.11.1",
     "next": "^15.5.4",
+    "nodemailer": "^10.1.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "tailwindcss": "^4.3.3",
@@ -39,6 +42,7 @@
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^24.13.3",
+    "@types/nodemailer": "^8.0.2",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "oxlint": "^1.81.0",

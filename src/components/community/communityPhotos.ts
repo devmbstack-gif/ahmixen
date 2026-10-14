@@ -8,8 +8,18 @@ export type CommunityPhoto = {
   objectPosition?: string;
 };
 
-/** Same workshop photos + captions as before */
+/**
+ * Community gallery (workshop + WhatsApp).
+ * Ordered for a dense 3-column mosaic: 3 tall + 1 lg + 3 wide + 2 sm = 18 cells.
+ */
 export const COMMUNITY_PHOTOS: CommunityPhoto[] = [
+  {
+    id: 'wa-portrait-1',
+    src: '/community/WhatsApp Image 2026-10-13 at 9.49.56 PM.jpeg',
+    caption: 'Instructor with workshop participants',
+    span: 'tall',
+    objectPosition: '50% 20%',
+  },
   {
     id: 'workshop-02',
     src: '/community/workshop-02.jpg',
@@ -18,41 +28,53 @@ export const COMMUNITY_PHOTOS: CommunityPhoto[] = [
     objectPosition: '50% 35%',
   },
   {
-    id: 'workshop-01',
-    src: '/community/workshop-01.jpg',
-    caption: 'Speaking at the Agentic AI & vibe coding workshop',
-    span: 'tall',
-    objectPosition: '50% 20%',
-  },
-  {
     id: 'workshop-03',
     src: '/community/workshop-03.jpg',
     caption: 'Live n8n automation demo on stage',
     span: 'sm',
-  },
-  {
-    id: 'workshop-04',
-    src: '/community/workshop-04.jpg',
-    caption: 'AhmiXen speaking and training collage',
-    span: 'wide',
+    objectPosition: '50% 40%',
   },
   {
     id: 'workshop-05',
     src: '/community/workshop-05.jpg',
     caption: 'Full room at the Agentic AI workshop',
     span: 'sm',
+    objectPosition: '50% 40%',
+  },
+  {
+    id: 'workshop-07',
+    src: '/community/workshop-07.jpg',
+    caption: 'Instructor addressing the community',
+    span: 'tall',
+    objectPosition: '50% 22%',
+  },
+  {
+    id: 'workshop-04',
+    src: '/community/workshop-04.jpg',
+    caption: 'AhmiXen speaking and training collage',
+    span: 'wide',
+    objectPosition: '50% 50%',
   },
   {
     id: 'workshop-06',
     src: '/community/workshop-06.jpg',
     caption: 'Audience during the live AI session',
     span: 'wide',
+    objectPosition: '50% 40%',
   },
   {
-    id: 'workshop-07',
-    src: '/community/workshop-07.jpg',
-    caption: 'Instructor addressing the community',
-    span: 'sm',
+    id: 'wa-portrait-2',
+    src: '/community/WhatsApp Image 2026t .jpeg',
+    caption: 'Hands-on training with students',
+    span: 'tall',
+    objectPosition: '50% 18%',
+  },
+  {
+    id: 'wa-landscape-hero',
+    src: '/community/WhatsApp Image 2026-10-1).jpeg',
+    caption: 'Live community workshop session',
+    span: 'wide',
+    objectPosition: '50% 40%',
   },
 ];
 

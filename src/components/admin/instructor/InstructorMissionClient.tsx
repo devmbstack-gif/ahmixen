@@ -44,6 +44,7 @@ export function InstructorMissionClient() {
   const [iMeta, setIMeta] = useState({ updatedAt: null as string | null, by: '' });
   const [instructor, setInstructor] = useState<InstructorContentData | null>(null);
   const [photo, setPhoto] = useState<MediaPickerValue | null>(null);
+  const [proofMedia, setProofMedia] = useState<(MediaPickerValue | null)[]>([]);
   const [iSaving, setISaving] = useState(false);
   const [iError, setIError] = useState<string | null>(null);
   const [placeDraft, setPlaceDraft] = useState('');
@@ -67,9 +68,48 @@ export function InstructorMissionClient() {
     }
     if (key === 'instructor') {
       const d = data.data as InstructorContentData;
-      setInstructor(d);
+      const proofCards = Array.isArray(d.proofCards) ? d.proofCards : [];
+      setInstructor({
+        ...d,
+        greeting: d.greeting || "Hello I'm AHMI",
+        greetingAccent: d.greetingAccent || "I'm",
+        headlineSub:
+          d.headlineSub ||
+          'TRAINED 100+ STUDENTS & DELIVERED KEYNOTE AI SEMINARS ACROSS UNIVERSITIES',
+        headlineAccent: d.headlineAccent || '100+ STUDENTS',
+        missionQuote: d.missionQuote || '',
+        differenceHeading:
+          d.differenceHeading || 'What makes me different is simple:',
+        differenceBody:
+          d.differenceBody ||
+          d.missionQuote ||
+          '',
+        proofCards,
+      });
       setIVersion(data.version);
       setIMeta({ updatedAt: data.updatedAt, by: data.updatedByName });
+      setProofMedia(proofCards.map(() => null));
+      for (let i = 0; i < proofCards.length; i += 1) {
+        const id = proofCards[i]?.imageAssetId;
+        if (!id) continue;
+        const index = i;
+        void fetch(`/api/admin/media/${id}`)
+          .then((r) => r.json())
+          .then((j: { asset?: { url: string; name: string; altText: string } }) => {
+            if (!j.asset) return;
+            setProofMedia((prev) => {
+              const next = [...prev];
+              next[index] = {
+                id,
+                url: j.asset!.url,
+                name: j.asset!.name,
+                altText: j.asset!.altText,
+              };
+              return next;
+            });
+          })
+          .catch(() => undefined);
+      }
       if (d.photoAssetId) {
         setPhoto({
           id: d.photoAssetId,
@@ -123,6 +163,10 @@ export function InstructorMissionClient() {
         ...instructor,
         photoAssetId: photo?.id || null,
         photo: photo?.id ? undefined : photo?.url || instructor.photo,
+        proofCards: (instructor.proofCards || []).map((card, index) => ({
+          ...card,
+          imageAssetId: proofMedia[index]?.id || card.imageAssetId,
+        })),
       };
       const res = await fetch('/api/admin/content/instructor', {
         method: 'PUT',
@@ -267,6 +311,9 @@ export function InstructorMissionClient() {
                   setInstructor({ ...instructor, name: e.target.value })
                 }
               />
+              <span className="mt-1 block text-xs text-[var(--text-secondary)]">
+                Used for photo alt text and social link labels
+              </span>
             </label>
             <label className="block">
               <span className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">
@@ -283,6 +330,70 @@ export function InstructorMissionClient() {
           </div>
           <label className="block">
             <span className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">
+              Greeting
+            </span>
+            <input
+              className="admin-input h-10 w-full"
+              value={instructor.greeting || ''}
+              maxLength={80}
+              onChange={(e) =>
+                setInstructor({ ...instructor, greeting: e.target.value })
+              }
+            />
+            <span className="mt-1 block text-xs text-[var(--text-secondary)]">
+              {(instructor.greeting || '').length}/80 · Large home headline
+            </span>
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">
+              Greeting accent (purple highlight)
+            </span>
+            <input
+              className="admin-input h-10 w-full"
+              value={instructor.greetingAccent || ''}
+              maxLength={20}
+              onChange={(e) =>
+                setInstructor({ ...instructor, greetingAccent: e.target.value })
+              }
+            />
+            <span className="mt-1 block text-xs text-[var(--text-secondary)]">
+              {(instructor.greetingAccent || '').length}/20 · e.g. I&apos;m
+            </span>
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">
+              Headline (second line)
+            </span>
+            <textarea
+              className="admin-input min-h-[72px] w-full py-2"
+              value={instructor.headlineSub || ''}
+              maxLength={200}
+              onChange={(e) =>
+                setInstructor({ ...instructor, headlineSub: e.target.value })
+              }
+            />
+            <span className="mt-1 block text-xs text-[var(--text-secondary)]">
+              {(instructor.headlineSub || '').length}/200 · Full uppercase line under greeting
+            </span>
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">
+              Headline accent (purple highlight)
+            </span>
+            <input
+              className="admin-input h-10 w-full"
+              value={instructor.headlineAccent || ''}
+              maxLength={80}
+              onChange={(e) =>
+                setInstructor({ ...instructor, headlineAccent: e.target.value })
+              }
+            />
+            <span className="mt-1 block text-xs text-[var(--text-secondary)]">
+              {(instructor.headlineAccent || '').length}/80 · e.g. 100+ STUDENTS
+            </span>
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">
               Short bio
             </span>
             <textarea
@@ -294,7 +405,7 @@ export function InstructorMissionClient() {
               }
             />
             <span className="mt-1 block text-xs text-[var(--text-secondary)]">
-              {instructor.shortBio.length}/400
+              {instructor.shortBio.length}/400 · Used on Our Mission
             </span>
           </label>
           <label className="block">
@@ -302,16 +413,60 @@ export function InstructorMissionClient() {
               Full bio
             </span>
             <textarea
-              className="admin-input min-h-[96px] w-full py-2"
+              className="admin-input min-h-[160px] w-full py-2"
               value={instructor.bio}
+              maxLength={1600}
               onChange={(e) =>
                 setInstructor({ ...instructor, bio: e.target.value })
               }
             />
+            <span className="mt-1 block text-xs text-[var(--text-secondary)]">
+              {instructor.bio.length}/1600 · Experience paragraph on the home page
+            </span>
           </label>
           <label className="block">
             <span className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">
-              Chip
+              Difference heading
+            </span>
+            <input
+              className="admin-input h-10 w-full"
+              value={instructor.differenceHeading || ''}
+              maxLength={80}
+              onChange={(e) =>
+                setInstructor({
+                  ...instructor,
+                  differenceHeading: e.target.value,
+                })
+              }
+            />
+            <span className="mt-1 block text-xs text-[var(--text-secondary)]">
+              {(instructor.differenceHeading || '').length}/80 · e.g. What makes me different is simple:
+            </span>
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">
+              Difference body
+            </span>
+            <textarea
+              className="admin-input min-h-[120px] w-full py-2"
+              value={instructor.differenceBody || instructor.missionQuote || ''}
+              maxLength={800}
+              onChange={(e) =>
+                setInstructor({
+                  ...instructor,
+                  differenceBody: e.target.value,
+                  missionQuote: e.target.value,
+                })
+              }
+            />
+            <span className="mt-1 block text-xs text-[var(--text-secondary)]">
+              {(instructor.differenceBody || instructor.missionQuote || '').length}
+              /800 · Shown under the difference heading
+            </span>
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">
+              Chip (optional / legacy)
             </span>
             <input
               className="admin-input h-10 w-full"
@@ -330,6 +485,184 @@ export function InstructorMissionClient() {
           <div>
             <div className="mb-1 flex items-center justify-between gap-2">
               <span className="text-xs font-semibold text-[var(--text-secondary)]">
+                Profile pictures ({(instructor.proofCards || []).length}/6)
+              </span>
+              <button
+                type="button"
+                className="admin-logout-btn nav-focus inline-flex items-center gap-1"
+                disabled={(instructor.proofCards || []).length >= 6}
+                onClick={() => {
+                  setInstructor({
+                    ...instructor,
+                    proofCards: [
+                      ...(instructor.proofCards || []),
+                      {
+                        imageAssetId: '',
+                        platform: 'linkedin',
+                        href: '',
+                        label: '',
+                      },
+                    ],
+                  });
+                  setProofMedia((m) => [...m, null]);
+                }}
+              >
+                <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                Add picture
+              </button>
+            </div>
+            <p className="mb-2 text-xs text-[var(--text-secondary)]">
+              Use clear screenshots of your own profiles. Crop out other people&apos;s
+              names and faces.
+            </p>
+            <div className="space-y-3">
+              {(instructor.proofCards || []).map((card, index) => (
+                <div
+                  key={index}
+                  className="space-y-2 rounded-xl border border-[var(--border-subtle)] p-3"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs text-[var(--text-secondary)]">
+                      {index + 1} of 6
+                    </span>
+                    <div className="admin-session-actions">
+                      <AdminIconAction
+                        tip="Move up"
+                        ariaLabel="Move up"
+                        disabled={index === 0}
+                        onClick={() => {
+                          if (index === 0) return;
+                          const cards = [...(instructor.proofCards || [])];
+                          const media = [...proofMedia];
+                          const tmp = cards[index - 1]!;
+                          cards[index - 1] = cards[index]!;
+                          cards[index] = tmp;
+                          const tmpM = media[index - 1] ?? null;
+                          media[index - 1] = media[index] ?? null;
+                          media[index] = tmpM;
+                          setInstructor({ ...instructor, proofCards: cards });
+                          setProofMedia(media);
+                        }}
+                      >
+                        <ArrowUp className="h-4 w-4" aria-hidden="true" />
+                      </AdminIconAction>
+                      <AdminIconAction
+                        tip="Move down"
+                        ariaLabel="Move down"
+                        disabled={index === (instructor.proofCards || []).length - 1}
+                        onClick={() => {
+                          const cards = [...(instructor.proofCards || [])];
+                          if (index >= cards.length - 1) return;
+                          const media = [...proofMedia];
+                          const tmp = cards[index + 1]!;
+                          cards[index + 1] = cards[index]!;
+                          cards[index] = tmp;
+                          const tmpM = media[index + 1] ?? null;
+                          media[index + 1] = media[index] ?? null;
+                          media[index] = tmpM;
+                          setInstructor({ ...instructor, proofCards: cards });
+                          setProofMedia(media);
+                        }}
+                      >
+                        <ArrowDown className="h-4 w-4" aria-hidden="true" />
+                      </AdminIconAction>
+                      <AdminIconAction
+                        tip="Remove"
+                        ariaLabel="Remove profile picture"
+                        danger
+                        onClick={() => {
+                          setInstructor({
+                            ...instructor,
+                            proofCards: (instructor.proofCards || []).filter(
+                              (_, i) => i !== index
+                            ),
+                          });
+                          setProofMedia((m) => m.filter((_, i) => i !== index));
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" aria-hidden="true" />
+                      </AdminIconAction>
+                    </div>
+                  </div>
+                  <MediaField
+                    label="Image"
+                    value={proofMedia[index] || null}
+                    onChange={(v) => {
+                      setProofMedia((m) => {
+                        const next = [...m];
+                        next[index] = v;
+                        return next;
+                      });
+                      const cards = [...(instructor.proofCards || [])];
+                      cards[index] = {
+                        ...card,
+                        imageAssetId: v?.id || '',
+                      };
+                      setInstructor({ ...instructor, proofCards: cards });
+                    }}
+                  />
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <label className="block">
+                      <span className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">
+                        Platform
+                      </span>
+                      <select
+                        className="admin-input h-10 w-full"
+                        value={card.platform}
+                        onChange={(e) => {
+                          const cards = [...(instructor.proofCards || [])];
+                          cards[index] = {
+                            ...card,
+                            platform: e.target.value as typeof card.platform,
+                          };
+                          setInstructor({ ...instructor, proofCards: cards });
+                        }}
+                      >
+                        <option value="linkedin">LinkedIn</option>
+                        <option value="instagram">Instagram</option>
+                        <option value="youtube">YouTube</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </label>
+                    <label className="block">
+                      <span className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">
+                        Label
+                      </span>
+                      <input
+                        className="admin-input h-10 w-full"
+                        value={card.label}
+                        maxLength={60}
+                        onChange={(e) => {
+                          const cards = [...(instructor.proofCards || [])];
+                          cards[index] = { ...card, label: e.target.value };
+                          setInstructor({ ...instructor, proofCards: cards });
+                        }}
+                      />
+                    </label>
+                  </div>
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">
+                      Link (https)
+                    </span>
+                    <input
+                      className="admin-input h-10 w-full"
+                      value={card.href}
+                      placeholder="https://"
+                      onChange={(e) => {
+                        const cards = [...(instructor.proofCards || [])];
+                        cards[index] = { ...card, href: e.target.value };
+                        setInstructor({ ...instructor, proofCards: cards });
+                      }}
+                    />
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <span className="text-xs font-semibold text-[var(--text-secondary)]">
                 Stats
               </span>
               <button
@@ -341,7 +674,13 @@ export function InstructorMissionClient() {
                     ...instructor,
                     stats: [
                       ...instructor.stats,
-                      { value: 0, suffix: '+', label: '', visible: true },
+                      {
+                        value: 0,
+                        suffix: '+',
+                        label: '',
+                        visible: true,
+                        textOnly: false,
+                      },
                     ],
                   })
                 }
@@ -394,6 +733,18 @@ export function InstructorMissionClient() {
                       }}
                     />
                     Visible
+                  </label>
+                  <label className="flex h-10 items-center gap-2 px-1 text-sm sm:col-span-4">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(stat.textOnly)}
+                      onChange={(e) => {
+                        const stats = [...instructor.stats];
+                        stats[index] = { ...stat, textOnly: e.target.checked };
+                        setInstructor({ ...instructor, stats });
+                      }}
+                    />
+                    Text only (no number)
                   </label>
                   <div className="admin-session-actions">
                     <AdminIconAction

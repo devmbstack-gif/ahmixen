@@ -72,5 +72,24 @@ export async function findMediaUsages(assetId: string): Promise<MediaUsage[]> {
     }
   }
 
+  const instructorDoc = await SiteContent.findOne({ key: 'instructor' }).lean();
+  if (instructorDoc?.data && typeof instructorDoc.data === 'object') {
+    const proofCards = (
+      instructorDoc.data as {
+        proofCards?: Array<{ imageAssetId?: string; label?: string }>;
+      }
+    ).proofCards;
+    if (Array.isArray(proofCards)) {
+      for (const card of proofCards) {
+        if (card?.imageAssetId === assetId) {
+          usages.push({
+            label: `Instructor profile picture: ${card.label || 'Untitled'}`,
+            href: '/admin/instructor',
+          });
+        }
+      }
+    }
+  }
+
   return usages;
 }

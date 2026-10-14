@@ -8,9 +8,19 @@ import {
 } from './seats';
 import { withOrdersTransaction, type TxMode } from './tx';
 import { deactivateRedemptionsForOrder } from '@/lib/coupons/redemptions';
+import {
+  cancelReservationEmailJob,
+  ensureReservationEmailJob,
+} from '@/lib/email/outbox';
+import { ensureEmailJobIndexes } from '@/lib/email/syncIndexes';
 
 export type TransitionResult =
-  | { ok: true; order: OrderDocument; mode: TxMode }
+  | {
+      ok: true;
+      order: OrderDocument;
+      mode: TxMode;
+      emailJobId?: string;
+    }
   | { ok: false; status: 409 | 400; error: string; mode?: TxMode };
 
 export async function approveOrder(
@@ -26,6 +36,7 @@ export async function approveOrder(
   }
 
   try {
+    await ensureEmailJobIndexes();
     const { result, mode } = await withOrdersTransaction(async (session) => {
       const updated = await Order.findOneAndUpdate(
         {
@@ -56,13 +67,22 @@ export async function approveOrder(
         throw err;
       }
 
+      let emailJobId = '';
       try {
         await confirmSeat(existing.sessionId, String(existing._id), {
           session,
         });
+
+        // Create email job only after seat confirm succeeds (idempotent upsert).
+        const job = await ensureReservationEmailJob(
+          String(existing._id),
+          existing.customer.email,
+          { session }
+        );
+        emailJobId = String(job._id);
       } catch (seatErr) {
         if (!session) {
-          // Compensating mode: revert the order status change.
+          // Compensating mode: revert the order status change and kill any job.
           await Order.findOneAndUpdate(
             { _id: existing._id, status: 'approved' },
             {
@@ -76,14 +96,20 @@ export async function approveOrder(
               },
             }
           );
+          await cancelReservationEmailJob(String(existing._id));
         }
         throw seatErr;
       }
 
-      return updated;
+      return { order: updated, emailJobId };
     });
 
-    return { ok: true, order: result, mode };
+    return {
+      ok: true,
+      order: result.order,
+      mode,
+      emailJobId: result.emailJobId || undefined,
+    };
   } catch (err) {
     if (err instanceof Error && (err as { code?: string }).code === 'ALREADY_HANDLED') {
       return { ok: false, status: 409, error: 'Already handled' };

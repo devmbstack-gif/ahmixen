@@ -2,7 +2,6 @@ import { unstable_cache } from 'next/cache';
 import { connectToDatabase } from '@/lib/db';
 import { SiteContent } from '@/models/SiteContent';
 import { MediaAsset } from '@/models/MediaAsset';
-import { Plan } from '@/models/Plan';
 import { mediaPublicUrl } from '@/lib/media/url';
 import { CONTENT_TAGS } from './cache';
 import {
@@ -12,11 +11,14 @@ import {
 import {
   agendaDataSchema,
   aiJobsDataSchema,
+  DEFAULT_HERO_TOOLS,
   heroDataSchema,
   introDataSchema,
   learnDataSchema,
   previewDataSchema,
+  pricingDataSchema,
   programsDataSchema,
+  programsStaticDefault,
   seoDataSchema,
   statsDataSchema,
   type AgendaContentData,
@@ -25,6 +27,7 @@ import {
   type IntroContentData,
   type LearnContentData,
   type PreviewContentData,
+  type PricingContentData,
   type ProgramsContentData,
   type SeoContentData,
   type StatsContentData,
@@ -32,15 +35,44 @@ import {
 import { applyHeroDurationToken } from '@/lib/video';
 import { getInstructor } from './public';
 import { instructor as staticInstructor } from '@/data/instructor';
+import {
+  staticHeroToolBlend,
+  staticHeroToolLogo,
+  type HeroLogoBlend,
+} from './heroToolLogos';
+
+const LEGACY_HERO_TOOL_SETS = new Set([
+  ['openclaw', 'claude-code', 'designer', 'n8n', 'antigravity'].join(','),
+  // Previous default that still listed Cursor instead of Meta AI
+  ['claude', 'openclaw', 'antigravity', 'cursor', 'n8n'].join(','),
+]);
+
+function resolveHeroTools(
+  tools: HeroContentData['tools']
+): HeroContentData['tools'] {
+  if (!tools.length) return structuredClone(DEFAULT_HERO_TOOLS);
+  const ids = tools.map((t) => t.id).join(',');
+  if (LEGACY_HERO_TOOL_SETS.has(ids)) {
+    return structuredClone(DEFAULT_HERO_TOOLS);
+  }
+  // Swap a lone Cursor tile to Meta AI without resetting other custom tools
+  return tools.map((t) =>
+    t.id === 'cursor' || t.id === 'cursor-ai'
+      ? { ...t, id: 'meta-ai', name: 'Meta AI' }
+      : t
+  );
+}
 
 /** Overlay landing "trained" from CMS instructor "students trained". */
 export function applyTrainedStatFromInstructor(
   stats: StatsContentData,
   instructorStats: Array<{ label: string; value: number; suffix: string }>
 ): StatsContentData {
+  const isTrained = (label: string) =>
+    label.trim().toLowerCase() === 'students trained';
   const linked =
-    instructorStats.find((s) => s.label === 'students trained') ??
-    staticInstructor.stats.find((s) => s.label === 'students trained');
+    instructorStats.find((s) => isTrained(s.label)) ??
+    staticInstructor.stats.find((s) => isTrained(s.label));
   if (!linked) return stats;
   return {
     items: stats.items.map((item) =>
@@ -131,6 +163,11 @@ const loadStats = cachedLoader<StatsContentData>(
   statsDataSchema,
   CONTENT_TAGS.stats
 );
+const loadPricing = cachedLoader<PricingContentData>(
+  'pricing',
+  pricingDataSchema,
+  CONTENT_TAGS.pricing
+);
 const loadPrograms = cachedLoader<ProgramsContentData>(
   'programs',
   programsDataSchema,
@@ -177,16 +214,66 @@ export async function getIntroContent(): Promise<
   return { ...data, photoUrl, photoAlt };
 }
 
+export type HeroToolPublic = HeroContentData['tools'][number] & {
+  logoUrl: string | null;
+  logoBlend: HeroLogoBlend;
+};
+
 export async function getHeroContent(
   durationMinutes?: number | null
-): Promise<HeroContentData & { headlineLine1Resolved: string }> {
+): Promise<
+  Omit<HeroContentData, 'tools'> & {
+    headlineLine1Resolved: string;
+    tools: HeroToolPublic[];
+  }
+> {
   const data = await loadHero();
+  const tools = resolveHeroTools(data.tools ?? []);
+  const logoIds = tools
+    .map((t) => t.logoAssetId)
+    .filter((id): id is string => Boolean(id));
+
+  const urlById = new Map<string, string>();
+  if (logoIds.length > 0) {
+    try {
+      await connectToDatabase();
+      const assets = await MediaAsset.find({
+        _id: { $in: logoIds },
+      }).lean();
+      for (const asset of assets) {
+        const url = mediaPublicUrl({
+          kind: asset.kind,
+          fileId: asset.fileId,
+          staticPath: asset.staticPath,
+          id: String(asset._id),
+        });
+        if (url) urlById.set(String(asset._id), url);
+      }
+    } catch (err) {
+      console.error(
+        '[hero tools logos]',
+        err instanceof Error ? err.message : 'error'
+      );
+    }
+  }
+
   return {
     ...data,
     headlineLine1Resolved: applyHeroDurationToken(
       data.headlineLine1,
       durationMinutes
     ),
+    tools: tools.map((t) => {
+      const uploaded = t.logoAssetId
+        ? urlById.get(t.logoAssetId) ?? null
+        : null;
+      return {
+        ...t,
+        logoUrl: uploaded ?? staticHeroToolLogo(t.id),
+        // CMS uploads are assumed transparent; static assets declare a blend.
+        logoBlend: uploaded ? 'normal' : staticHeroToolBlend(t.id),
+      };
+    }),
   };
 }
 
@@ -214,6 +301,10 @@ export async function getPreviewContent(): Promise<
       );
     }
   }
+  // Static fallback from /public (CMS posterAssetId wins when set).
+  if (!posterUrl) {
+    posterUrl = '/intro-video-thumbnail.jpeg';
+  }
   return { ...data, videoUrl: '/intro-video.mp4', posterUrl };
 }
 
@@ -234,51 +325,65 @@ export async function getStatsContent(): Promise<StatsContentData> {
   return applyTrainedStatFromInstructor(stats, instructor.stats);
 }
 
+export async function getPricingContent(): Promise<PricingContentData> {
+  return loadPricing();
+}
+
 export type ProgramCardPublic = ProgramsContentData['cards'][number] & {
   posterUrl: string;
   priceLabel: string;
   originalPriceLabel: string | null;
+  status: 'open' | 'locked';
 };
+
+const LEGACY_PROGRAM_ID_SETS = new Set([
+  'course-1,course-2,course-3',
+  'ai-automation-live,course-1,course-2,course-3',
+]);
+
+function resolveProgramCards(
+  cards: ProgramsContentData['cards']
+): ProgramsContentData['cards'] {
+  if (!cards.length) {
+    return structuredClone(programsStaticDefault.cards);
+  }
+  const ids = cards.map((c) => c.id).join(',');
+  const hasRetiredFourth = cards.some(
+    (c) =>
+      c.id === 'course-3' ||
+      /xen ai batch|stop!\s*why you need/i.test(c.title)
+  );
+  if (LEGACY_PROGRAM_ID_SETS.has(ids) || hasRetiredFourth || cards.length > 3) {
+    return structuredClone(programsStaticDefault.cards);
+  }
+  return cards.map((c) => {
+    const locked = c.status !== 'open';
+    return {
+      ...c,
+      instructorLine: /hafiz ahmad ali/i.test(c.instructorLine)
+        ? 'Ahmi'
+        : c.instructorLine || 'Ahmi',
+      status: locked ? 'locked' : 'open',
+      // Locked workshops hide price until they open
+      priceLabel: locked
+        ? ''
+        : c.priceLabel?.trim() || 'Rs 500',
+    };
+  });
+}
 
 export async function getProgramsContent(): Promise<{
   cards: ProgramCardPublic[];
 }> {
   const data = await loadPrograms();
-  let priceLabel = '$29';
-  let originalPriceLabel: string | null = null;
-
-  try {
-    await connectToDatabase();
-    const plans = await Plan.find({
-      status: 'active',
-      type: 'one_time',
-    })
-      .sort({ price: 1 })
-      .limit(1)
-      .lean();
-    const cheapest = plans[0];
-    if (cheapest) {
-      const currency = cheapest.currency === 'PKR' ? 'Rs' : '$';
-      priceLabel = `${currency}${cheapest.price}`;
-      if (
-        cheapest.originalPrice != null &&
-        cheapest.originalPrice > cheapest.price
-      ) {
-        originalPriceLabel = `${currency}${cheapest.originalPrice}`;
-      }
-    }
-  } catch (err) {
-    console.error(
-      '[programs price]',
-      err instanceof Error ? err.message : 'error'
-    );
-  }
+  const sourceCards = resolveProgramCards(data.cards);
 
   const cards: ProgramCardPublic[] = [];
-  for (const card of data.cards) {
+  for (const card of sourceCards) {
     let posterUrl = card.image || '/course1.jpeg';
     if (card.posterAssetId) {
       try {
+        await connectToDatabase();
         const asset = await MediaAsset.findById(card.posterAssetId).lean();
         if (asset) {
           posterUrl =
@@ -293,11 +398,16 @@ export async function getProgramsContent(): Promise<{
         /* keep fallback */
       }
     }
+    const locked = card.status !== 'open';
+    const fromStatic =
+      programsStaticDefault.cards.find((c) => c.id === card.id)?.priceLabel ||
+      '';
     cards.push({
       ...card,
       posterUrl,
-      priceLabel,
-      originalPriceLabel,
+      priceLabel: locked ? '' : card.priceLabel || fromStatic || 'Rs 500',
+      originalPriceLabel: null,
+      status: locked ? 'locked' : 'open',
     });
   }
 

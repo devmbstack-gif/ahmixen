@@ -7,6 +7,7 @@ import {
   ExternalLink,
   Mail,
   MessageCircle,
+  Send,
   X,
 } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
@@ -14,6 +15,8 @@ import type { AdminOrderDetailDTO } from '@/lib/orders/serialize';
 import { formatMoneyLabel } from '@/lib/plans/money';
 import { AdminToast } from '../AdminToast';
 import { AdminConfirmDialog } from '../AdminConfirmDialog';
+import { AdminIconAction } from '../AdminIconAction';
+import { EmailStatusBadge } from '../EmailStatusBadge';
 
 const REJECT_REASONS = [
   'Payment not received',
@@ -73,6 +76,7 @@ export function OrderDetailClient({ initial }: { initial: AdminOrderDetailDTO })
     useState<(typeof REJECT_REASONS)[number]>('Payment not received');
   const [rejectNote, setRejectNote] = useState('');
   const [busy, setBusy] = useState(false);
+  const [emailBusy, setEmailBusy] = useState(false);
 
   const proofUrl = `/api/admin/orders/${order.id}/proof`;
   const canApprove = order.status === 'pending_verification';
@@ -80,6 +84,11 @@ export function OrderDetailClient({ initial }: { initial: AdminOrderDetailDTO })
     order.status === 'pending_verification' ||
     order.status === 'awaiting_payment';
   const showActions = canApprove || canReject;
+  const canSendConfirmation = order.status === 'approved';
+  const confirmationTip =
+    order.emailStatus === 'not_sent'
+      ? 'Send confirmation email'
+      : 'Resend confirmation email';
 
   useEffect(() => {
     if (!toast) return;
@@ -92,6 +101,48 @@ export function OrderDetailClient({ initial }: { initial: AdminOrderDetailDTO })
     if (!digits) return null;
     return `https://wa.me/${digits}`;
   }, [order.phoneDigits]);
+
+  const sendConfirmationEmail = async () => {
+    setEmailBusy(true);
+    try {
+      const res = await fetch(`/api/admin/orders/${order.id}/resend-email`, {
+        method: 'POST',
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        emailStatus?: AdminOrderDetailDTO['emailStatus'];
+        emailStatusLabel?: string;
+        reason?: string;
+      };
+      if (!res.ok) {
+        setToast({
+          message: data.error || 'Could not send confirmation email',
+          tone: 'error',
+        });
+        return;
+      }
+      setOrder((prev) => ({
+        ...prev,
+        emailStatus: data.emailStatus || prev.emailStatus,
+        emailStatusLabel: data.emailStatusLabel || prev.emailStatusLabel,
+        emailReason: data.reason || '',
+      }));
+      setToast({
+        message:
+          data.emailStatus === 'sent'
+            ? 'Confirmation email sent'
+            : data.emailStatus === 'skipped'
+              ? data.reason || 'Confirmation email skipped'
+              : data.emailStatusLabel || 'Confirmation email queued',
+        tone: data.emailStatus === 'failed' ? 'error' : 'ok',
+      });
+      await refresh();
+    } catch {
+      setToast({ message: 'Could not send confirmation email', tone: 'error' });
+    } finally {
+      setEmailBusy(false);
+    }
+  };
 
   const refresh = async () => {
     const res = await fetch(`/api/admin/orders/${order.id}`);
@@ -288,8 +339,8 @@ export function OrderDetailClient({ initial }: { initial: AdminOrderDetailDTO })
                   <a
                     href={`mailto:${order.customerEmail}`}
                     className="admin-icon-btn admin-session-icon-btn nav-focus"
-                    aria-label="Send email"
-                    title="Send email"
+                    aria-label="Email customer (opens your mail app)"
+                    title="Email customer (opens your mail app)"
                   >
                     <Mail className="w-4 h-4" aria-hidden="true" />
                   </a>
@@ -304,11 +355,27 @@ export function OrderDetailClient({ initial }: { initial: AdminOrderDetailDTO })
               <p className="mt-1 text-xs text-[var(--text-muted)]">
                 Source: {order.sourceLabel || 'Direct'}
               </p>
+              {order.sourceKind === 'workshop' ? (
+                <p className="mt-1">
+                  <span className="admin-coupon-popup-pill">Workshop</span>
+                </p>
+              ) : null}
             </div>
 
             <div>
-              <h3 className="text-sm font-semibold">Plan and amounts</h3>
-              <p className="mt-1 text-[13px]">{order.planName}</p>
+              <h3 className="text-sm font-semibold">
+                {order.sourceKind === 'workshop'
+                  ? 'Program and amounts'
+                  : 'Plan and amounts'}
+              </h3>
+              <p className="mt-1 text-[13px] font-medium">
+                {order.programTitle || order.planName}
+              </p>
+              {order.sourceKind === 'workshop' && order.programId ? (
+                <p className="text-xs text-[var(--text-muted)]">
+                  Program ID: {order.programId}
+                </p>
+              ) : null}
               <dl className="mt-2 space-y-1 text-[13px]">
                 <div className="flex justify-between gap-3">
                   <dt className="text-[var(--text-muted)]">Base price</dt>
@@ -343,6 +410,64 @@ export function OrderDetailClient({ initial }: { initial: AdminOrderDetailDTO })
               {order.seatsLeft != null ? (
                 <p className="mt-1 text-sm font-medium">
                   Seats left: {order.seatsLeft}
+                </p>
+              ) : null}
+            </div>
+
+            {order.sourceKind === 'workshop' && order.workshopMeta ? (
+              <div>
+                <h3 className="text-sm font-semibold">Workshop details</h3>
+                <dl className="mt-2 space-y-1 text-[13px]">
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-[var(--text-muted)]">City</dt>
+                    <dd>{order.workshopMeta.city || '—'}</dd>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-[var(--text-muted)]">Skill level</dt>
+                    <dd className="capitalize">
+                      {order.workshopMeta.skillLevel || '—'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-[var(--text-muted)]">Learning goals</dt>
+                    <dd className="mt-0.5">
+                      {order.workshopMeta.learningGoals?.length
+                        ? order.workshopMeta.learningGoals
+                            .map((g) => g.replace(/_/g, ' '))
+                            .join(', ')
+                        : '—'}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            ) : null}
+
+            <div>
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="text-sm font-semibold">Confirmation email</h3>
+                {canSendConfirmation ? (
+                  <AdminIconAction
+                    tip={confirmationTip}
+                    ariaLabel={confirmationTip}
+                    disabled={emailBusy}
+                    onClick={() => void sendConfirmationEmail()}
+                  >
+                    <Send className="w-4 h-4" aria-hidden="true" />
+                  </AdminIconAction>
+                ) : null}
+              </div>
+              <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                <EmailStatusBadge
+                  status={order.emailStatus}
+                  label={order.emailStatusLabel}
+                  reason={order.emailReason}
+                />
+              </div>
+              {(order.emailStatus === 'failed' ||
+                order.emailStatus === 'skipped') &&
+              order.emailReason ? (
+                <p className="mt-1 text-xs text-[var(--text-muted)]">
+                  {order.emailReason}
                 </p>
               ) : null}
             </div>

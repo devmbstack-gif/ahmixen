@@ -36,15 +36,42 @@ function onlyDurationToken(value: string): boolean {
   return tokens.every((t) => t === '{duration}');
 }
 
+const heroToolFields = z.object({
+  id: plain(40, 1, 'Id'),
+  name: plain(40, 1, 'Name'),
+  logoAssetId: objectIdOrNull,
+});
+
+export const DEFAULT_HERO_TOOLS = [
+  { id: 'claude', name: 'Claude AI', logoAssetId: null as string | null },
+  { id: 'openclaw', name: 'OpenClaw', logoAssetId: null as string | null },
+  { id: 'antigravity', name: 'AntiGravity', logoAssetId: null as string | null },
+  { id: 'meta-ai', name: 'Meta AI', logoAssetId: null as string | null },
+  { id: 'n8n', name: 'n8n', logoAssetId: null as string | null },
+];
+
 const heroFields = z.object({
-  headlineLine1: plain(40, 1, 'Headline line 1').refine(onlyDurationToken, {
+  /** Soft intro / hook above the main title (Aaghaz-style top line). */
+  headlineLine1: plain(140, 1, 'Top line 1').refine(onlyDurationToken, {
     message: 'Only the {duration} placeholder is allowed in curly braces',
   }),
-  headlineLine2: plain(40, 1, 'Headline line 2'),
-  badgeText: plain(60, 1, 'Badge text'),
-  badgeSuffix: plain(30, 1, 'Badge suffix'),
+  headlineLine2: plain(80, 0, 'Top line 2'),
+  /** Large display title under the soft intro. */
+  mainHeadlineLine1: plain(60, 1, 'Main headline 1').default(
+    'BECOME A CERTIFIED AI'
+  ),
+  mainHeadlineLine2: plain(60, 1, 'Main headline 2').default('EXPERT IN 90 DAYS'),
+  /** Description under the main title (was badge callout). */
+  badgeText: plain(220, 1, 'Subtext'),
+  badgeSuffix: plain(80, 0, 'Subtext suffix').default(''),
   primaryCtaLabel: plain(30, 1, 'Primary button label'),
   secondaryLinkLabel: plain(30, 1, 'Secondary link label'),
+  toolsTitle: plain(40, 1, 'Tools title').default("Tools you'll master"),
+  tools: z
+    .array(heroToolFields)
+    .min(1, 'Add at least one tool')
+    .max(8, 'At most 8 tools')
+    .default(DEFAULT_HERO_TOOLS),
 });
 
 export const heroDataSchema = heroFields;
@@ -182,7 +209,7 @@ function isValidProgramHref(value: string): boolean {
 
 const programCardFields = z.object({
   id: plain(40, 1, 'Id'),
-  title: plain(60, 1, 'Title'),
+  title: plain(80, 1, 'Title'),
   instructorLine: plain(60, 1, 'Instructor line'),
   badges: z.array(plain(30, 1, 'Badge')).min(1).max(4),
   posterAssetId: objectIdOrNull,
@@ -195,13 +222,15 @@ const programCardFields = z.object({
       message:
         'Use an internal path like /#pricing or an https:// link',
     }),
+  status: z.enum(['open', 'locked']).default('locked'),
+  priceLabel: plain(40, 0, 'Price label').default(''),
 });
 
 const programsFields = z.object({
   cards: z
     .array(programCardFields)
     .min(1, 'Add at least one program card')
-    .max(6, 'At most 6 program cards'),
+    .max(8, 'At most 8 program cards'),
 });
 
 export const programsDataSchema = programsFields;
@@ -221,13 +250,26 @@ const seoFields = z.object({
 export const seoDataSchema = seoFields;
 
 export const heroStaticDefault = {
-  headlineLine1: 'Join Our {duration} Live',
-  headlineLine2: WORKSHOP_CONFIG.titleHighlight,
-  badgeText: WORKSHOP_CONFIG.calloutQuestion,
-  badgeSuffix: WORKSHOP_CONFIG.calloutAnswer,
+  headlineLine1:
+    'AI Will Replace You In The Next 12 Months... Unless You Become The One Who Uses It',
+  headlineLine2: '',
+  mainHeadlineLine1: 'BECOME A CERTIFIED AI',
+  mainHeadlineLine2: 'EXPERT IN 90 DAYS',
+  badgeText:
+    'Master the best AI tools, use them in real life, build real solutions and then we show you how to sell AI services to high paying businesses.',
+  badgeSuffix: '',
   primaryCtaLabel: 'Reserve My Seat',
   secondaryLinkLabel: 'Watch preview',
+  toolsTitle: "Tools you'll master",
+  tools: structuredClone(DEFAULT_HERO_TOOLS),
 };
+
+/** Hero info cards — fixed on the site, not CMS-editable. */
+export const HERO_INFO_CARDS = [
+  { label: 'Program Format', value: WORKSHOP_CONFIG.deliveryFormat },
+  { label: 'Program Length', value: WORKSHOP_CONFIG.durationLabel },
+  { label: 'Topic', value: 'Practical AI' },
+] as const;
 
 export const introStaticDefault = {
   badge: 'AI and Agentic AI for youth',
@@ -280,6 +322,23 @@ export const statsStaticDefault = {
   })),
 };
 
+const pricingFields = z.object({
+  badge: plain(20, 1, 'Badge'),
+  headingLine1: plain(40, 1, 'Heading line 1'),
+  headingLine2: plain(40, 1, 'Heading line 2'),
+  subtext: plain(120, 0, 'Subtext'),
+});
+
+export const pricingDataSchema = pricingFields;
+
+export const pricingStaticDefault = {
+  badge: 'PRICING',
+  headingLine1: 'FEES STRUCTURE OF',
+  headingLine2: 'AHMIXEN AI',
+  subtext:
+    'Takes about 2 minutes. You pay by JazzCash / Easypaisa on the next step.',
+};
+
 export const programsStaticDefault = {
   cards: PROGRAMS.map((p) => ({
     id: p.id,
@@ -289,6 +348,8 @@ export const programsStaticDefault = {
     posterAssetId: null as string | null,
     image: p.image,
     href: p.href,
+    status: p.status,
+    priceLabel: p.price,
   })),
 };
 
@@ -321,5 +382,6 @@ export type LearnContentData = z.infer<typeof learnDataSchema>;
 export type AiJobsContentData = z.infer<typeof aiJobsDataSchema>;
 export type AgendaContentData = z.infer<typeof agendaDataSchema>;
 export type StatsContentData = z.infer<typeof statsDataSchema>;
+export type PricingContentData = z.infer<typeof pricingDataSchema>;
 export type ProgramsContentData = z.infer<typeof programsDataSchema>;
 export type SeoContentData = z.infer<typeof seoDataSchema>;

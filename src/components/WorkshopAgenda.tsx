@@ -22,7 +22,7 @@ export const WorkshopAgenda: React.FC<{ content?: AgendaContentData }> = ({
   return (
     <section
       id="agenda"
-      className="section-y bg-transparent"
+      className="pt-10 pb-[var(--section-y)] md:pt-12 bg-transparent"
       aria-labelledby="agenda-heading"
     >
       <div className="container-tight max-w-3xl">

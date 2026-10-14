@@ -2,6 +2,8 @@ import { GridFSBucket, ObjectId, type GridFSBucketReadStream } from 'mongodb';
 import { connectToDatabase } from '@/lib/db';
 
 const MAX_BYTES = 2 * 1024 * 1024;
+/** Workshop registration payment screenshots (public form allows up to 10 MB). */
+export const WORKSHOP_PROOF_MAX_BYTES = 10 * 1024 * 1024;
 
 type CachedBucket = {
   bucket: GridFSBucket;
@@ -68,25 +70,33 @@ export async function getPaymentProofBucket(): Promise<GridFSBucket> {
 
 export async function saveProof(
   buffer: Buffer,
-  meta: { orderId: string }
+  meta: { orderId?: string; leadId?: string },
+  opts?: { maxBytes?: number }
 ): Promise<{ fileId: string; contentType: VerifiedImageType; size: number }> {
+  const maxBytes = opts?.maxBytes ?? MAX_BYTES;
+  const maxMb = Math.round(maxBytes / (1024 * 1024));
   if (!Buffer.isBuffer(buffer) || buffer.length === 0) {
-    throw new Error('Upload a JPEG, PNG or WebP image (max 2 MB)');
+    throw new Error(`Upload a JPEG, PNG or WebP image (max ${maxMb} MB)`);
   }
-  if (buffer.length > MAX_BYTES) {
-    throw new Error('The image is too large. Use a file under 2 MB');
+  if (buffer.length > maxBytes) {
+    throw new Error(`The image is too large. Use a file under ${maxMb} MB`);
   }
   const contentType = sniffContentType(buffer);
   if (!contentType) {
-    throw new Error('Upload a JPEG, PNG or WebP image (max 2 MB)');
+    throw new Error(`Upload a JPEG, PNG or WebP image (max ${maxMb} MB)`);
   }
 
   const bucket = await getPaymentProofBucket();
-  const filename = `proof-${meta.orderId}-${Date.now()}`;
+  const owner = meta.orderId || meta.leadId || 'unknown';
+  const filename = `proof-${owner}-${Date.now()}`;
 
   const fileId = await new Promise<ObjectId>((resolve, reject) => {
     const stream = bucket.openUploadStream(filename, {
-      metadata: { orderId: meta.orderId, contentType },
+      metadata: {
+        orderId: meta.orderId || '',
+        leadId: meta.leadId || '',
+        contentType,
+      },
     });
     stream.on('error', reject);
     stream.on('finish', () => resolve(stream.id as ObjectId));

@@ -13,6 +13,7 @@ export const CONTENT_TAGS = {
   aiJobs: 'content:aiJobs',
   agenda: 'content:agenda',
   stats: 'content:stats',
+  pricing: 'content:pricing',
   programs: 'content:programs',
   seo: 'content:seo',
   landing: 'content:landing',

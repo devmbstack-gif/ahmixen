@@ -260,7 +260,11 @@ export function OrdersListClient({ sessions }: { sessions: SessionOption[] }) {
                         <p className="text-[13px]">
                           {o.installmentLabel || o.amountLabel}
                         </p>
-                        {o.couponCode ? (
+                        {o.sourceKind === 'workshop' ? (
+                          <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                            Workshop · {o.programTitle || o.planName}
+                          </p>
+                        ) : o.couponCode ? (
                           <p className="text-xs text-[var(--text-muted)] mt-0.5">
                             {o.couponCode}
                           </p>
@@ -291,6 +295,9 @@ export function OrdersListClient({ sessions }: { sessions: SessionOption[] }) {
                           <p className="text-xs text-[var(--text-muted)] mt-0.5">
                             Seat hold expired
                           </p>
+                        ) : null}
+                        {o.sourceKind === 'workshop' ? (
+                          <span className="admin-coupon-popup-pill">Workshop</span>
                         ) : null}
                         {o.isTestData ? (
                           <span className="admin-coupon-popup-pill">Test</span>
@@ -344,6 +351,11 @@ export function OrdersListClient({ sessions }: { sessions: SessionOption[] }) {
                   <p className="text-[13px]">
                     {o.planName} · {o.installmentLabel || o.amountLabel}
                   </p>
+                  {o.sourceKind === 'workshop' ? (
+                    <p className="text-xs text-[var(--text-muted)]">
+                      Workshop booking
+                    </p>
+                  ) : null}
                   <p className="text-xs text-[var(--text-muted)]">
                     {o.sessionTitle} · {o.sessionDateLabel}
                   </p>

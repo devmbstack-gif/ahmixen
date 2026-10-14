@@ -141,6 +141,9 @@ export async function PATCH(request: Request, ctx: Ctx) {
       doc.status = next.status;
     }
     doc.sortOrder = next.sortOrder ?? 0;
+    if (doc.status !== 'active' || doc.type !== 'one_time') {
+      doc.isLandingPlan = false;
+    }
 
     doc.updatedBy = gate.admin.sub;
     doc.version = (doc.version ?? 1) + 1;
@@ -177,6 +180,7 @@ export async function DELETE(request: Request, ctx: Ctx) {
     }
 
     doc.status = 'archived';
+    doc.isLandingPlan = false;
     doc.updatedBy = gate.admin.sub;
     doc.version = (doc.version ?? 1) + 1;
     await doc.save();

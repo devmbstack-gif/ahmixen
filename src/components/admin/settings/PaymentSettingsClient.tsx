@@ -145,7 +145,8 @@ export function PaymentSettingsClient({
       </div>
 
       <div className="admin-banner" role="note">
-        Customers will see these details when they pay by bank transfer.
+        Bank details are saved for later. Customers currently see JazzCash /
+        Easypaisa on the pay page (bank UI is hidden for now).
         Double-check the account number.
       </div>
 

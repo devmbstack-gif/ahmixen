@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
 import { getVideoSource } from '@/lib/video';
 import { MediaField, type MediaPickerValue } from '../media/MediaPicker';
@@ -10,6 +9,7 @@ import { AdminToast } from '../AdminToast';
 import { AdminConfirmDialog } from '../AdminConfirmDialog';
 import { AdminIconAction } from '../AdminIconAction';
 import { SkeletonForm } from '../skeletons';
+import { DEFAULT_HERO_TOOLS } from '@/lib/content/landingSchemas';
 
 type Props = { contentKey: string };
 
@@ -22,7 +22,6 @@ function CharCount({ value, max }: { value: string; max: number }) {
 }
 
 export function ContentEditorClient({ contentKey }: Props) {
-  const router = useRouter();
   const [label, setLabel] = useState('');
   const [description, setDescription] = useState('');
   const [version, setVersion] = useState(1);
@@ -38,6 +37,9 @@ export function ContentEditorClient({ contentKey }: Props) {
   const [confirmReset, setConfirmReset] = useState(false);
   const [poster, setPoster] = useState<MediaPickerValue | null>(null);
   const [cardPosters, setCardPosters] = useState<Record<string, MediaPickerValue | null>>(
+    {}
+  );
+  const [toolLogos, setToolLogos] = useState<Record<string, MediaPickerValue | null>>(
     {}
   );
 
@@ -63,12 +65,69 @@ export function ContentEditorClient({ contentKey }: Props) {
         setLabel(json.label || contentKey);
         setDescription(json.description || '');
         setVersion(json.version || 1);
-        setData(json.data);
-        setBaseline(JSON.stringify(json.data));
+
+        let loaded = { ...json.data };
+        if (contentKey === 'hero') {
+          if (
+            typeof loaded.mainHeadlineLine1 !== 'string' ||
+            !String(loaded.mainHeadlineLine1).trim()
+          ) {
+            loaded = { ...loaded, mainHeadlineLine1: 'BECOME A CERTIFIED AI' };
+          }
+          if (
+            typeof loaded.mainHeadlineLine2 !== 'string' ||
+            !String(loaded.mainHeadlineLine2).trim()
+          ) {
+            loaded = { ...loaded, mainHeadlineLine2: 'EXPERT IN 90 DAYS' };
+          }
+          if (!Array.isArray(loaded.tools) || loaded.tools.length === 0) {
+            loaded = {
+              ...loaded,
+              toolsTitle:
+                typeof loaded.toolsTitle === 'string' && loaded.toolsTitle.trim()
+                  ? loaded.toolsTitle
+                  : "Tools you'll master",
+              tools: structuredClone(DEFAULT_HERO_TOOLS),
+            };
+          } else if (
+            typeof loaded.toolsTitle !== 'string' ||
+            !String(loaded.toolsTitle).trim()
+          ) {
+            loaded = { ...loaded, toolsTitle: "Tools you'll master" };
+          }
+        }
+
+        setData(loaded);
+        setBaseline(JSON.stringify(loaded));
         setMeta({
           updatedAt: json.updatedAt ?? null,
           by: json.updatedByName || '',
         });
+
+        if (contentKey === 'hero') {
+          const tools =
+            (loaded.tools as Array<{ id: string; logoAssetId?: string | null }>) ||
+            [];
+          const map: Record<string, MediaPickerValue | null> = {};
+          for (const t of tools) {
+            if (t.logoAssetId) {
+              const m = await fetch(`/api/admin/media/${t.logoAssetId}`).then((r) =>
+                r.json()
+              );
+              map[t.id] = m.asset
+                ? {
+                    id: m.asset.id,
+                    url: m.asset.url,
+                    name: m.asset.name,
+                    altText: m.asset.altText,
+                  }
+                : null;
+            } else {
+              map[t.id] = null;
+            }
+          }
+          setToolLogos(map);
+        }
 
         if (contentKey === 'preview') {
           const id = (json.data.posterAssetId as string) || '';
@@ -204,6 +263,15 @@ export function ContentEditorClient({ contentKey }: Props) {
           })
         );
         payload = { ...payload, cards };
+      }
+      if (contentKey === 'hero') {
+        const tools = ((payload.tools as Array<Record<string, unknown>>) || []).map(
+          (t) => ({
+            ...t,
+            logoAssetId: toolLogos[String(t.id)]?.id || null,
+          })
+        );
+        payload = { ...payload, tools };
       }
 
       const res = await fetch(`/api/admin/content/${contentKey}`, {
@@ -414,50 +482,76 @@ export function ContentEditorClient({ contentKey }: Props) {
           <>
             <label className="block">
               <span className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">
-                Headline line 1
+                Top line 1
               </span>
               <input
                 className="admin-input h-10 w-full"
                 value={String(data.headlineLine1 || '')}
-                maxLength={40}
+                maxLength={140}
                 onChange={(e) => patch({ headlineLine1: e.target.value })}
               />
               <span className="mt-1 block text-xs text-[var(--text-secondary)]">
-                {'{duration} fills in the session length automatically.'}
+                Hook line above the main title. Optional {'{duration}'} fills session length.
               </span>
-              <CharCount value={String(data.headlineLine1 || '')} max={40} />
+              <CharCount value={String(data.headlineLine1 || '')} max={140} />
             </label>
             <label className="block">
               <span className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">
-                Headline line 2 (gradient)
+                Top line 2 (muted, optional)
               </span>
               <input
                 className="admin-input h-10 w-full"
                 value={String(data.headlineLine2 || '')}
-                maxLength={40}
+                maxLength={80}
                 onChange={(e) => patch({ headlineLine2: e.target.value })}
               />
+              <CharCount value={String(data.headlineLine2 || '')} max={80} />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">
+                Main headline 1
+              </span>
+              <input
+                className="admin-input h-10 w-full"
+                value={String(data.mainHeadlineLine1 || '')}
+                maxLength={60}
+                onChange={(e) => patch({ mainHeadlineLine1: e.target.value })}
+              />
+              <CharCount value={String(data.mainHeadlineLine1 || '')} max={60} />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">
+                Main headline 2 (gradient)
+              </span>
+              <input
+                className="admin-input h-10 w-full"
+                value={String(data.mainHeadlineLine2 || '')}
+                maxLength={60}
+                onChange={(e) => patch({ mainHeadlineLine2: e.target.value })}
+              />
+              <CharCount value={String(data.mainHeadlineLine2 || '')} max={60} />
             </label>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="block">
                 <span className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">
-                  Badge text
+                  Subtext
                 </span>
                 <input
                   className="admin-input h-10 w-full"
                   value={String(data.badgeText || '')}
-                  maxLength={60}
+                  maxLength={220}
                   onChange={(e) => patch({ badgeText: e.target.value })}
                 />
+                <CharCount value={String(data.badgeText || '')} max={220} />
               </label>
               <label className="block">
                 <span className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">
-                  Badge suffix
+                  Subtext suffix
                 </span>
                 <input
                   className="admin-input h-10 w-full"
                   value={String(data.badgeSuffix || '')}
-                  maxLength={30}
+                  maxLength={60}
                   onChange={(e) => patch({ badgeSuffix: e.target.value })}
                 />
               </label>
@@ -487,8 +581,105 @@ export function ContentEditorClient({ contentKey }: Props) {
               </label>
             </div>
             <p className="text-xs text-[var(--text-secondary)]">
-              Date, time, countdown and seats come from Live Sessions.
+              Program Format / Length / Topic cards are fixed on the site. Countdown
+              and seats come from Live Sessions.
             </p>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">
+                Tools section title
+              </span>
+              <input
+                className="admin-input h-10 w-full"
+                value={String(data.toolsTitle || '')}
+                maxLength={40}
+                onChange={(e) => patch({ toolsTitle: e.target.value })}
+              />
+              <CharCount value={String(data.toolsTitle || '')} max={40} />
+            </label>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-semibold text-[var(--text-secondary)]">
+                Tools you&apos;ll master ({list('tools').length}/8)
+              </p>
+              <button
+                type="button"
+                className="admin-logout-btn nav-focus inline-flex items-center gap-1"
+                disabled={list('tools').length >= 8}
+                onClick={() => {
+                  const id = `tool-${Date.now()}`;
+                  setList('tools', [
+                    ...list('tools'),
+                    { id, name: '', logoAssetId: null },
+                  ]);
+                  setToolLogos((m) => ({ ...m, [id]: null }));
+                }}
+              >
+                <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                Add tool
+              </button>
+            </div>
+            {list('tools').map((tool, index) => (
+              <div
+                key={String(tool.id)}
+                className="space-y-2 rounded-xl border border-[var(--border-subtle)] p-3"
+              >
+                <div className="flex justify-end gap-1">
+                  <AdminIconAction
+                    tip="Move up"
+                    ariaLabel="Move up"
+                    disabled={index === 0}
+                    onClick={() => moveItem('tools', index, -1)}
+                  >
+                    <ArrowUp className="h-4 w-4" aria-hidden="true" />
+                  </AdminIconAction>
+                  <AdminIconAction
+                    tip="Move down"
+                    ariaLabel="Move down"
+                    disabled={index === list('tools').length - 1}
+                    onClick={() => moveItem('tools', index, 1)}
+                  >
+                    <ArrowDown className="h-4 w-4" aria-hidden="true" />
+                  </AdminIconAction>
+                  <AdminIconAction
+                    tip="Remove"
+                    ariaLabel="Remove"
+                    danger
+                    disabled={list('tools').length <= 1}
+                    onClick={() => {
+                      const id = String(tool.id);
+                      setList(
+                        'tools',
+                        list('tools').filter((_, i) => i !== index)
+                      );
+                      setToolLogos((m) => {
+                        const next = { ...m };
+                        delete next[id];
+                        return next;
+                      });
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />
+                  </AdminIconAction>
+                </div>
+                <input
+                  className="admin-input h-10 w-full"
+                  placeholder="Tool name"
+                  value={String(tool.name || '')}
+                  maxLength={40}
+                  onChange={(e) => {
+                    const tools = [...list('tools')];
+                    tools[index] = { ...tool, name: e.target.value };
+                    setList('tools', tools);
+                  }}
+                />
+                <MediaField
+                  label="Logo"
+                  value={toolLogos[String(tool.id)] || null}
+                  onChange={(v) =>
+                    setToolLogos((m) => ({ ...m, [String(tool.id)]: v }))
+                  }
+                />
+              </div>
+            ))}
           </>
         )}
 
@@ -1037,11 +1228,69 @@ export function ContentEditorClient({ contentKey }: Props) {
           </>
         )}
 
+        {contentKey === 'pricing' && (
+          <>
+            <p className="text-xs text-[var(--text-secondary)]">
+              Price, features and plan name come from Pricing Plans.
+            </p>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">
+                Badge
+              </span>
+              <input
+                className="admin-input h-10 w-full"
+                value={String(data.badge || '')}
+                maxLength={20}
+                onChange={(e) => patch({ badge: e.target.value })}
+              />
+              <CharCount value={String(data.badge || '')} max={20} />
+            </label>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">
+                  Heading line 1
+                </span>
+                <input
+                  className="admin-input h-10 w-full"
+                  value={String(data.headingLine1 || '')}
+                  maxLength={40}
+                  onChange={(e) => patch({ headingLine1: e.target.value })}
+                />
+                <CharCount value={String(data.headingLine1 || '')} max={40} />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">
+                  Heading line 2 (gradient)
+                </span>
+                <input
+                  className="admin-input h-10 w-full"
+                  value={String(data.headingLine2 || '')}
+                  maxLength={40}
+                  onChange={(e) => patch({ headingLine2: e.target.value })}
+                />
+                <CharCount value={String(data.headingLine2 || '')} max={40} />
+              </label>
+            </div>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">
+                Subtext
+              </span>
+              <textarea
+                className="admin-input min-h-[72px] w-full py-2"
+                value={String(data.subtext || '')}
+                maxLength={120}
+                onChange={(e) => patch({ subtext: e.target.value })}
+              />
+              <CharCount value={String(data.subtext || '')} max={120} />
+            </label>
+          </>
+        )}
+
         {contentKey === 'programs' && (
           <>
             <p className="text-xs text-[var(--text-secondary)]">
-              Card price comes from the cheapest active one-time plan (or the static price if
-              none).
+              Card price comes from the landing plan (or the cheapest active one-time plan).
+              When no plan exists, the price is hidden.
             </p>
             <div className="flex items-center justify-between">
               <span className="text-xs text-[var(--text-secondary)]">
@@ -1218,6 +1467,7 @@ export function ContentEditorClient({ contentKey }: Props) {
             })}
           </>
         )}
+
 
         {error && (
           <p className="text-sm text-red-600 dark:text-red-400" role="alert">

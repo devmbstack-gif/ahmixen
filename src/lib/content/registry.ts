@@ -2,7 +2,13 @@ import { z } from 'zod';
 import { instructor as staticInstructor } from '@/data/instructor';
 import { MISSION as staticMission } from '@/data/mission';
 import { hasHtmlTags } from './plainText';
-import { isHttpsUrl, isInstagramUrl, isLinkedInUrl } from './urls';
+import {
+  isHttpsUrl,
+  isInstagramUrl,
+  isLinkedInUrl,
+  isProofCardHref,
+  type ProofPlatformHref,
+} from './urls';
 import {
   agendaDataSchema,
   agendaStaticDefault,
@@ -20,6 +26,8 @@ import {
   programsStaticDefault,
   seoDataSchema,
   seoStaticDefault,
+  pricingDataSchema,
+  pricingStaticDefault,
   statsDataSchema,
   statsStaticDefault,
 } from './landingSchemas';
@@ -37,16 +45,64 @@ const plain = (max: number, min = 0, label = 'Text') =>
 const instructorStatFields = z.object({
   value: z.number().finite(),
   suffix: plain(10, 0, 'Suffix'),
-  label: plain(40, 1, 'Stat label'),
+  label: plain(60, 1, 'Stat label'),
   visible: z.boolean(),
+  textOnly: z.boolean().optional().default(false),
 });
+
+const proofPlatformEnum = z.enum([
+  'linkedin',
+  'instagram',
+  'youtube',
+  'other',
+]);
+
+const instructorProofCardFields = z
+  .object({
+    imageAssetId: z
+      .string()
+      .trim()
+      .refine((v) => /^[a-f\d]{24}$/i.test(v), {
+        message: 'Choose a valid image from the media library',
+      }),
+    platform: proofPlatformEnum,
+    href: z.string().trim().max(500),
+    label: plain(60, 1, 'Card label'),
+  })
+  .superRefine((card, ctx) => {
+    if (
+      !isProofCardHref(card.platform as ProofPlatformHref, card.href)
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        message:
+          'Link must be https and match the platform (linkedin.com, instagram.com, youtube.com / youtu.be)',
+        path: ['href'],
+      });
+    }
+  });
 
 const instructorDataFields = z.object({
   name: plain(80, 2, 'Name'),
+  greeting: plain(80, 1, 'Greeting').default(staticInstructor.greeting),
+  greetingAccent: plain(20, 0, 'Greeting accent').default(
+    staticInstructor.greetingAccent
+  ),
+  headlineSub: plain(200, 1, 'Tagline').default(staticInstructor.headlineSub),
+  headlineAccent: plain(80, 0, 'Headline accent').default(
+    staticInstructor.headlineAccent
+  ),
   title: plain(120, 2, 'Title'),
-  bio: plain(800, 10, 'Bio'),
+  bio: plain(1600, 10, 'Bio'),
   shortBio: plain(400, 10, 'Short bio'),
   chip: plain(80, 1, 'Chip'),
+  missionQuote: plain(800, 0, 'Quote').default(staticInstructor.missionQuote),
+  differenceHeading: plain(80, 0, 'Difference heading').default(
+    staticInstructor.differenceHeading
+  ),
+  differenceBody: plain(800, 0, 'Difference body').default(
+    staticInstructor.differenceBody
+  ),
   stats: z.array(instructorStatFields).max(6, 'At most 6 stats'),
   seminars: z.object({
     label: plain(40, 1, 'Seminars label'),
@@ -75,6 +131,10 @@ const instructorDataFields = z.object({
     .refine((v) => v == null || v === '' || /^[a-f\d]{24}$/i.test(v), {
       message: 'Choose a valid photo from the media library',
     }),
+  proofCards: z
+    .array(instructorProofCardFields)
+    .max(6, 'At most 6 profile pictures')
+    .default([]),
 });
 
 export const instructorDataSchema = instructorDataFields;
@@ -109,6 +169,7 @@ export type ContentKey =
   | 'aiJobs'
   | 'agenda'
   | 'stats'
+  | 'pricing'
   | 'programs'
   | 'seo';
 
@@ -156,7 +217,8 @@ export const CONTENT_REGISTRY: Record<ContentKey, ContentRegistryEntry> = {
   hero: {
     key: 'hero',
     label: 'Workshop hero (live session)',
-    description: 'Live session headline, countdown, seats and Reserve CTA',
+    description:
+      'Top line, main headline, subtext, countdown, Reserve CTA and tools row',
     group: 'home',
     schema: heroDataSchema,
     staticDefault: structuredClone(heroStaticDefault),
@@ -212,6 +274,16 @@ export const CONTENT_REGISTRY: Record<ContentKey, ContentRegistryEntry> = {
     staticDefault: structuredClone(statsStaticDefault),
     publicPath: '/',
   },
+  pricing: {
+    key: 'pricing',
+    label: 'Pricing section',
+    description: 'Header copy above the pricing card',
+    group: 'home',
+    schema: pricingDataSchema,
+    staticDefault: structuredClone(pricingStaticDefault),
+    publicAnchor: '#pricing',
+    publicPath: '/',
+  },
   programs: {
     key: 'programs',
     label: 'Programs cards',
@@ -231,18 +303,40 @@ export const CONTENT_REGISTRY: Record<ContentKey, ContentRegistryEntry> = {
   },
 };
 
-/** Landing admin index order (excludes instructor/mission). */
-export const LANDING_CONTENT_KEYS: ContentKey[] = [
+/**
+ * Landing admin index — primary sections shown first;
+ * “more” stays available under a collapsed Advanced group.
+ * (Excludes instructor/mission — separate admin pages.)
+ */
+export const PRIMARY_LANDING_CONTENT_KEYS: ContentKey[] = [
   'intro',
   'hero',
   'preview',
+  'pricing',
+  'seo',
+];
+
+export const MORE_LANDING_CONTENT_KEYS: ContentKey[] = [
   'learn',
   'aiJobs',
   'agenda',
   'stats',
   'programs',
-  'seo',
 ];
+
+/** Full landing list order (primary then more). */
+export const LANDING_CONTENT_KEYS: ContentKey[] = [
+  ...PRIMARY_LANDING_CONTENT_KEYS,
+  ...MORE_LANDING_CONTENT_KEYS,
+];
+
+export function landingContentPriority(
+  key: ContentKey
+): 'primary' | 'more' | null {
+  if ((PRIMARY_LANDING_CONTENT_KEYS as string[]).includes(key)) return 'primary';
+  if ((MORE_LANDING_CONTENT_KEYS as string[]).includes(key)) return 'more';
+  return null;
+}
 
 export function isContentKey(value: string): value is ContentKey {
   return value in CONTENT_REGISTRY;
@@ -259,6 +353,7 @@ export {
   aiJobsDataSchema,
   agendaDataSchema,
   statsDataSchema,
+  pricingDataSchema,
   programsDataSchema,
   seoDataSchema,
 };

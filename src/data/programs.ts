@@ -1,42 +1,47 @@
-import { instructor } from './instructor';
+export type ProgramStatus = 'open' | 'locked';
 
 export type ProgramCard = {
   id: string;
   title: string;
   instructor: string;
   badges: readonly string[];
+  /** Display price, e.g. "Rs 500". Empty for locked cards until they open. */
   price: string;
   image: string;
   href: string;
+  status: ProgramStatus;
 };
 
-/** Course catalog — add more cards here later */
+/** Course catalog — one open workshop + two locked upcoming */
 export const PROGRAMS: readonly ProgramCard[] = [
+  {
+    id: 'ai-automation-live',
+    title: 'AI Automation Live Workshop',
+    instructor: 'Ahmi',
+    badges: ['2.5 Hours', 'Live Session'],
+    price: 'Rs 500',
+    image: '/course4.jpeg',
+    href: '/#programs',
+    status: 'open',
+  },
   {
     id: 'course-1',
     title: 'AI Workshop',
-    instructor: instructor.name,
+    instructor: 'Ahmi',
     badges: ['2.5 Hours', 'Live Session'],
-    price: '$29',
+    price: '',
     image: '/course1.jpeg',
-    href: '/#pricing',
+    href: '/programs',
+    status: 'locked',
   },
   {
     id: 'course-2',
     title: 'AI Workshop',
-    instructor: instructor.name,
+    instructor: 'Ahmi',
     badges: ['2.5 Hours', 'Live Session'],
-    price: '$29',
+    price: '',
     image: '/course2.jpeg',
-    href: '/#pricing',
-  },
-  {
-    id: 'course-3',
-    title: 'AI Workshop',
-    instructor: instructor.name,
-    badges: ['2.5 Hours', 'Live Session'],
-    price: '$29',
-    image: '/course3.jpeg',
-    href: '/#pricing',
+    href: '/programs',
+    status: 'locked',
   },
 ] as const;

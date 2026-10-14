@@ -12,6 +12,7 @@ import {
 import { planWriteSchema } from '@/lib/plans/schema';
 import { serializeAdminPlan } from '@/lib/plans/serialize';
 import { assertActiveValidUntil, parseValidUntil } from '@/lib/plans/validate';
+import { ensurePlanIndexes } from '@/lib/plans/syncIndexes';
 
 async function sessionTitleMap(ids: string[]) {
   const unique = Array.from(
@@ -31,6 +32,7 @@ export async function GET(request: Request) {
   if (gate.error) return gate.error;
 
   try {
+    await ensurePlanIndexes();
     const { searchParams } = new URL(request.url);
     const includeArchived = searchParams.get('includeArchived') === 'true';
     const q = (searchParams.get('q') || '').trim();
@@ -41,6 +43,30 @@ export async function GET(request: Request) {
     if (status && status !== 'all') filter.status = status;
     if (q) filter.name = { $regex: q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' };
 
+    const landingSession = await Session.findOne({ isLandingActive: true })
+      .select({ _id: 1 })
+      .lean();
+    const activeLandingSessionId = landingSession
+      ? String(landingSession._id)
+      : null;
+
+    // Heal stale session binding on the landing-flagged plan so admin pills
+    // and checkout filters stay aligned with the public landing session.
+    if (activeLandingSessionId) {
+      await Plan.updateMany(
+        {
+          isLandingPlan: true,
+          sessionId: { $nin: [activeLandingSessionId, ''] },
+        },
+        { $set: { sessionId: activeLandingSessionId } }
+      );
+    } else {
+      await Plan.updateMany(
+        { isLandingPlan: true, sessionId: { $nin: ['', null] } },
+        { $set: { sessionId: '' } }
+      );
+    }
+
     const docs = await Plan.find(filter).sort({ sortOrder: 1, createdAt: -1 }).lean();
     const titles = await sessionTitleMap(docs.map((d) => d.sessionId || ''));
     const now = new Date();
@@ -50,7 +76,8 @@ export async function GET(request: Request) {
         serializeAdminPlan(
           d as unknown as Parameters<typeof serializeAdminPlan>[0],
           d.sessionId ? titles.get(d.sessionId) ?? null : null,
-          now
+          now,
+          activeLandingSessionId
         )
       ),
     });

@@ -3,11 +3,15 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LogOut, Menu, X } from 'lucide-react';
+import { ChevronDown, LogOut, Menu, X } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { AhmiXenLogo } from '@/components/AhmiXenLogo';
 import { AdminAtmosphere } from './AdminAtmosphere';
-import { ADMIN_NAV } from './admin-nav';
+import {
+  ADMIN_NAV_GROUPS,
+  groupContainsPath,
+  isNavItemActive,
+} from './admin-nav';
 
 type AdminShellProps = {
   adminName: string;
@@ -20,12 +24,21 @@ export function AdminShell({ adminName, children }: AdminShellProps) {
   const reduceMotion = useReducedMotion();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const setupActive = groupContainsPath(
+    ADMIN_NAV_GROUPS.find((g) => g.id === 'setup')!,
+    pathname
+  );
+  const [setupOpen, setSetupOpen] = useState(setupActive);
   const drawerId = useId();
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     setDrawerOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (setupActive) setSetupOpen(true);
+  }, [setupActive]);
 
   useEffect(() => {
     if (!drawerOpen) return;
@@ -74,23 +87,50 @@ export function AdminShell({ adminName, children }: AdminShellProps) {
   };
 
   const nav = (
-    <nav aria-label="Admin navigation" className="flex flex-col gap-1 p-3">
-      {ADMIN_NAV.map((item) => {
-        const active =
-          item.href === '/admin'
-            ? pathname === '/admin'
-            : pathname === item.href || pathname.startsWith(`${item.href}/`);
-        const Icon = item.icon;
+    <nav aria-label="Admin navigation" className="flex flex-col gap-4 p-3">
+      {ADMIN_NAV_GROUPS.map((group) => {
+        const isSetup = group.collapsible;
+        const expanded = isSetup ? setupOpen : true;
+
         return (
-          <Link
-            key={item.href}
-            href={item.href}
-            aria-current={active ? 'page' : undefined}
-            className={`admin-nav-link nav-focus ${active ? 'is-active' : ''}`}
-          >
-            <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />
-            <span>{item.label}</span>
-          </Link>
+          <div key={group.id} className="admin-nav-group">
+            {isSetup ? (
+              <button
+                type="button"
+                className="admin-nav-group-toggle nav-focus"
+                aria-expanded={expanded}
+                onClick={() => setSetupOpen((v) => !v)}
+              >
+                <span className="admin-nav-group-label">{group.label}</span>
+                <ChevronDown
+                  className={`admin-nav-group-chevron${expanded ? ' is-open' : ''}`}
+                  aria-hidden="true"
+                />
+              </button>
+            ) : (
+              <p className="admin-nav-group-label">{group.label}</p>
+            )}
+
+            {expanded ? (
+              <div className="flex flex-col gap-1 mt-1">
+                {group.items.map((item) => {
+                  const active = isNavItemActive(pathname, item.href);
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      aria-current={active ? 'page' : undefined}
+                      className={`admin-nav-link nav-focus ${active ? 'is-active' : ''}`}
+                    >
+                      <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            ) : null}
+          </div>
         );
       })}
     </nav>

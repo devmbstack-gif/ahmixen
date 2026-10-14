@@ -11,6 +11,16 @@ const UtmSchema = new Schema(
   { _id: false }
 );
 
+const LeadProofSchema = new Schema(
+  {
+    fileId: { type: String, default: '' },
+    contentType: { type: String, default: '' },
+    size: { type: Number, default: 0 },
+    uploadedAt: { type: Date, default: null },
+  },
+  { _id: false }
+);
+
 const LeadSchema = new Schema(
   {
     name: { type: String, required: true, trim: true },
@@ -24,7 +34,23 @@ const LeadSchema = new Schema(
     },
     phone: { type: String, required: true, trim: true },
     profession: { type: String, default: '', trim: true },
-    message: { type: String, default: '', trim: true, maxlength: 200 },
+    message: { type: String, default: '', trim: true, maxlength: 500 },
+    city: { type: String, default: '', trim: true, maxlength: 80 },
+    skillLevel: {
+      type: String,
+      enum: ['', 'beginner', 'intermediate', 'advanced'],
+      default: '',
+    },
+    learningGoals: { type: [String], default: [] },
+    paidConfirmed: { type: Boolean, default: false },
+    programId: { type: String, default: '', trim: true, maxlength: 80 },
+    programTitle: { type: String, default: '', trim: true, maxlength: 120 },
+    kind: {
+      type: String,
+      enum: ['general', 'workshop'],
+      default: 'general',
+    },
+    proof: { type: LeadProofSchema, default: () => ({}) },
     utm: { type: UtmSchema, default: () => ({}) },
     referrer: { type: String, default: '', trim: true },
     status: {
@@ -47,6 +73,7 @@ const LeadSchema = new Schema(
 );
 
 LeadSchema.index({ status: 1, lastSeenAt: -1 });
+LeadSchema.index({ kind: 1, lastSeenAt: -1 });
 
 export type LeadDocument = InferSchemaType<typeof LeadSchema> & {
   _id: mongoose.Types.ObjectId;

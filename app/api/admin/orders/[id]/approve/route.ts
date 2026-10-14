@@ -13,6 +13,9 @@ import { approveOrder } from '@/lib/orders/transitions';
 import { serializeAdminOrderDetail } from '@/lib/orders/serialize';
 import { getSeatSummary } from '@/lib/sessions/seats';
 import { ensureOrderIndexes } from '@/lib/orders/syncIndexes';
+import { scheduleEmailJobSend } from '@/lib/email/scheduleSend';
+
+export const runtime = 'nodejs';
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -31,6 +34,10 @@ export async function POST(request: Request, ctx: Ctx) {
       return badRequest(result.error);
     }
 
+    if (result.emailJobId) {
+      scheduleEmailJobSend(result.emailJobId);
+    }
+
     await logAudit({
       adminId: gate.admin.sub,
       action: 'order.approve',
@@ -39,6 +46,7 @@ export async function POST(request: Request, ctx: Ctx) {
       meta: {
         orderNumber: result.order.orderNumber,
         txMode: result.mode,
+        emailJobQueued: Boolean(result.emailJobId),
       },
     });
 
@@ -62,6 +70,9 @@ export async function POST(request: Request, ctx: Ctx) {
           expiresAt: Date | string;
         }>,
         seatsLeft: seats?.available ?? null,
+        emailStatus: result.emailJobId ? 'pending' : 'not_sent',
+        emailStatusLabel: result.emailJobId ? 'Pending' : 'Not sent',
+        emailReason: '',
       }),
       txMode: result.mode,
     });

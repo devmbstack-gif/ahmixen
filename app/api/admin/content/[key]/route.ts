@@ -18,6 +18,7 @@ import {
 } from '@/lib/content/registry';
 import { revalidateContentKey } from '@/lib/content/cache';
 import type {
+  HeroContentData,
   IntroContentData,
   PreviewContentData,
   ProgramsContentData,
@@ -120,6 +121,13 @@ export async function PUT(request: Request, ctx: Ctx) {
       if (data.photoAssetId && !(await assertMediaExists(data.photoAssetId))) {
         return badRequest('Choose a photo from the media library');
       }
+      for (const card of data.proofCards ?? []) {
+        if (!(await assertMediaExists(card.imageAssetId))) {
+          return badRequest(
+            'Choose a valid profile picture from the media library'
+          );
+        }
+      }
     }
     if (key === 'intro') {
       const data = parsed.data as IntroContentData;
@@ -141,6 +149,17 @@ export async function PUT(request: Request, ctx: Ctx) {
           !(await assertMediaExists(card.posterAssetId))
         ) {
           return badRequest('Choose a valid image from the media library');
+        }
+      }
+    }
+    if (key === 'hero') {
+      const data = parsed.data as HeroContentData;
+      for (const tool of data.tools ?? []) {
+        if (
+          tool.logoAssetId &&
+          !(await assertMediaExists(tool.logoAssetId))
+        ) {
+          return badRequest('Choose a valid tool logo from the media library');
         }
       }
     }

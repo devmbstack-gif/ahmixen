@@ -10,6 +10,10 @@ const SettingSchema = new Schema(
     iban: { type: String, default: '', trim: true },
     paymentInstructions: { type: String, default: '', trim: true },
     cardPaymentEnabled: { type: Boolean, default: false },
+    /** Email settings meta (key: "email") — never stores SMTP secrets */
+    lastTestAt: { type: Date, default: null },
+    lastTestOk: { type: Boolean, required: false },
+    lastTestMessage: { type: String, default: '', trim: true, maxlength: 200 },
     version: { type: Number, default: 1 },
     updatedBy: { type: String, default: '' },
   },

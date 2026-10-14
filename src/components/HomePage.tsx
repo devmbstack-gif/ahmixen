@@ -6,7 +6,6 @@ import { Navbar } from './Navbar';
 import { IntroHero } from './IntroHero';
 import { Hero } from './Hero';
 import { WorkshopPreview } from './WorkshopPreview';
-import { StatCounters } from './StatCounters';
 import { Registration } from './Registration';
 import { Footer } from './Footer';
 import { WhatsAppFloat } from './WhatsAppFloat';
@@ -21,7 +20,8 @@ import type { IntroContentData } from '@/lib/content/landingSchemas';
 import type { PreviewContentData } from '@/lib/content/landingSchemas';
 import type { AiJobsContentData } from '@/lib/content/landingSchemas';
 import type { AgendaContentData } from '@/lib/content/landingSchemas';
-import type { StatsContentData } from '@/lib/content/landingSchemas';
+import type { PricingContentData } from '@/lib/content/landingSchemas';
+import type { ProgramCardPublic } from '@/lib/content/landingPublic';
 
 /**
  * Below-fold / heavy UI — client-only code-split.
@@ -37,6 +37,17 @@ const Community = dynamic(
   {
     ssr: false,
     loading: () => <SectionPlaceholder minHeight="28rem" label="Loading community" />,
+  }
+);
+
+const ProgramsSection = dynamic(
+  () =>
+    import('./ProgramsSection').then((m) => ({ default: m.ProgramsSection })),
+  {
+    ssr: false,
+    loading: () => (
+      <SectionPlaceholder minHeight="22rem" label="Loading programs" />
+    ),
   }
 );
 
@@ -64,6 +75,14 @@ const Instructor = dynamic(
   }
 );
 
+const AiStack = dynamic(
+  () => import('./AiStack').then((m) => ({ default: m.AiStack })),
+  {
+    ssr: false,
+    loading: () => <SectionPlaceholder minHeight="18rem" label="Loading AI stack" />,
+  }
+);
+
 const Testimonials = dynamic(
   () => import('./Testimonials').then((m) => ({ default: m.Testimonials })),
   {
@@ -74,11 +93,17 @@ const Testimonials = dynamic(
 
 export type HomeLandingContent = {
   intro: IntroContentData & { photoUrl: string; photoAlt: string };
-  hero: HeroContentData & { headlineLine1Resolved: string };
+  hero: Omit<HeroContentData, 'tools'> & {
+    headlineLine1Resolved: string;
+    tools: Array<
+      HeroContentData['tools'][number] & { logoUrl: string | null }
+    >;
+  };
   preview: PreviewContentData & { posterUrl: string | null };
   aiJobs: AiJobsContentData;
   agenda: AgendaContentData;
-  stats: StatsContentData;
+  pricing: PricingContentData;
+  programs: ProgramCardPublic[];
 };
 
 const HomePageInner: React.FC<{
@@ -119,7 +144,11 @@ const HomePageInner: React.FC<{
           />
         </SectionReveal>
         <SectionReveal>
-          <StatCounters content={landing.stats} />
+          <ProgramsSection
+            publicSession={publicSession}
+            cards={landing.programs}
+            headingAs="h2"
+          />
         </SectionReveal>
         <SectionReveal>
           <Community />
@@ -137,10 +166,12 @@ const HomePageInner: React.FC<{
           <Testimonials reviews={reviews} />
         </SectionReveal>
         <SectionReveal>
+          <AiStack />
+        </SectionReveal>
+        <SectionReveal>
           <Registration
-            seatsAvailable={publicSession.seatsAvailable}
-            showLimitedSeatsBadge={publicSession.showLimitedSeatsBadge}
-            durationLabel={publicSession.durationLabel}
+            session={publicSession}
+            content={landing.pricing}
           />
         </SectionReveal>
       </main>

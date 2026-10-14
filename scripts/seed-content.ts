@@ -147,12 +147,37 @@ async function main() {
       data: {
         ...instructor,
         photoAssetId: instructorPhotoAssetId,
+        proofCards: [],
       },
       version: 1,
       updatedBy: 'seed',
       updatedByName: 'seed',
     });
     summary.instructorCreated = true;
+  } else {
+    const data =
+      instructorDoc.data && typeof instructorDoc.data === 'object'
+        ? ({ ...(instructorDoc.data as Record<string, unknown>) } as Record<
+            string,
+            unknown
+          >)
+        : {};
+    let patched = false;
+    if (typeof data.greeting !== 'string' || !String(data.greeting).trim()) {
+      data.greeting = instructor.greeting;
+      patched = true;
+    }
+    if (!Array.isArray(data.proofCards)) {
+      data.proofCards = [];
+      patched = true;
+    }
+    if (patched) {
+      instructorDoc.data = data;
+      instructorDoc.updatedBy = 'seed';
+      instructorDoc.updatedByName = 'seed';
+      await instructorDoc.save();
+      console.log('  siteContent.instructor: patched greeting/proofCards defaults');
+    }
   }
 
   const missionDoc = await SiteContent.findOne({ key: 'mission' });

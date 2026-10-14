@@ -116,7 +116,7 @@ export function Lightbox({ photos, index, onClose, onPrev, onNext }: LightboxPro
                   transition={{ duration: reduceMotion ? 0.01 : 0.28, ease: EASE }}
                 >
                   <Image
-                    src={photo.src}
+                    src={encodeURI(photo.src)}
                     alt={photo.caption}
                     fill
                     sizes="100vw"
@@ -124,6 +124,7 @@ export function Lightbox({ photos, index, onClose, onPrev, onNext }: LightboxPro
                     placeholder="blur"
                     blurDataURL={COMMUNITY_BLUR_DATA_URL}
                     priority
+                    unoptimized
                   />
                 </motion.div>
               </AnimatePresence>

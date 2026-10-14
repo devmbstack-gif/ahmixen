@@ -1,19 +1,37 @@
 'use client';
 
 import { useMemo } from 'react';
-import { ArrowRight, Calendar, Clock, Hourglass, Video } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { WORKSHOP_CONFIG } from '../data/workshopData';
 import type { PublicSessionDisplay } from '../lib/sessions/publicShared';
-import type { HeroContentData } from '@/lib/content/landingSchemas';
+import {
+  HERO_INFO_CARDS,
+  type HeroContentData,
+} from '@/lib/content/landingSchemas';
+import type { HeroLogoBlend } from '@/lib/content/heroToolLogos';
 import { Countdown } from './Countdown';
 import { useReserveFlow } from './checkout/ReserveFlowProvider';
 
 interface HeroProps {
   onExploreWorkshop: () => void;
   session: PublicSessionDisplay;
-  content: HeroContentData & { headlineLine1Resolved: string };
+  content: Omit<HeroContentData, 'tools'> & {
+    headlineLine1Resolved: string;
+    tools: Array<
+      HeroContentData['tools'][number] & {
+        logoUrl: string | null;
+        logoBlend?: HeroLogoBlend;
+      }
+    >;
+  };
 }
+
+const LOGO_BLEND_CLASS: Record<HeroLogoBlend, string> = {
+  normal: '',
+  screen: 'hero-tool-logo--screen',
+  lighten: 'hero-tool-logo--lighten',
+  multiply: 'hero-tool-logo--multiply',
+};
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -33,23 +51,28 @@ export const Hero: React.FC<HeroProps> = ({
       ? content.primaryCtaLabel
       : reserveCta.label;
 
-  const line1Words = useMemo(
-    () => splitWords(content.headlineLine1Resolved),
-    [content.headlineLine1Resolved]
+  const mainLine1Words = useMemo(
+    () => splitWords(content.mainHeadlineLine1),
+    [content.mainHeadlineLine1]
   );
-  const line2Words = useMemo(
-    () => splitWords(content.headlineLine2),
-    [content.headlineLine2]
+  const mainLine2Words = useMemo(
+    () => splitWords(content.mainHeadlineLine2),
+    [content.mainHeadlineLine2]
   );
 
-  const metaItems = useMemo(
-    () => [
-      { icon: Calendar, label: `On ${session.dateShort}`, live: false },
-      { icon: Hourglass, label: session.durationLabel, live: false },
-      { icon: Video, label: WORKSHOP_CONFIG.sessionLabel, live: true },
-      { icon: Clock, label: session.timeLabel, live: false },
-    ],
-    [session.dateShort, session.durationLabel, session.timeLabel]
+  const subcopy = [content.badgeText, content.badgeSuffix]
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .join(' ');
+
+  const infoCards = useMemo(
+    () =>
+      HERO_INFO_CARDS.map((card) =>
+        card.label === 'Program Length'
+          ? { ...card, value: session.durationLabel || card.value }
+          : card
+      ),
+    [session.durationLabel]
   );
 
   const wordInitial = reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 28 };
@@ -67,95 +90,106 @@ export const Hero: React.FC<HeroProps> = ({
   return (
     <section
       id="hero"
-      className="hero-premium relative flex items-center py-16 md:py-20 lg:py-24 bg-transparent overflow-hidden"
+      className="hero-premium relative flex items-center pt-8 pb-12 md:pt-10 md:pb-14 lg:pt-10 lg:pb-16 bg-transparent overflow-hidden"
       aria-labelledby="hero-heading"
     >
       <div className="relative z-10 w-full container-page text-center">
-        <h2 id="hero-heading" className="type-display uppercase">
-          <span className="block sm:whitespace-nowrap">
-            {line1Words.map((word, i) => (
-              <motion.span
-                key={`l1-${word}-${i}`}
-                initial={wordInitial}
-                animate={wordAnimate}
-                transition={{
-                  duration: reduceMotion ? 0 : 0.55,
-                  delay: reduceMotion ? 0 : 0.06 + i * 0.08,
-                  ease: EASE,
-                }}
-                className="inline-block text-[var(--text-main)] mr-[0.28em] last:mr-0"
-              >
-                {word}
-              </motion.span>
-            ))}
-          </span>
-          <span className="block mt-1 sm:mt-2">
-            {line2Words.map((word, i) => (
-              <motion.span
-                key={`l2-${word}-${i}`}
-                initial={wordInitial}
-                animate={wordAnimate}
-                transition={{
-                  duration: reduceMotion ? 0 : 0.55,
-                  delay: reduceMotion
-                    ? 0
-                    : 0.06 + (line1Words.length + i) * 0.08,
-                  ease: EASE,
-                }}
-                className="hero-gradient-text inline-block mr-[0.28em] last:mr-0"
-              >
-                {word}
-              </motion.span>
-            ))}
-          </span>
-        </h2>
+        <div className="hero-header-block">
+          <motion.p
+            initial="hidden"
+            animate="show"
+            variants={blockVariants}
+            className="hero-topline"
+          >
+            <span className="hero-topline-lead">
+              {content.headlineLine1Resolved}
+            </span>
+            {content.headlineLine2?.trim() ? (
+              <>
+                {' '}
+                <span className="hero-topline-muted">
+                  {content.headlineLine2}
+                </span>
+              </>
+            ) : null}
+          </motion.p>
+
+          <h1 id="hero-heading" className="hero-main-title">
+            <span className="hero-main-line hero-main-line-solid">
+              {mainLine1Words.map((word, i) => (
+                <motion.span
+                  key={`m1-${word}-${i}`}
+                  initial={wordInitial}
+                  animate={wordAnimate}
+                  transition={{
+                    duration: reduceMotion ? 0 : 0.55,
+                    delay: reduceMotion ? 0 : 0.08 + i * 0.07,
+                    ease: EASE,
+                  }}
+                  className="hero-main-word"
+                >
+                  {word}
+                </motion.span>
+              ))}
+            </span>
+            <span className="hero-main-line hero-main-line-accent">
+              {mainLine2Words.map((word, i) => (
+                <motion.span
+                  key={`m2-${word}-${i}`}
+                  initial={wordInitial}
+                  animate={wordAnimate}
+                  transition={{
+                    duration: reduceMotion ? 0 : 0.55,
+                    delay: reduceMotion
+                      ? 0
+                      : 0.08 + (mainLine1Words.length + i) * 0.07,
+                    ease: EASE,
+                  }}
+                  className="hero-main-word hero-gradient-text"
+                >
+                  {word}
+                </motion.span>
+              ))}
+            </span>
+          </h1>
+
+          {subcopy ? (
+            <motion.p
+              initial="hidden"
+              animate="show"
+              variants={blockVariants}
+              transition={{ delay: reduceMotion ? 0 : 0.5 }}
+              className="hero-subcopy"
+            >
+              {subcopy}
+            </motion.p>
+          ) : null}
+        </div>
 
         <motion.div
           initial="hidden"
           animate="show"
           variants={blockVariants}
-          transition={{ delay: reduceMotion ? 0 : 0.55 }}
-          className="mt-7 md:mt-8 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3"
+          transition={{ delay: reduceMotion ? 0 : 0.62 }}
+          className="hero-info-block"
         >
-          <span className="inline-flex items-center bg-[var(--primary-purple)] text-white font-extrabold text-base sm:text-xl md:text-2xl px-3.5 sm:px-4 py-1.5 rounded-md leading-tight shadow-[0_8px_28px_-8px_rgba(124,58,237,0.65)]">
-            {content.badgeText}
-          </span>
-          <span className="hero-gradient-text font-extrabold text-base sm:text-xl md:text-2xl leading-tight">
-            {content.badgeSuffix}
-          </span>
+          <div className="hero-info-rule" aria-hidden="true" />
+          <ul className="hero-info-cards" aria-label="Workshop details">
+            {infoCards.map((card) => (
+              <li key={card.label} className="hero-info-card">
+                <span className="hero-info-card-label">{card.label}</span>
+                <span className="hero-info-card-value">{card.value}</span>
+              </li>
+            ))}
+          </ul>
         </motion.div>
-
-        <motion.ul
-          initial="hidden"
-          animate="show"
-          variants={blockVariants}
-          transition={{ delay: reduceMotion ? 0 : 0.7 }}
-          className="mt-8 md:mt-10 flex flex-wrap items-center justify-center gap-3"
-        >
-          {metaItems.map(({ icon: Icon, label, live }) => (
-            <li
-              key={label}
-              className="hero-meta-pill inline-flex items-center gap-2.5 px-4 sm:px-5 py-2.5 sm:py-3 rounded-full text-sm sm:text-[15px] font-semibold cursor-default"
-            >
-              {live ? (
-                <span className="hero-live-dot" aria-hidden="true" />
-              ) : (
-                <Icon
-                  className="w-4 h-4 sm:w-[18px] sm:h-[18px] text-fuchsia-300 shrink-0"
-                  strokeWidth={2.25}
-                />
-              )}
-              {label}
-            </li>
-          ))}
-        </motion.ul>
 
         <motion.div
           initial="hidden"
           animate="show"
           variants={blockVariants}
           transition={{ delay: reduceMotion ? 0 : 0.78 }}
-          className="mt-7 md:mt-8 flex flex-col items-center gap-3"
+          className="mt-8 md:mt-10 flex flex-col items-center gap-3"
         >
           {session.showLimitedSeatsBadge && (
             <span className="hero-urgency-badge">
@@ -199,6 +233,44 @@ export const Hero: React.FC<HeroProps> = ({
             {content.secondaryLinkLabel}
           </button>
         </motion.div>
+
+        {content.tools?.length ? (
+          <motion.div
+            initial="hidden"
+            animate="show"
+            variants={blockVariants}
+            transition={{ delay: reduceMotion ? 0 : 1.0 }}
+            className="hero-tools mt-10 md:mt-12"
+          >
+            <p className="hero-tools-label">{content.toolsTitle}</p>
+            <ul className="hero-tools-row" aria-label={content.toolsTitle}>
+              {content.tools.map((tool) => (
+                <li key={tool.id} className="hero-tool-tile" title={tool.name}>
+                  {tool.logoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- static public logos
+                    <img
+                      src={encodeURI(tool.logoUrl)}
+                      alt=""
+                      className={[
+                        'hero-tool-logo object-contain bg-transparent',
+                        LOGO_BLEND_CLASS[tool.logoBlend ?? 'normal'],
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  ) : (
+                    <span className="hero-tool-fallback" aria-hidden="true">
+                      {tool.name.slice(0, 1).toUpperCase()}
+                    </span>
+                  )}
+                  <span className="sr-only">{tool.name}</span>
+                </li>
+              ))}
+            </ul>
+          </motion.div>
+        ) : null}
       </div>
     </section>
   );

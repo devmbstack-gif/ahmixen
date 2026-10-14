@@ -1,5 +1,10 @@
 import type { PlanDocument } from '@/models/Plan';
 import { installmentTotal, savingsPercent } from './money';
+import {
+  landingPlanSiteIssue,
+  landingSiteIssueMessage,
+  type LandingSiteIssue,
+} from './landing';
 
 export type PlanStatus = 'active' | 'hidden' | 'archived';
 export type PlanType = 'one_time' | 'installment';
@@ -21,6 +26,10 @@ export type AdminPlanDTO = {
   validUntilLocal: string;
   status: PlanStatus;
   displayStatus: 'active' | 'hidden' | 'expired' | 'archived';
+  isLandingPlan: boolean;
+  /** When isLandingPlan: null = showing on site; else why not. */
+  landingSiteIssue: LandingSiteIssue;
+  landingSiteIssueMessage: string;
   sortOrder: number;
   version: number;
   savingsPercent: number | null;
@@ -44,7 +53,8 @@ function toLocalDate(d: Date | null | undefined): string {
 export function serializeAdminPlan(
   doc: PlanDocument,
   sessionTitle: string | null = null,
-  now = new Date()
+  now = new Date(),
+  activeLandingSessionId: string | null = null
 ): AdminPlanDTO {
   const validUntil =
     doc.validUntil instanceof Date
@@ -73,6 +83,19 @@ export function serializeAdminPlan(
       ? null
       : Number(doc.installmentsCount);
 
+  const isLandingPlan = Boolean(doc.isLandingPlan);
+  const issue = landingPlanSiteIssue(
+    {
+      status,
+      type: doc.type,
+      validUntil,
+      sessionId: doc.sessionId ?? '',
+      isLandingPlan,
+    },
+    activeLandingSessionId,
+    now
+  );
+
   return {
     id: String(doc._id),
     name: doc.name,
@@ -89,6 +112,9 @@ export function serializeAdminPlan(
     validUntilLocal: toLocalDate(validUntil),
     status,
     displayStatus,
+    isLandingPlan,
+    landingSiteIssue: issue,
+    landingSiteIssueMessage: landingSiteIssueMessage(issue),
     sortOrder: doc.sortOrder ?? 0,
     version: doc.version ?? 1,
     savingsPercent: savingsPercent(price, original),

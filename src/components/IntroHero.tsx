@@ -33,7 +33,7 @@ export const IntroHero: React.FC<IntroHeroProps> = ({ content }) => {
   return (
     <section
       id="intro"
-      className="intro-hero relative flex items-center pt-24 pb-12 md:pt-28 md:pb-16 lg:min-h-[calc(100svh-4rem)]"
+      className="intro-hero relative flex items-center pt-12 pb-6 md:pt-16 md:pb-8"
       aria-labelledby="intro-heading"
     >
       <div className="container-page w-full">

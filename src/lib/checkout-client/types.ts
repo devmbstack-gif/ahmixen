@@ -1,6 +1,7 @@
 export type PublicCheckoutConfig = {
   reservationsOpen: boolean;
   holdMinutes: number;
+  landingPlanId: string | null;
   session: {
     startsAt: string;
     durationMinutes: number;
@@ -12,6 +13,7 @@ export type PublicCheckoutConfig = {
   plans: Array<{
     id: string;
     name: string;
+    shortDescription: string;
     type: 'one_time' | 'installment';
     currency: 'PKR' | 'USD';
     price: number;

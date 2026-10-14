@@ -57,7 +57,11 @@ export function ReserveClient() {
           setPhone(prefill.phone);
           if (prefill.couponCode) setCouponInput(prefill.couponCode);
         }
-        if (data.plans[0]) setPlanId(data.plans[0].id);
+        const preferred =
+          (data.landingPlanId &&
+            data.plans.find((p) => p.id === data.landingPlanId)?.id) ||
+          data.plans[0]?.id;
+        if (preferred) setPlanId(preferred);
       } catch (err) {
         if (!cancelled) {
           setAlert(
@@ -232,7 +236,7 @@ export function ReserveClient() {
             Reserve your seat
           </h1>
           <p className="mt-2 text-sm sm:text-base text-[var(--text-secondary)]">
-            Takes about 2 minutes. You pay by bank transfer on the next step.
+            Takes about 2 minutes. You pay by JazzCash / Easypaisa on the next step.
           </p>
         </header>
 

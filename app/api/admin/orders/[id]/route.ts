@@ -11,6 +11,15 @@ import { ensureOrderIndexes } from '@/lib/orders/syncIndexes';
 import { expireStaleOrders } from '@/lib/orders/expire';
 import { serializeAdminOrderDetail } from '@/lib/orders/serialize';
 import { getSeatSummary } from '@/lib/sessions/seats';
+import {
+  emailStatusLabel,
+  getJobsForOrderIds,
+  mapJobToPublicStatus,
+  processDueEmailJobs,
+} from '@/lib/email/outbox';
+import { ensureEmailJobIndexes } from '@/lib/email/syncIndexes';
+
+export const runtime = 'nodejs';
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -20,7 +29,13 @@ export async function GET(_request: Request, ctx: Ctx) {
 
   try {
     await ensureOrderIndexes();
+    await ensureEmailJobIndexes();
     await expireStaleOrders();
+    try {
+      await processDueEmailJobs(5);
+    } catch {
+      /* ignore */
+    }
 
     const { id } = await ctx.params;
     if (!mongoose.isValidObjectId(id)) return notFound();
@@ -42,6 +57,10 @@ export async function GET(_request: Request, ctx: Ctx) {
         })
       : null;
 
+    const jobs = await getJobsForOrderIds([String(doc._id)]);
+    const job = jobs.get(String(doc._id));
+    const emailStatus = mapJobToPublicStatus(job);
+
     return NextResponse.json({
       order: serializeAdminOrderDetail(doc, {
         sessionTitle: session?.title,
@@ -51,6 +70,9 @@ export async function GET(_request: Request, ctx: Ctx) {
           expiresAt: Date | string;
         }>,
         seatsLeft: seats?.available ?? null,
+        emailStatus,
+        emailStatusLabel: emailStatusLabel(emailStatus),
+        emailReason: job?.lastError || '',
       }),
     });
   } catch (err) {

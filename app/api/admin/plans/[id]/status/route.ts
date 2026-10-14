@@ -48,6 +48,9 @@ export async function POST(request: Request, ctx: Ctx) {
     }
 
     doc.status = parsed.data.status;
+    if (parsed.data.status !== 'active') {
+      doc.isLandingPlan = false;
+    }
     doc.updatedBy = gate.admin.sub;
     doc.version = (doc.version ?? 1) + 1;
     await doc.save();
@@ -65,8 +68,18 @@ export async function POST(request: Request, ctx: Ctx) {
           await Session.findById(doc.sessionId).select({ title: 1 }).lean()
         )?.title ?? null
       : null;
+    const landingSession = await Session.findOne({ isLandingActive: true })
+      .select({ _id: 1 })
+      .lean();
 
-    return NextResponse.json({ plan: serializeAdminPlan(doc, title) });
+    return NextResponse.json({
+      plan: serializeAdminPlan(
+        doc,
+        title,
+        new Date(),
+        landingSession ? String(landingSession._id) : null
+      ),
+    });
   } catch (err) {
     console.error('[plans status]', err instanceof Error ? err.message : 'error');
     return serverError();

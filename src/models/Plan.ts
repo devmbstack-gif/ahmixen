@@ -28,6 +28,8 @@ const PlanSchema = new Schema(
       required: true,
       default: 'hidden',
     },
+    /** At most one plan may be true (unique partial index). */
+    isLandingPlan: { type: Boolean, default: false },
     sortOrder: { type: Number, default: 0 },
     version: { type: Number, default: 1 },
     createdBy: { type: String, default: '' },
@@ -41,6 +43,14 @@ const PlanSchema = new Schema(
 
 PlanSchema.index({ status: 1, sortOrder: 1 });
 PlanSchema.index({ name: 'text' });
+PlanSchema.index(
+  { isLandingPlan: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { isLandingPlan: true },
+    name: 'plans_unique_landing',
+  }
+);
 
 export type PlanDocument = InferSchemaType<typeof PlanSchema> & {
   _id: mongoose.Types.ObjectId;

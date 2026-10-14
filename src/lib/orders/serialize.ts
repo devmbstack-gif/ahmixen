@@ -22,6 +22,11 @@ export type AdminOrderListDTO = {
   seatHoldExpired: boolean;
   currency: string;
   finalPrice: number;
+  sourceKind: 'checkout' | 'workshop';
+  programId: string;
+  programTitle: string;
+  /** Short label for admin tables, e.g. "Workshop" */
+  bookingTypeLabel: string;
 };
 
 export type AdminOrderDetailDTO = AdminOrderListDTO & {
@@ -55,6 +60,14 @@ export type AdminOrderDetailDTO = AdminOrderListDTO & {
   seatsLeft: number | null;
   verifyHint: string;
   sourceLabel: string;
+  emailStatus: 'sent' | 'pending' | 'failed' | 'skipped' | 'not_sent';
+  emailStatusLabel: string;
+  emailReason: string;
+  workshopMeta: {
+    city: string;
+    skillLevel: string;
+    learningGoals: string[];
+  } | null;
 };
 
 function statusLabel(status: OrderStatus): string {
@@ -110,6 +123,19 @@ export function serializeAdminOrderList(
     (doc.status === 'pending_verification' || doc.status === 'awaiting_payment') &&
     !holdStillActive(meta.sessionHolds, String(doc._id), now);
 
+  const sourceKind =
+    (doc as { sourceKind?: string }).sourceKind === 'workshop'
+      ? 'workshop'
+      : 'checkout';
+  const programId = String((doc as { programId?: string }).programId || '');
+  const programTitle = String(
+    (doc as { programTitle?: string }).programTitle || ''
+  ).trim();
+  const displayPlanName =
+    sourceKind === 'workshop'
+      ? programTitle || doc.planSnapshot.name
+      : doc.planSnapshot.name;
+
   return {
     id: String(doc._id),
     orderNumber: doc.orderNumber,
@@ -117,7 +143,7 @@ export function serializeAdminOrderList(
     createdLabel: formatPkt(doc.createdAt),
     customerName: doc.customer.name,
     customerEmail: doc.customer.email,
-    planName: doc.planSnapshot.name,
+    planName: displayPlanName,
     amountLabel: formatMoneyLabel(currency, finalPrice),
     couponCode: doc.coupon?.code ?? null,
     installmentLabel,
@@ -129,6 +155,10 @@ export function serializeAdminOrderList(
     seatHoldExpired,
     currency,
     finalPrice,
+    sourceKind,
+    programId,
+    programTitle,
+    bookingTypeLabel: sourceKind === 'workshop' ? 'Workshop' : 'Checkout',
   };
 }
 
@@ -140,6 +170,9 @@ export function serializeAdminOrderDetail(
     sessionHolds?: Array<{ orderId?: string; expiresAt: Date | string }>;
     seatsLeft?: number | null;
     now?: Date;
+    emailStatus?: 'sent' | 'pending' | 'failed' | 'skipped' | 'not_sent';
+    emailStatusLabel?: string;
+    emailReason?: string;
   } = {}
 ): AdminOrderDetailDTO {
   const base = serializeAdminOrderList(doc, meta);
@@ -193,6 +226,22 @@ export function serializeAdminOrderDetail(
       if (source) return source;
       if (campaign) return campaign;
       return 'Direct';
+    })(),
+    emailStatus: meta.emailStatus ?? 'not_sent',
+    emailStatusLabel: meta.emailStatusLabel ?? 'Not sent',
+    emailReason: meta.emailReason ?? '',
+    workshopMeta: (() => {
+      const raw = (doc as { workshopMeta?: {
+        city?: string;
+        skillLevel?: string;
+        learningGoals?: string[];
+      } | null }).workshopMeta;
+      if (!raw) return null;
+      return {
+        city: raw.city || '',
+        skillLevel: raw.skillLevel || '',
+        learningGoals: Array.isArray(raw.learningGoals) ? raw.learningGoals : [],
+      };
     })(),
   };
 }

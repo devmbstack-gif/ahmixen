@@ -11,8 +11,9 @@ import {
   getHeroContent,
   getIntroContent,
   getPreviewContent,
+  getPricingContent,
+  getProgramsContent,
   getSeoContent,
-  getStatsContent,
 } from '@/lib/content/landingPublic';
 
 export const revalidate = 30;
@@ -35,7 +36,8 @@ export default async function Page() {
     preview,
     aiJobs,
     agenda,
-    stats,
+    pricing,
+    programs,
   ] = await Promise.all([
     getInstructor(),
     getLandingTestimonials(),
@@ -44,7 +46,8 @@ export default async function Page() {
     getPreviewContent(),
     getAiJobsContent(),
     getAgendaContent(),
-    getStatsContent(),
+    getPricingContent(),
+    getProgramsContent(),
   ]);
 
   return (
@@ -52,7 +55,15 @@ export default async function Page() {
       publicSession={publicSession}
       instructor={instructor}
       reviews={reviews}
-      landing={{ intro, hero, preview, aiJobs, agenda, stats }}
+      landing={{
+        intro,
+        hero,
+        preview,
+        aiJobs,
+        agenda,
+        pricing,
+        programs: programs.cards,
+      }}
     />
   );
 }

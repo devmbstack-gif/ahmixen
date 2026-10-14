@@ -2,12 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Copy, Download, Eye, MessageCircle } from 'lucide-react';
+import { Copy, Download, Eye, MessageCircle, Send } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { SearchInput } from '../SearchInput';
 import { SkeletonListPage } from '../skeletons';
 import { AdminIconAction } from '../AdminIconAction';
 import { AdminToast } from '../AdminToast';
+import { EmailStatusBadge } from '../EmailStatusBadge';
 import type { AdminReservationDTO } from '@/lib/reservations/serialize';
 
 type SessionOption = {
@@ -54,6 +55,55 @@ export function ReservationsListClient() {
     null
   );
   const [exporting, setExporting] = useState(false);
+  const [emailBusyId, setEmailBusyId] = useState<string | null>(null);
+
+  async function sendConfirmationEmail(row: AdminReservationDTO) {
+    setEmailBusyId(row.id);
+    try {
+      const res = await fetch(`/api/admin/orders/${row.id}/resend-email`, {
+        method: 'POST',
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        emailStatus?: AdminReservationDTO['emailStatus'];
+        emailStatusLabel?: string;
+        reason?: string;
+      };
+      if (!res.ok) {
+        setToast({
+          message: data.error || 'Could not send confirmation email',
+          tone: 'error',
+        });
+        return;
+      }
+      setRows((prev) =>
+        prev.map((r) =>
+          r.id === row.id
+            ? {
+                ...r,
+                emailStatus: data.emailStatus || r.emailStatus,
+                emailStatusLabel: data.emailStatusLabel || r.emailStatusLabel,
+                emailReason: data.reason || '',
+              }
+            : r
+        )
+      );
+      setToast({
+        message:
+          data.emailStatus === 'sent'
+            ? 'Confirmation email sent'
+            : data.emailStatus === 'skipped'
+              ? data.reason || 'Confirmation email skipped'
+              : data.emailStatusLabel || 'Confirmation email queued',
+        tone: data.emailStatus === 'failed' ? 'error' : 'ok',
+      });
+      void load();
+    } catch {
+      setToast({ message: 'Could not send confirmation email', tone: 'error' });
+    } finally {
+      setEmailBusyId(null);
+    }
+  }
 
   const load = useCallback(async () => {
     if (hasLoadedOnce.current) setRefreshing(true);
@@ -246,7 +296,7 @@ export function ReservationsListClient() {
         aria-label="Search reservations"
       />
 
-      {loading && <SkeletonListPage rows={6} cols={5} />}
+      {loading && <SkeletonListPage rows={6} cols={7} />}
 
       {!loading && rows.length === 0 && (
         <div className="admin-card text-center py-10">
@@ -278,6 +328,7 @@ export function ReservationsListClient() {
                   <col className="admin-reservations-col-plan" />
                   <col className="admin-reservations-col-amount" />
                   <col className="admin-reservations-col-approved" />
+                  <col className="admin-reservations-col-email" />
                   <col className="admin-reservations-col-actions" />
                 </colgroup>
                 <thead>
@@ -287,11 +338,17 @@ export function ReservationsListClient() {
                     <th scope="col">Plan</th>
                     <th scope="col">Amount</th>
                     <th scope="col">Approved on</th>
+                    <th scope="col">Email</th>
                     <th scope="col">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((row) => (
+                  {rows.map((row) => {
+                    const confirmTip =
+                      row.emailStatus === 'not_sent'
+                        ? 'Send confirmation email'
+                        : 'Resend confirmation email';
+                    return (
                     <tr key={row.id}>
                       <td>
                         <p className="admin-session-title" title={row.customerName}>
@@ -306,12 +363,24 @@ export function ReservationsListClient() {
                       </td>
                       <td>
                         <p className="text-[13px]">{row.planName}</p>
+                        {row.sourceKind === 'workshop' ? (
+                          <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                            Workshop
+                          </p>
+                        ) : null}
                       </td>
                       <td>
                         <p className="text-[13px]">{row.amountLabel}</p>
                       </td>
                       <td>
                         <p className="text-[13px]">{row.approvedLabel || '—'}</p>
+                      </td>
+                      <td>
+                        <EmailStatusBadge
+                          status={row.emailStatus}
+                          label={row.emailStatusLabel}
+                          reason={row.emailReason}
+                        />
                       </td>
                       <td className="admin-sessions-actions-cell">
                         <div className="admin-session-actions gap-2">
@@ -332,27 +401,47 @@ export function ReservationsListClient() {
                               <MessageCircle className="w-4 h-4" aria-hidden="true" />
                             </AdminIconAction>
                           ) : null}
+                          <AdminIconAction
+                            tip={confirmTip}
+                            ariaLabel={confirmTip}
+                            disabled={emailBusyId === row.id}
+                            onClick={() => void sendConfirmationEmail(row)}
+                          >
+                            <Send className="w-4 h-4" aria-hidden="true" />
+                          </AdminIconAction>
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           </div>
 
           <ul className="lg:hidden space-y-3">
-            {rows.map((row) => (
+            {rows.map((row) => {
+              const confirmTip =
+                row.emailStatus === 'not_sent'
+                  ? 'Send confirmation email'
+                  : 'Resend confirmation email';
+              return (
               <li key={row.id} className="admin-card admin-session-card space-y-2">
                 <p className="font-medium">{row.customerName}</p>
                 <p className="text-xs text-[var(--text-muted)]">{row.customerEmail}</p>
                 <p className="text-[13px]">{row.phone || '—'}</p>
                 <p className="text-[13px]">
                   {row.planName} · {row.amountLabel}
+                  {row.sourceKind === 'workshop' ? ' · Workshop' : ''}
                 </p>
                 <p className="text-xs text-[var(--text-muted)]">
                   Approved {row.approvedLabel || '—'}
                 </p>
+                <EmailStatusBadge
+                  status={row.emailStatus}
+                  label={row.emailStatusLabel}
+                  reason={row.emailReason}
+                />
                 <div className="admin-session-actions gap-2">
                   <AdminIconAction
                     tip="View booking"
@@ -371,9 +460,18 @@ export function ReservationsListClient() {
                       <MessageCircle className="w-4 h-4" aria-hidden="true" />
                     </AdminIconAction>
                   ) : null}
+                  <AdminIconAction
+                    tip={confirmTip}
+                    ariaLabel={confirmTip}
+                    disabled={emailBusyId === row.id}
+                    onClick={() => void sendConfirmationEmail(row)}
+                  >
+                    <Send className="w-4 h-4" aria-hidden="true" />
+                  </AdminIconAction>
                 </div>
               </li>
-            ))}
+              );
+            })}
           </ul>
 
           {totalPages > 1 && (

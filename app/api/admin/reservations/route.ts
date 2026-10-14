@@ -10,6 +10,13 @@ import { formatMoneyLabel } from '@/lib/plans/money';
 import { toLocalDateString } from '@/lib/coupons/dates';
 import { ensureOrderIndexes } from '@/lib/orders/syncIndexes';
 import { expireStaleOrders } from '@/lib/orders/expire';
+import {
+  emailStatusLabel,
+  getJobsForOrderIds,
+  mapJobToPublicStatus,
+  processDueEmailJobs,
+} from '@/lib/email/outbox';
+import { ensureEmailJobIndexes } from '@/lib/email/syncIndexes';
 
 const PAGE_SIZE = 25;
 
@@ -21,13 +28,21 @@ type SessionOption = {
   isLandingActive: boolean;
 };
 
+export const runtime = 'nodejs';
+
 export async function GET(request: Request) {
   const gate = await withAdminRead();
   if (gate.error) return gate.error;
 
   try {
     await ensureOrderIndexes();
+    await ensureEmailJobIndexes();
     await expireStaleOrders();
+    try {
+      await processDueEmailJobs(5);
+    } catch {
+      /* never block list load */
+    }
 
     const { searchParams } = new URL(request.url);
     const q = sanitizeAdminSearch(searchParams.get('q'));
@@ -137,11 +152,19 @@ export async function GET(request: Request) {
       .filter(Boolean)
       .join(', ');
 
-    const reservations = docs.map((d) =>
-      serializeAdminReservation(
-        d as unknown as Parameters<typeof serializeAdminReservation>[0]
-      )
-    );
+    const jobs = await getJobsForOrderIds(docs.map((d) => String(d._id)));
+    const reservations = docs.map((d) => {
+      const job = jobs.get(String(d._id));
+      const status = mapJobToPublicStatus(job);
+      return serializeAdminReservation(
+        d as unknown as Parameters<typeof serializeAdminReservation>[0],
+        {
+          status,
+          label: emailStatusLabel(status),
+          reason: job?.lastError || '',
+        }
+      );
+    });
 
     return NextResponse.json({
       sessions,

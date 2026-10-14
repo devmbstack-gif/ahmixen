@@ -42,7 +42,9 @@ export const metadata: Metadata = {
     images: ['/ahmixen-logo.png'],
   },
   icons: {
-    icon: '/ahmixen-logo.png',
+    icon: [{ url: '/xen-icon-transparent.png', type: 'image/png', sizes: 'any' }],
+    shortcut: '/xen-icon-transparent.png',
+    apple: [{ url: '/xen-icon-transparent.png', type: 'image/png' }],
   },
 };
 

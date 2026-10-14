@@ -81,6 +81,39 @@ async function resolveInstructorPhoto(
   return staticInstructor.photo;
 }
 
+async function resolveProofCards(
+  cards: InstructorContentData['proofCards']
+): Promise<Instructor['proofCards']> {
+  if (!cards?.length) return [];
+  const ids = cards.map((c) => c.imageAssetId).filter(Boolean);
+  if (ids.length === 0) return [];
+
+  const assets = await MediaAsset.find({ _id: { $in: ids } }).lean();
+  const urlById = new Map<string, string>();
+  for (const asset of assets) {
+    const url = mediaPublicUrl({
+      kind: asset.kind,
+      fileId: asset.fileId,
+      staticPath: asset.staticPath,
+      id: String(asset._id),
+    });
+    if (url) urlById.set(String(asset._id), url);
+  }
+
+  return cards
+    .map((c) => {
+      const imageUrl = urlById.get(c.imageAssetId);
+      if (!imageUrl) return null;
+      return {
+        imageUrl,
+        platform: c.platform,
+        href: c.href,
+        label: c.label,
+      };
+    })
+    .filter((c): c is NonNullable<typeof c> => Boolean(c));
+}
+
 async function loadInstructorFromDb(): Promise<Instructor | null> {
   await connectToDatabase();
   const doc = await SiteContent.findOne({ key: 'instructor' }).lean();
@@ -91,18 +124,106 @@ async function loadInstructorFromDb(): Promise<Instructor | null> {
     return null;
   }
   const data = parsed.data;
-  const photo = await resolveInstructorPhoto(data);
+  const [photo, proofCards] = await Promise.all([
+    resolveInstructorPhoto(data),
+    resolveProofCards(data.proofCards ?? []),
+  ]);
+  // Heal legacy CMS rows that still store older short copy.
+  const legacyGreeting = new Set([
+    "Hello I'm Ahmi.",
+    "Hello I'm Ahmi",
+    "HELLO I'm Ahmi",
+    "HELLO I'm Ahmi.",
+    "Hello I'm HAFIZ AHMAD ALI",
+    "Hello I'm Hafiz Ahmad Ali",
+    "HELLO I'm HAFIZ AHMAD ALI",
+  ]);
+  const legacyHeadline =
+    'Trained 100+ students & delivered keynote AI seminars across universities';
+  const legacyHeadlineUpper =
+    'TRAINED 100+ STUDENTS & DELIVERED KEYNOTE AI SEMINARS ACROSS UNIVERSITIES';
+  const legacyAccent = new Set([
+    'TRAINED 100+ STUDENTS',
+    'Trained 100+ students',
+  ]);
+  const legacyBioStartsWith =
+    "Over the past 3+ years, I've been on a mission to empower youth";
+  const legacyQuote =
+    'We cannot win the race of AI without actively building with AI.';
+
+  const greetingRaw = data.greeting.trim();
+  const greeting = legacyGreeting.has(greetingRaw)
+    ? staticInstructor.greeting
+    : /HAFIZ AHMAD ALI|Hafiz Ahmad Ali/i.test(greetingRaw)
+      ? greetingRaw
+          .replace(/HAFIZ AHMAD ALI/gi, 'AHMI')
+          .replace(/Hafiz Ahmad Ali/gi, 'Ahmi')
+      : greetingRaw;
+  const headlineSubRaw = data.headlineSub.trim();
+  const headlineSub =
+    headlineSubRaw.toLowerCase() === legacyHeadline.toLowerCase() ||
+    headlineSubRaw === legacyHeadlineUpper
+      ? staticInstructor.headlineSub
+      : data.headlineSub;
+  const bioRaw = data.bio.trim();
+  const bioHealedName = bioRaw
+    .replace(/^Hafiz Ahmad Ali\b/i, 'Ahmi')
+    .replace(/\bHafiz Ahmad Ali\b/g, 'Ahmi');
+  const bio =
+    bioRaw.startsWith(legacyBioStartsWith) ||
+    /^Hafiz Ahmad Ali teaches\b/i.test(bioRaw)
+      ? staticInstructor.bio
+      : bioHealedName;
+
+  const differenceHeading =
+    (data.differenceHeading && data.differenceHeading.trim()) ||
+    staticInstructor.differenceHeading;
+  const differenceBodyRaw =
+    (data.differenceBody && data.differenceBody.trim()) ||
+    data.missionQuote?.trim() ||
+    '';
+  const differenceBody =
+    !differenceBodyRaw || differenceBodyRaw === legacyQuote
+      ? staticInstructor.differenceBody
+      : differenceBodyRaw;
+
+  const headlineAccentRaw = data.headlineAccent?.trim() || '';
+  const headlineAccent =
+    !headlineAccentRaw || legacyAccent.has(headlineAccentRaw)
+      ? staticInstructor.headlineAccent
+      : headlineAccentRaw;
+
+  const nameRaw = (data.name || '').trim();
+  const name =
+    !nameRaw || /hafiz ahmad ali/i.test(nameRaw)
+      ? staticInstructor.name
+      : nameRaw;
+  const shortBio = (data.shortBio || '')
+    .replace(/^Hafiz Ahmad Ali\b/i, 'Ahmi')
+    .replace(/\bHafiz Ahmad Ali\b/g, 'Ahmi')
+    .replace(/^He teaches AI and agentic AI/i, 'Ahmi teaches AI and agentic AI');
+
   return {
-    name: data.name,
+    name,
+    greeting,
+    greetingAccent:
+      (data.greetingAccent && data.greetingAccent.trim()) ||
+      staticInstructor.greetingAccent,
+    headlineSub,
+    headlineAccent,
     title: data.title,
-    bio: data.bio,
-    shortBio: data.shortBio,
+    bio,
+    shortBio: shortBio || staticInstructor.shortBio,
     chip: data.chip,
+    missionQuote: differenceBody,
+    differenceHeading,
+    differenceBody,
     stats: data.stats,
     seminars: data.seminars,
     linkedin: data.linkedin,
     instagram: data.instagram,
     photo,
+    proofCards,
   };
 }
 

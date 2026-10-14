@@ -1,14 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowUp } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { WORKSHOP_CONFIG } from '../data/workshopData';
 import {
   instructor as staticInstructor,
   type Instructor as InstructorData,
 } from '../data/instructor';
-import { NAV_LINKS } from '../data/navLinks';
 import { AhmiXenLogo } from './AhmiXenLogo';
 
 function LinkedInIcon({ className }: { className?: string }) {
@@ -27,16 +25,21 @@ function InstagramIcon({ className }: { className?: string }) {
   );
 }
 
+/** Row-major 2-column footer nav order */
+const FOOTER_LINKS = [
+  { label: 'Programs', href: '/programs' },
+  { label: 'Refund Policy', href: '/refund-policy' },
+  { label: 'Testimonials', href: '/testimonials' },
+  { label: 'Terms of Service', href: '/terms' },
+  { label: 'Our Mission', href: '/our-mission' },
+] as const;
+
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 export const Footer: React.FC<{ instructor?: InstructorData }> = ({
   instructor = staticInstructor,
 }) => {
   const reduceMotion = useReducedMotion();
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
-  };
 
   return (
     <footer className="site-footer">
@@ -52,14 +55,13 @@ export const Footer: React.FC<{ instructor?: InstructorData }> = ({
             <Link href="/" className="nav-focus inline-flex" aria-label="AhmiXen home">
               <AhmiXenLogo className="text-2xl sm:text-3xl" />
             </Link>
-            <p className="site-footer-tagline">Practical AI workshops for professionals.</p>
             <p className="site-footer-copy hidden lg:block">
               &copy; {new Date().getFullYear()} {WORKSHOP_CONFIG.brandName}
             </p>
           </div>
 
           <nav className="site-footer-nav" aria-label="Footer">
-            {NAV_LINKS.map((link) => (
+            {FOOTER_LINKS.map((link) => (
               <Link key={link.href} href={link.href} className="site-footer-link nav-focus">
                 {link.label}
               </Link>
@@ -93,14 +95,6 @@ export const Footer: React.FC<{ instructor?: InstructorData }> = ({
                 <InstagramIcon className="w-5 h-5" />
               </a>
             </div>
-            <button
-              type="button"
-              onClick={scrollToTop}
-              aria-label="Back to top"
-              className="site-footer-top nav-focus"
-            >
-              <ArrowUp className="w-4 h-4" aria-hidden="true" />
-            </button>
             <p className="site-footer-copy site-footer-copy-mobile lg:hidden">
               &copy; {new Date().getFullYear()} {WORKSHOP_CONFIG.brandName}
             </p>

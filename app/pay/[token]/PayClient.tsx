@@ -13,6 +13,10 @@ import {
   RATE_LIMIT_MESSAGE,
 } from '@/lib/checkout-client';
 import { prepareProofImage } from '@/lib/checkout-client/imagePrepare';
+import {
+  SHOW_BANK_TRANSFER_DETAILS,
+  WALLET_PAYMENT,
+} from '@/data/paymentDisplay';
 
 type OrderStatus = {
   orderNumber: string;
@@ -565,35 +569,57 @@ function AwaitingPayment({
         </p>
       ) : (
         <div className="checkout-card space-y-3">
-          <h2 className="font-semibold">Bank transfer details</h2>
+          <h2 className="font-semibold">JazzCash / Easypaisa details</h2>
           <CopyRow
-            label="Bank"
-            value={payInfo.bankName}
-            copied={copiedKey === 'bank'}
-            onCopy={() => onCopy('bank', payInfo.bankName)}
+            label="JazzCash / Easypaisa"
+            value={WALLET_PAYMENT.number}
+            copied={copiedKey === 'wallet'}
+            onCopy={() => onCopy('wallet', WALLET_PAYMENT.number)}
           />
           <CopyRow
-            label="Account title"
-            value={payInfo.accountTitle}
-            copied={copiedKey === 'title'}
-            onCopy={() => onCopy('title', payInfo.accountTitle)}
+            label="Name"
+            value={WALLET_PAYMENT.accountName}
+            copied={copiedKey === 'walletName'}
+            onCopy={() => onCopy('walletName', WALLET_PAYMENT.accountName)}
           />
-          <CopyRow
-            label="Account number"
-            value={payInfo.accountNumber}
-            copied={copiedKey === 'number'}
-            onCopy={() => onCopy('number', payInfo.accountNumber)}
-          />
-          <CopyRow
-            label="IBAN"
-            value={payInfo.iban}
-            copied={copiedKey === 'iban'}
-            onCopy={() => onCopy('iban', payInfo.iban)}
-          />
-          {payInfo.paymentInstructions ? (
-            <p className="text-sm text-[var(--text-secondary)] pt-2 border-t border-[var(--border-subtle)]">
-              {payInfo.paymentInstructions}
-            </p>
+          <p className="text-sm text-[var(--text-secondary)] pt-2 border-t border-[var(--border-subtle)]">
+            {WALLET_PAYMENT.instructions}
+          </p>
+
+          {/* Bank transfer kept for future — hidden from customers for now */}
+          {SHOW_BANK_TRANSFER_DETAILS ? (
+            <div className="space-y-3 pt-3 border-t border-[var(--border-subtle)]">
+              <h3 className="font-semibold text-sm">Bank transfer details</h3>
+              <CopyRow
+                label="Bank"
+                value={payInfo.bankName}
+                copied={copiedKey === 'bank'}
+                onCopy={() => onCopy('bank', payInfo.bankName)}
+              />
+              <CopyRow
+                label="Account title"
+                value={payInfo.accountTitle}
+                copied={copiedKey === 'title'}
+                onCopy={() => onCopy('title', payInfo.accountTitle)}
+              />
+              <CopyRow
+                label="Account number"
+                value={payInfo.accountNumber}
+                copied={copiedKey === 'number'}
+                onCopy={() => onCopy('number', payInfo.accountNumber)}
+              />
+              <CopyRow
+                label="IBAN"
+                value={payInfo.iban}
+                copied={copiedKey === 'iban'}
+                onCopy={() => onCopy('iban', payInfo.iban)}
+              />
+              {payInfo.paymentInstructions ? (
+                <p className="text-sm text-[var(--text-secondary)]">
+                  {payInfo.paymentInstructions}
+                </p>
+              ) : null}
+            </div>
           ) : null}
         </div>
       )}

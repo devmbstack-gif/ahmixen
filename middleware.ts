@@ -23,7 +23,9 @@ export async function middleware(request: NextRequest) {
   const isAdminApi = pathname.startsWith('/api/admin');
   const isAdminPage = pathname.startsWith('/admin');
   const isAuthApi =
-    pathname === '/api/admin/auth/login' || pathname === '/api/admin/auth/logout';
+    pathname === '/api/admin/auth/login' ||
+    pathname === '/api/admin/auth/logout' ||
+    pathname === '/api/admin/auth/warm';
 
   if (isAuthApi) {
     return NextResponse.next();

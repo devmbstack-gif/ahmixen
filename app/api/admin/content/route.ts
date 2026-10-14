@@ -7,6 +7,7 @@ import {
 import {
   CONTENT_REGISTRY,
   LANDING_CONTENT_KEYS,
+  landingContentPriority,
 } from '@/lib/content/registry';
 
 export async function GET() {
@@ -30,6 +31,7 @@ export async function GET() {
         label: entry.label,
         description: entry.description,
         group: entry.group,
+        priority: landingContentPriority(key) ?? 'more',
         publicPath: entry.publicPath || null,
         publicAnchor: entry.publicAnchor || null,
         version: doc?.version ?? null,

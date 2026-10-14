@@ -123,6 +123,26 @@ const OrderSchema = new Schema(
     events: { type: [EventSchema], default: [] },
     utm: { type: UtmSchema, default: () => ({}) },
     leadId: { type: String, default: '', trim: true },
+    /** checkout = pricing/reserve flow; workshop = Programs registration */
+    sourceKind: {
+      type: String,
+      enum: ['checkout', 'workshop'],
+      default: 'checkout',
+      index: true,
+    },
+    programId: { type: String, default: '', trim: true, maxlength: 80 },
+    programTitle: { type: String, default: '', trim: true, maxlength: 120 },
+    workshopMeta: {
+      type: new Schema(
+        {
+          city: { type: String, default: '', trim: true, maxlength: 80 },
+          skillLevel: { type: String, default: '', trim: true, maxlength: 40 },
+          learningGoals: { type: [String], default: [] },
+        },
+        { _id: false }
+      ),
+      default: null,
+    },
     isTestData: { type: Boolean, default: false },
     version: { type: Number, default: 1 },
   },

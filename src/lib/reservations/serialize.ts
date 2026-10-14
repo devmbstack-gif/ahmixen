@@ -15,6 +15,12 @@ export type AdminReservationDTO = {
   finalPrice: number;
   approvedAt: string | null;
   approvedLabel: string;
+  emailStatus: 'sent' | 'pending' | 'failed' | 'skipped' | 'not_sent';
+  emailStatusLabel: string;
+  emailReason: string;
+  sourceKind: 'checkout' | 'workshop';
+  programTitle: string;
+  bookingTypeLabel: string;
 };
 
 function formatPkt(d: Date | null | undefined): string {
@@ -43,13 +49,31 @@ export function approvedAtFromEvents(
   return latest;
 }
 
-export function serializeAdminReservation(doc: OrderDocument): AdminReservationDTO {
+export function serializeAdminReservation(
+  doc: OrderDocument,
+  email?: {
+    status: 'sent' | 'pending' | 'failed' | 'skipped' | 'not_sent';
+    label: string;
+    reason?: string;
+  }
+): AdminReservationDTO {
   const currency = doc.planSnapshot.currency;
   const finalPrice = doc.amounts.finalPrice;
   const approvedAt = approvedAtFromEvents(
     doc.events as Array<{ type?: string; at?: Date | string }>
   );
   const phone = doc.customer.phone || '';
+  const sourceKind =
+    (doc as { sourceKind?: string }).sourceKind === 'workshop'
+      ? 'workshop'
+      : 'checkout';
+  const programTitle = String(
+    (doc as { programTitle?: string }).programTitle || ''
+  ).trim();
+  const planName =
+    sourceKind === 'workshop'
+      ? programTitle || doc.planSnapshot.name
+      : doc.planSnapshot.name;
 
   return {
     id: String(doc._id),
@@ -58,11 +82,17 @@ export function serializeAdminReservation(doc: OrderDocument): AdminReservationD
     customerEmail: doc.customer.email,
     phone,
     phoneDigits: digitsOnlyPhone(phone),
-    planName: doc.planSnapshot.name,
+    planName,
     amountLabel: formatMoneyLabel(currency, finalPrice),
     currency,
     finalPrice,
     approvedAt: approvedAt ? approvedAt.toISOString() : null,
     approvedLabel: formatPkt(approvedAt) || formatPkt(doc.updatedAt),
+    emailStatus: email?.status ?? 'not_sent',
+    emailStatusLabel: email?.label ?? 'Not sent',
+    emailReason: email?.reason ?? '',
+    sourceKind,
+    programTitle,
+    bookingTypeLabel: sourceKind === 'workshop' ? 'Workshop' : 'Checkout',
   };
 }

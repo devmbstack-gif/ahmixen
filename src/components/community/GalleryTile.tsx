@@ -47,7 +47,7 @@ export function GalleryTile({ photo, index, onOpen }: GalleryTileProps) {
       >
         <div className="community-tile-media">
           <Image
-            src={photo.src}
+            src={encodeURI(photo.src)}
             alt={photo.caption}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
@@ -60,6 +60,7 @@ export function GalleryTile({ photo, index, onOpen }: GalleryTileProps) {
             placeholder="blur"
             blurDataURL={COMMUNITY_BLUR_DATA_URL}
             loading="lazy"
+            unoptimized
           />
         </div>
 

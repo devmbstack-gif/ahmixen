@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Archive, Eye, EyeOff, Pencil, Plus } from 'lucide-react';
+import { Archive, Eye, EyeOff, Monitor, Pencil, Plus } from 'lucide-react';
 import { SearchInput } from '../SearchInput';
 import { SkeletonListPage } from '../skeletons';
 import { motion, useReducedMotion } from 'framer-motion';
@@ -78,23 +78,54 @@ function PriceCell({ plan }: { plan: AdminPlanDTO }) {
   );
 }
 
+function LandingPills({ plan }: { plan: AdminPlanDTO }) {
+  if (!plan.isLandingPlan) return null;
+  if (plan.landingSiteIssue) {
+    return (
+      <span
+        className="admin-plan-landing-pill admin-plan-landing-pill-warn"
+        title={plan.landingSiteIssueMessage}
+      >
+        Not showing on the site
+      </span>
+    );
+  }
+  return (
+    <span className="admin-plan-landing-pill">Shown on landing page</span>
+  );
+}
+
 function PlanActions({
   plan,
   busy,
   onToggleVisibility,
   onArchive,
+  onShowOnLanding,
 }: {
   plan: AdminPlanDTO;
   busy: boolean;
   onToggleVisibility: () => void;
   onArchive: () => void;
+  onShowOnLanding: () => void;
 }) {
   const isArchived = plan.status === 'archived';
+  const isLanding = plan.isLandingPlan;
+  const canShowOnLanding =
+    !isLanding && !isArchived && plan.status === 'active' && plan.type === 'one_time';
   const showTip = isArchived
     ? 'Archived plans cannot be shown'
     : plan.status === 'active'
       ? 'Hide plan'
       : 'Show plan';
+
+  let landingTip = 'Show on landing page';
+  if (isLanding) landingTip = 'Already shown on landing page';
+  else if (isArchived) landingTip = 'Archived plans cannot be shown on the landing page';
+  else if (plan.status !== 'active')
+    landingTip = 'Only active plans can be shown on the landing page';
+  else if (plan.type !== 'one_time')
+    landingTip = 'Only one-time plans can be shown on the landing page';
+  else if (busy) landingTip = 'Please wait';
 
   return (
     <div className="admin-session-actions" role="group" aria-label="Plan actions">
@@ -105,6 +136,15 @@ function PlanActions({
         disabled={busy}
       >
         <Pencil className="w-4 h-4" aria-hidden="true" />
+      </AdminIconAction>
+      <AdminIconAction
+        tip={landingTip}
+        ariaLabel="Show on landing page"
+        accent={isLanding}
+        disabled={!canShowOnLanding || busy}
+        onClick={onShowOnLanding}
+      >
+        <Monitor className="w-4 h-4" aria-hidden="true" />
       </AdminIconAction>
       <AdminIconAction
         tip={showTip}
@@ -142,7 +182,11 @@ export function PlansListClient() {
   const [toast, setToast] = useState<{ message: string; tone?: 'ok' | 'error' } | null>(
     null
   );
-  const [confirm, setConfirm] = useState<AdminPlanDTO | null>(null);
+  const [confirm, setConfirm] = useState<
+    | { type: 'archive'; plan: AdminPlanDTO }
+    | { type: 'landing'; plan: AdminPlanDTO }
+    | null
+  >(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -246,6 +290,33 @@ export function PlansListClient() {
     }
   };
 
+  const runLanding = async (plan: AdminPlanDTO) => {
+    setBusyId(plan.id);
+    try {
+      const res = await fetch(`/api/admin/plans/${plan.id}/landing`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ version: plan.version }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setToast({
+          message:
+            res.status === 409
+              ? 'This plan was changed elsewhere, reload'
+              : data.error || 'Could not update landing plan',
+          tone: 'error',
+        });
+        return;
+      }
+      setToast({ message: `"${plan.name}" is now shown on the landing page` });
+      await load();
+    } finally {
+      setBusyId(null);
+      setConfirm(null);
+    }
+  };
+
   const renderDesktopTable = (list: AdminPlanDTO[]) => (
     <div className="admin-sessions-table-wrap">
       <table className="admin-table admin-sessions-table admin-plans-table">
@@ -279,6 +350,7 @@ export function PlansListClient() {
                   <p className="text-xs text-[var(--text-muted)] mt-0.5 truncate">
                     {p.sessionTitle || 'All sessions'}
                   </p>
+                  <LandingPills plan={p} />
                 </td>
                 <td>
                   <PriceCell plan={p} />
@@ -307,7 +379,10 @@ export function PlansListClient() {
                     plan={p}
                     busy={busyId === p.id}
                     onToggleVisibility={() => void toggleVisibility(p)}
-                    onArchive={() => setConfirm(p)}
+                    onArchive={() => setConfirm({ type: 'archive', plan: p })}
+                    onShowOnLanding={() =>
+                      setConfirm({ type: 'landing', plan: p })
+                    }
                   />
                 </td>
               </tr>
@@ -331,6 +406,7 @@ export function PlansListClient() {
               <p className="text-xs text-[var(--text-muted)] mt-0.5">
                 {p.sessionTitle || 'All sessions'}
               </p>
+              <LandingPills plan={p} />
             </div>
             <PriceCell plan={p} />
             <div className="flex flex-wrap gap-3 text-[13px]">
@@ -359,7 +435,10 @@ export function PlansListClient() {
                 plan={p}
                 busy={busyId === p.id}
                 onToggleVisibility={() => void toggleVisibility(p)}
-                onArchive={() => setConfirm(p)}
+                onArchive={() => setConfirm({ type: 'archive', plan: p })}
+                onShowOnLanding={() =>
+                  setConfirm({ type: 'landing', plan: p })
+                }
               />
             </div>
           </li>
@@ -448,17 +527,25 @@ export function PlansListClient() {
       <AdminToast message={toast?.message ?? null} tone={toast?.tone} />
       <AdminConfirmDialog
         open={Boolean(confirm)}
-        title="Archive plan?"
-        description={
-          confirm
-            ? `"${confirm.name}" will be archived and hidden from customers. You can still find it in the Archived filter.`
-            : ''
+        title={
+          confirm?.type === 'landing'
+            ? 'Show on landing page?'
+            : 'Archive plan?'
         }
-        confirmLabel="Archive"
-        danger
+        description={
+          confirm?.type === 'landing'
+            ? `"${confirm.plan.name}" will be the plan shown on the home page pricing card. Any other landing plan will be turned off.`
+            : confirm?.type === 'archive'
+              ? `"${confirm.plan.name}" will be archived and hidden from customers. You can still find it in the Archived filter.`
+              : ''
+        }
+        confirmLabel={confirm?.type === 'landing' ? 'Show on landing' : 'Archive'}
+        danger={confirm?.type === 'archive'}
         onCancel={() => setConfirm(null)}
         onConfirm={() => {
-          if (confirm) void runArchive(confirm);
+          if (!confirm) return;
+          if (confirm.type === 'landing') void runLanding(confirm.plan);
+          else void runArchive(confirm.plan);
         }}
       />
     </motion.div>
