@@ -32,15 +32,6 @@ export const PUBLIC_RATE_LIMITS = {
     limit: intEnv('RATE_LIMIT_LEADS_EMAIL', 5),
     windowSeconds: intEnv('RATE_LIMIT_LEADS_EMAIL_WINDOW', 3600),
   },
-  /** POST /api/public/coupons/check */
-  couponsIp: {
-    limit: intEnv('RATE_LIMIT_COUPONS_IP', 30),
-    windowSeconds: intEnv('RATE_LIMIT_COUPONS_IP_WINDOW', 600),
-  },
-  couponsEmail: {
-    limit: intEnv('RATE_LIMIT_COUPONS_EMAIL', 10),
-    windowSeconds: intEnv('RATE_LIMIT_COUPONS_EMAIL_WINDOW', 3600),
-  },
   /** POST /api/public/orders */
   ordersIp: {
     limit: intEnv('RATE_LIMIT_ORDERS_IP', 20),

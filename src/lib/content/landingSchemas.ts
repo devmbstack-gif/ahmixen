@@ -164,19 +164,22 @@ export const aiJobsDataSchema = aiJobsFields;
 const agendaItemFields = z.object({
   id: plain(40, 1, 'Id'),
   moduleNumber: plain(10, 1, 'Module number'),
-  timeRange: plain(30, 1, 'Time range'),
-  durationMin: plain(20, 1, 'Duration'),
-  title: plain(60, 1, 'Title'),
-  summary: plain(140, 1, 'Description'),
+  timeRange: plain(30, 0, 'Time range').default(''),
+  durationMin: plain(20, 0, 'Duration').default(''),
+  title: plain(80, 1, 'Title'),
+  summary: plain(200, 1, 'Description'),
+  category: plain(40, 0, 'Category').default('AI AUTOMATION'),
+  image: z.string().trim().optional(),
 });
 
 const agendaFields = z.object({
   heading: plain(60, 1, 'Heading'),
-  comingSoon: z.boolean(),
+  /** @deprecated Roadmap is always visible; kept for CMS compat. */
+  comingSoon: z.boolean().default(false),
   items: z
     .array(agendaItemFields)
     .min(1, 'Add at least one agenda item')
-    .max(10, 'At most 10 agenda items'),
+    .max(12, 'At most 12 agenda items'),
 });
 
 export const agendaDataSchema = agendaFields;
@@ -207,6 +210,15 @@ function isValidProgramHref(value: string): boolean {
   return false;
 }
 
+const planIdOrNull = z
+  .string()
+  .trim()
+  .nullable()
+  .optional()
+  .refine((v) => v == null || v === '' || /^[a-f\d]{24}$/i.test(v), {
+    message: 'Choose a valid pricing plan',
+  });
+
 const programCardFields = z.object({
   id: plain(40, 1, 'Id'),
   title: plain(80, 1, 'Title'),
@@ -223,7 +235,10 @@ const programCardFields = z.object({
         'Use an internal path like /#pricing or an https:// link',
     }),
   status: z.enum(['open', 'locked']).default('locked'),
+  /** Display fallback when no plan is linked (locked cards leave blank). */
   priceLabel: plain(40, 0, 'Price label').default(''),
+  /** Checkout plan for this program (workshop reserve). Not mentorship. */
+  planId: planIdOrNull,
 });
 
 const programsFields = z.object({
@@ -307,8 +322,17 @@ export const aiJobsStaticDefault = {
 
 export const agendaStaticDefault = {
   heading: 'Session Agenda',
-  comingSoon: true,
-  items: WORKSHOP_AGENDA.map((m) => ({ ...m })),
+  comingSoon: false,
+  items: WORKSHOP_AGENDA.map((m) => ({
+    id: m.id,
+    moduleNumber: m.moduleNumber,
+    timeRange: m.timeRange || '',
+    durationMin: m.durationMin || '',
+    title: m.title,
+    summary: m.summary,
+    category: m.category || 'AI AUTOMATION',
+    image: m.image,
+  })),
 };
 
 export const statsStaticDefault = {
@@ -332,9 +356,9 @@ const pricingFields = z.object({
 export const pricingDataSchema = pricingFields;
 
 export const pricingStaticDefault = {
-  badge: 'PRICING',
+  badge: 'MENTORSHIP',
   headingLine1: 'FEES STRUCTURE OF',
-  headingLine2: 'AHMIXEN AI',
+  headingLine2: 'AHMIXEN AI MENTORSHIP',
   subtext:
     'Takes about 2 minutes. You pay by JazzCash / Easypaisa on the next step.',
 };
@@ -350,6 +374,7 @@ export const programsStaticDefault = {
     href: p.href,
     status: p.status,
     priceLabel: p.price,
+    planId: null as string | null,
   })),
 };
 

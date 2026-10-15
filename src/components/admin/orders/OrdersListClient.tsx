@@ -264,10 +264,6 @@ export function OrdersListClient({ sessions }: { sessions: SessionOption[] }) {
                           <p className="text-xs text-[var(--text-muted)] mt-0.5">
                             Workshop · {o.programTitle || o.planName}
                           </p>
-                        ) : o.couponCode ? (
-                          <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                            {o.couponCode}
-                          </p>
                         ) : null}
                       </td>
                       <td>

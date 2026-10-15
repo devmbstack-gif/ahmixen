@@ -7,7 +7,7 @@ import { getSeatSummary } from '@/lib/sessions/seats';
 import { escapeRegex, sanitizeAdminSearch } from '@/lib/admin/search';
 import { serializeAdminReservation } from '@/lib/reservations/serialize';
 import { formatMoneyLabel } from '@/lib/plans/money';
-import { toLocalDateString } from '@/lib/coupons/dates';
+import { toLocalDateString } from '@/lib/dates/pkt';
 import { ensureOrderIndexes } from '@/lib/orders/syncIndexes';
 import { expireStaleOrders } from '@/lib/orders/expire';
 import {

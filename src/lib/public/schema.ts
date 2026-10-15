@@ -77,19 +77,81 @@ export const leadFieldsSchema = z.object({
   website: z.string().optional().default(''),
 });
 
-export const couponCheckFieldsSchema = z.object({
-  code: z.string().trim().min(1).max(20),
-  planId: z.string().trim().min(1).max(64),
-  email: emailSchema,
-});
+const LEARNING_GOALS = [
+  'ai_automation',
+  'monetize',
+  'ai_agents',
+  'n8n',
+  'real_world',
+  'business_problems',
+  'content_research',
+  'other',
+] as const;
 
-export const publicOrderFieldsSchema = z.object({
-  planId: z.string().trim().min(1).max(64),
-  name: nameSchema,
-  email: emailSchema,
-  phone: phoneSchema,
-  profession: professionSchema,
-  couponCode: z.string().trim().max(20).optional().default(''),
-  utm: utmSchema,
-  website: z.string().optional().default(''),
-});
+const SKILL_LEVELS = ['beginner', 'intermediate', 'advanced'] as const;
+
+export const publicOrderFieldsSchema = z
+  .object({
+    planId: z.string().trim().min(1).max(64),
+    name: nameSchema,
+    email: emailSchema,
+    phone: phoneSchema,
+    profession: professionSchema,
+    sourceKind: z.enum(['checkout', 'workshop']).optional().default('checkout'),
+    programId: z.string().trim().max(80).optional().default(''),
+    programTitle: z.string().trim().max(120).optional().default(''),
+    city: z.string().trim().max(80).optional().default(''),
+    skillLevel: z.string().trim().max(40).optional().default(''),
+    learningGoals: z
+      .array(z.string().trim().max(40))
+      .max(8)
+      .optional()
+      .default([]),
+    utm: utmSchema,
+    website: z.string().optional().default(''),
+  })
+  .superRefine((data, ctx) => {
+    if (data.sourceKind !== 'workshop') return;
+
+    if (data.profession.trim().length < 2) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['profession'],
+        message: 'Enter your education or profession',
+      });
+    }
+    if (data.city.trim().length < 2) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['city'],
+        message: 'Enter your city',
+      });
+    }
+    if (
+      !SKILL_LEVELS.includes(data.skillLevel as (typeof SKILL_LEVELS)[number])
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['skillLevel'],
+        message: 'Choose your AI skill level',
+      });
+    }
+    const goals = data.learningGoals.filter(Boolean);
+    if (goals.length < 1) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['learningGoals'],
+        message: 'Select at least one learning goal',
+      });
+    }
+    for (const g of goals) {
+      if (!LEARNING_GOALS.includes(g as (typeof LEARNING_GOALS)[number])) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['learningGoals'],
+          message: 'Choose a valid learning goal',
+        });
+        break;
+      }
+    }
+  });

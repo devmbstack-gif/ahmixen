@@ -2,7 +2,13 @@ import { unstable_cache } from 'next/cache';
 import { connectToDatabase } from '@/lib/db';
 import { SiteContent } from '@/models/SiteContent';
 import { MediaAsset } from '@/models/MediaAsset';
+import { Plan } from '@/models/Plan';
 import { mediaPublicUrl } from '@/lib/media/url';
+import { formatMoneyLabel } from '@/lib/plans/money';
+import {
+  selectLandingPlan,
+  selectWorkshopPlan,
+} from '@/lib/plans/landing';
 import { CONTENT_TAGS } from './cache';
 import {
   CONTENT_REGISTRY,
@@ -32,6 +38,10 @@ import {
   type SeoContentData,
   type StatsContentData,
 } from './landingSchemas';
+import {
+  AGENDA_MODULE_IMAGE,
+  WORKSHOP_AGENDA,
+} from '@/data/workshopData';
 import { applyHeroDurationToken } from '@/lib/video';
 import { getInstructor } from './public';
 import { instructor as staticInstructor } from '@/data/instructor';
@@ -316,8 +326,50 @@ export async function getAiJobsContent(): Promise<AiJobsContentData> {
   return loadAiJobs();
 }
 
+const LEGACY_AGENDA_TITLES = new Set([
+  'AI Fundamentals',
+  'AI Agents',
+  'Automation Workflows',
+  'Build with AI + Q&A',
+]);
+
 export async function getAgendaContent(): Promise<AgendaContentData> {
-  return loadAgenda();
+  const data = await loadAgenda();
+  const titles = (data.items || []).map((i) => i.title.trim());
+  const isLegacy =
+    data.comingSoon === true ||
+    titles.length < 7 ||
+    titles.every((t) => LEGACY_AGENDA_TITLES.has(t)) ||
+    titles.some((t) => LEGACY_AGENDA_TITLES.has(t));
+
+  if (isLegacy) {
+    return {
+      heading: data.heading?.trim() || 'Session Agenda',
+      comingSoon: false,
+      items: WORKSHOP_AGENDA.map((m) => ({
+        id: m.id,
+        moduleNumber: m.moduleNumber,
+        timeRange: m.timeRange || '',
+        durationMin: m.durationMin || '',
+        title: m.title,
+        summary: m.summary,
+        category: m.category || 'AI AUTOMATION',
+        image: AGENDA_MODULE_IMAGE,
+      })),
+    };
+  }
+
+  return {
+    ...data,
+    comingSoon: false,
+    items: data.items.map((item) => ({
+      ...item,
+      category: item.category?.trim() || 'AI AUTOMATION',
+      timeRange: item.timeRange || '',
+      durationMin: item.durationMin || '',
+      image: AGENDA_MODULE_IMAGE,
+    })),
+  };
 }
 
 export async function getStatsContent(): Promise<StatsContentData> {
@@ -325,8 +377,50 @@ export async function getStatsContent(): Promise<StatsContentData> {
   return applyTrainedStatFromInstructor(stats, instructor.stats);
 }
 
+/** Map legacy pricing copy → mentorship branding without requiring a CMS republish. */
+function healPricingCopy(data: PricingContentData): PricingContentData {
+  const badgeNorm = data.badge.trim().toUpperCase();
+  const line2Norm = data.headingLine2.trim().toUpperCase();
+  const line1Norm = data.headingLine1.trim().toUpperCase();
+
+  let badge = data.badge;
+  let headingLine1 = data.headingLine1;
+  let headingLine2 = data.headingLine2;
+
+  if (badgeNorm === 'PRICING' || badgeNorm === 'PRICE') {
+    badge = 'MENTORSHIP';
+  }
+
+  if (
+    line2Norm === 'AHMIXEN AI' ||
+    line2Norm === 'AHMIXEN AI.' ||
+    line2Norm === 'AHMI XEN AI'
+  ) {
+    headingLine2 = 'AHMIXEN AI MENTORSHIP';
+  }
+
+  // Older one-line style stored entirely in line1
+  if (
+    line1Norm === 'FEES STRUCTURE OF AHMIXEN AI' &&
+    !line2Norm.includes('MENTORSHIP')
+  ) {
+    headingLine1 = 'FEES STRUCTURE OF';
+    headingLine2 = 'AHMIXEN AI MENTORSHIP';
+  }
+
+  if (
+    badge === data.badge &&
+    headingLine1 === data.headingLine1 &&
+    headingLine2 === data.headingLine2
+  ) {
+    return data;
+  }
+
+  return { ...data, badge, headingLine1, headingLine2 };
+}
+
 export async function getPricingContent(): Promise<PricingContentData> {
-  return loadPricing();
+  return healPricingCopy(await loadPricing());
 }
 
 export type ProgramCardPublic = ProgramsContentData['cards'][number] & {
@@ -334,6 +428,8 @@ export type ProgramCardPublic = ProgramsContentData['cards'][number] & {
   priceLabel: string;
   originalPriceLabel: string | null;
   status: 'open' | 'locked';
+  /** Resolved checkout plan (linked plan or default workshop plan). */
+  planId: string | null;
 };
 
 const LEGACY_PROGRAM_ID_SETS = new Set([
@@ -358,8 +454,13 @@ function resolveProgramCards(
   }
   return cards.map((c) => {
     const locked = c.status !== 'open';
+    const planId =
+      typeof c.planId === 'string' && /^[a-f\d]{24}$/i.test(c.planId)
+        ? c.planId
+        : null;
     return {
       ...c,
+      planId,
       instructorLine: /hafiz ahmad ali/i.test(c.instructorLine)
         ? 'Ahmi'
         : c.instructorLine || 'Ahmi',
@@ -378,12 +479,61 @@ export async function getProgramsContent(): Promise<{
   const data = await loadPrograms();
   const sourceCards = resolveProgramCards(data.cards);
 
+  await connectToDatabase();
+
+  const linkedIds = Array.from(
+    new Set(
+      sourceCards
+        .map((c) => c.planId)
+        .filter((id): id is string => Boolean(id))
+    )
+  );
+
+  const planDocs =
+    linkedIds.length > 0
+      ? await Plan.find({
+          _id: { $in: linkedIds },
+          status: 'active',
+          type: 'one_time',
+        }).lean()
+      : [];
+
+  const planById = new Map(
+    planDocs.map((p) => [String(p._id), p as { price: number; currency: string; originalPrice?: number | null; isLandingPlan?: boolean }])
+  );
+
+  let defaultWorkshopPlanId: string | null = null;
+  let defaultWorkshopPriceLabel: string | null = null;
+  let defaultWorkshopOriginal: string | null = null;
+  try {
+    const landing = await selectLandingPlan(null);
+    const workshop = await selectWorkshopPlan(
+      null,
+      landing ? String(landing._id) : null
+    );
+    if (workshop) {
+      defaultWorkshopPlanId = String(workshop._id);
+      defaultWorkshopPriceLabel = formatMoneyLabel(
+        workshop.currency as 'PKR' | 'USD',
+        workshop.price
+      );
+      defaultWorkshopOriginal =
+        workshop.originalPrice != null
+          ? formatMoneyLabel(
+              workshop.currency as 'PKR' | 'USD',
+              workshop.originalPrice
+            )
+          : null;
+    }
+  } catch {
+    /* optional */
+  }
+
   const cards: ProgramCardPublic[] = [];
   for (const card of sourceCards) {
     let posterUrl = card.image || '/course1.jpeg';
     if (card.posterAssetId) {
       try {
-        await connectToDatabase();
         const asset = await MediaAsset.findById(card.posterAssetId).lean();
         if (asset) {
           posterUrl =
@@ -399,15 +549,48 @@ export async function getProgramsContent(): Promise<{
       }
     }
     const locked = card.status !== 'open';
+    const linked = card.planId ? planById.get(card.planId) : undefined;
+    // Never checkout Mentorship landing plan from a workshop program card.
+    const linkedOk = linked && !linked.isLandingPlan ? linked : undefined;
+    const resolvedPlanId = locked
+      ? null
+      : linkedOk
+        ? card.planId
+        : defaultWorkshopPlanId;
     const fromStatic =
       programsStaticDefault.cards.find((c) => c.id === card.id)?.priceLabel ||
       '';
+
+    let priceLabel = '';
+    let originalPriceLabel: string | null = null;
+    if (!locked) {
+      if (linkedOk) {
+        priceLabel = formatMoneyLabel(
+          linkedOk.currency as 'PKR' | 'USD',
+          linkedOk.price
+        );
+        originalPriceLabel =
+          linkedOk.originalPrice != null
+            ? formatMoneyLabel(
+                linkedOk.currency as 'PKR' | 'USD',
+                linkedOk.originalPrice
+              )
+            : null;
+      } else if (defaultWorkshopPriceLabel) {
+        priceLabel = defaultWorkshopPriceLabel;
+        originalPriceLabel = defaultWorkshopOriginal;
+      } else {
+        priceLabel = card.priceLabel || fromStatic || '';
+      }
+    }
+
     cards.push({
       ...card,
       posterUrl,
-      priceLabel: locked ? '' : card.priceLabel || fromStatic || 'Rs 500',
-      originalPriceLabel: null,
+      priceLabel,
+      originalPriceLabel,
       status: locked ? 'locked' : 'open',
+      planId: resolvedPlanId ?? null,
     });
   }
 

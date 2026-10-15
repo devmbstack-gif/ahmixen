@@ -12,12 +12,12 @@ import {
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import {
-  Archive,
   Lock,
   LockOpen,
   Monitor,
   Pencil,
   Plus,
+  Trash2,
 } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { AdminSessionDTO } from '@/lib/sessions/serialize';
@@ -58,7 +58,9 @@ function ActionIcon({
   disabled,
   onClick,
   href,
+  edit,
   accent,
+  warn,
   danger,
   children,
 }: {
@@ -67,7 +69,9 @@ function ActionIcon({
   disabled?: boolean;
   onClick?: () => void;
   href?: string;
+  edit?: boolean;
   accent?: boolean;
+  warn?: boolean;
   danger?: boolean;
   children: ReactNode;
 }) {
@@ -105,7 +109,9 @@ function ActionIcon({
 
   const className = [
     'admin-icon-btn admin-session-icon-btn nav-focus',
+    edit ? 'is-edit' : '',
     accent ? 'is-accent' : '',
+    warn ? 'is-warn' : '',
     danger ? 'is-danger' : '',
     disabled ? 'is-disabled' : '',
   ]
@@ -181,20 +187,20 @@ function SessionActions({
   busy,
   onShowOnLanding,
   onToggleReservations,
-  onArchive,
+  onDelete,
 }: {
   session: AdminSessionDTO;
   busy: boolean;
   onShowOnLanding: () => void;
   onToggleReservations: () => void;
-  onArchive: () => void;
+  onDelete: () => void;
 }) {
   const isLanding = session.isLandingActive;
   const isArchived = session.status === 'archived';
   const canToggleReservations =
     session.status === 'open' || session.status === 'closed';
   const canShowOnLanding = !isLanding && !isArchived;
-  const canArchive = !isArchived;
+  const canDelete = !isLanding;
 
   let landingTip = 'Show on landing page';
   if (isLanding) landingTip = 'Already shown on landing page';
@@ -209,9 +215,12 @@ function SessionActions({
     reservationsTip = 'Please wait';
   }
 
-  let archiveTip = 'Archive session';
-  if (isArchived) archiveTip = 'Already archived';
-  else if (busy) archiveTip = 'Please wait';
+  let deleteTip = 'Delete session';
+  if (isLanding) {
+    deleteTip = 'Cannot delete the landing session — show another session first';
+  } else if (busy) {
+    deleteTip = 'Please wait';
+  }
 
   return (
     <div className="admin-session-actions" role="group" aria-label="Session actions">
@@ -219,6 +228,7 @@ function SessionActions({
         tip="Edit session"
         ariaLabel="Edit session"
         href={`/admin/sessions/${session.id}/edit`}
+        edit
         disabled={busy}
       >
         <Pencil className="w-4 h-4" aria-hidden="true" />
@@ -239,6 +249,7 @@ function SessionActions({
         ariaLabel={
           session.status === 'open' ? 'Close reservations' : 'Open reservations'
         }
+        warn
         disabled={!canToggleReservations || busy}
         onClick={onToggleReservations}
       >
@@ -250,13 +261,13 @@ function SessionActions({
       </ActionIcon>
 
       <ActionIcon
-        tip={archiveTip}
-        ariaLabel="Archive session"
+        tip={deleteTip}
+        ariaLabel="Delete session"
         danger
-        disabled={!canArchive || busy}
-        onClick={onArchive}
+        disabled={!canDelete || busy}
+        onClick={onDelete}
       >
-        <Archive className="w-4 h-4" aria-hidden="true" />
+        <Trash2 className="w-4 h-4" aria-hidden="true" />
       </ActionIcon>
     </div>
   );
@@ -328,7 +339,7 @@ export function SessionsListClient() {
     null
   );
   const [confirm, setConfirm] = useState<
-    | { type: 'activate' | 'archive'; session: AdminSessionDTO }
+    | { type: 'activate' | 'delete'; session: AdminSessionDTO }
     | null
   >(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -425,16 +436,16 @@ export function SessionsListClient() {
     }
   };
 
-  const runArchive = async (session: AdminSessionDTO) => {
+  const runDelete = async (session: AdminSessionDTO) => {
     setBusyId(session.id);
     try {
       const res = await fetch(`/api/admin/sessions/${session.id}`, { method: 'DELETE' });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setToast({ message: data.error || 'Archive failed', tone: 'error' });
+        setToast({ message: data.error || 'Delete failed', tone: 'error' });
         return;
       }
-      setToast({ message: 'Session archived' });
+      setToast({ message: 'Session deleted' });
       await load();
     } finally {
       setBusyId(null);
@@ -483,7 +494,7 @@ export function SessionsListClient() {
       busy={busyId === s.id}
       onShowOnLanding={() => setConfirm({ type: 'activate', session: s })}
       onToggleReservations={() => void toggleOpenClose(s)}
-      onArchive={() => setConfirm({ type: 'archive', session: s })}
+      onDelete={() => setConfirm({ type: 'delete', session: s })}
     />
   );
 
@@ -663,22 +674,22 @@ export function SessionsListClient() {
         title={
           confirm?.type === 'activate'
             ? 'Show on landing page?'
-            : 'Archive session?'
+            : 'Delete session?'
         }
         description={
           confirm?.type === 'activate'
             ? `"${confirm.session.title}" will be shown on the landing page. Any other landing session will be turned off.`
-            : `"${confirm?.session.title}" will be archived. This is blocked if it has confirmed seats or active holds.`
+            : `"${confirm?.session.title}" will be permanently removed from this list. Closed or completed sessions can be deleted so you can set a new landing session. Open sessions with seats or holds must be closed first.`
         }
         confirmLabel={
-          confirm?.type === 'activate' ? 'Show on landing page' : 'Archive'
+          confirm?.type === 'activate' ? 'Show on landing page' : 'Delete'
         }
-        danger={confirm?.type === 'archive'}
+        danger={confirm?.type === 'delete'}
         onCancel={() => setConfirm(null)}
         onConfirm={() => {
           if (!confirm) return;
           if (confirm.type === 'activate') void runActivate(confirm.session);
-          else void runArchive(confirm.session);
+          else void runDelete(confirm.session);
         }}
       />
     </motion.div>

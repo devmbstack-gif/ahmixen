@@ -8,10 +8,10 @@ import { expireStaleOrders } from '@/lib/orders/expire';
 import { serializeAdminOrderList } from '@/lib/orders/serialize';
 import { formatMoneyLabel } from '@/lib/plans/money';
 import {
-  parseCouponEnd,
-  parseCouponStart,
+  parsePktDayEnd,
+  parsePktDayStart,
   toLocalDateString,
-} from '@/lib/coupons/dates';
+} from '@/lib/dates/pkt';
 
 export const runtime = 'nodejs';
 
@@ -40,8 +40,8 @@ export async function GET() {
     void expireStaleOrders().catch(() => undefined);
 
     const todayPkt = toLocalDateString(new Date());
-    const dayStart = parseCouponStart(todayPkt);
-    const dayEnd = parseCouponEnd(todayPkt);
+    const dayStart = parsePktDayStart(todayPkt);
+    const dayEnd = parsePktDayEnd(todayPkt);
 
     const [pendingCount, pendingDocs, newLeadsToday] = await Promise.all([
       Order.countDocuments({ status: 'pending_verification' }),

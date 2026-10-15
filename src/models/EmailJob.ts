@@ -1,6 +1,9 @@
 import mongoose, { Schema, type InferSchemaType, type Model } from 'mongoose';
 
-export const EMAIL_JOB_TYPES = ['reservation_confirmed'] as const;
+export const EMAIL_JOB_TYPES = [
+  'reservation_confirmed',
+  'admin_new_booking',
+] as const;
 export type EmailJobType = (typeof EMAIL_JOB_TYPES)[number];
 
 export const EMAIL_JOB_STATUSES = [

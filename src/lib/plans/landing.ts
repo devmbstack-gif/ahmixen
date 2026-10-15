@@ -13,9 +13,20 @@ export type PlanLean = {
   validUntil?: Date | null;
   status: string;
   isLandingPlan?: boolean | null;
+  isWorkshopPlan?: boolean | null;
   sortOrder?: number | null;
   createdAt?: Date | null;
 };
+
+function looksLikeWorkshopName(name: string): boolean {
+  const n = name.trim().toLowerCase();
+  return (
+    n.includes('workshop') ||
+    n.includes('live online') ||
+    n.includes('live session') ||
+    n.includes('automation live')
+  );
+}
 
 function planStillValid(
   validUntil: Date | null | undefined,
@@ -90,6 +101,77 @@ export async function selectLandingPlan(
   const eligible = candidates.filter((p) =>
     isPlanPublicEligible(p, activeSessionId, now)
   );
+  return eligible[0] ?? null;
+}
+
+/**
+ * Workshop checkout plan (Nav / Hero / Preview / Programs → `/reserve`).
+ * Prefer explicit flag, then name heuristic, then first non-mentorship plan.
+ */
+export async function selectWorkshopPlan(
+  activeSessionId: string | null,
+  mentorshipPlanId: string | null,
+  now = new Date()
+): Promise<PlanLean | null> {
+  const flagged = (await Plan.findOne({
+    isWorkshopPlan: true,
+    status: 'active',
+    type: 'one_time',
+  }).lean()) as unknown as PlanLean | null;
+
+  if (
+    flagged &&
+    isPlanPublicEligible(flagged, activeSessionId, now)
+  ) {
+    return flagged;
+  }
+
+  const filter: Record<string, unknown> = {
+    status: 'active',
+    type: 'one_time',
+  };
+  if (activeSessionId) {
+    filter.$or = [
+      { sessionId: '' },
+      { sessionId: activeSessionId },
+      { sessionId: { $exists: false } },
+      { isWorkshopPlan: true },
+      { isLandingPlan: true },
+    ];
+  }
+
+  const candidates = (await Plan.find(filter)
+    .sort({ sortOrder: 1, price: 1, createdAt: 1 })
+    .lean()) as unknown as PlanLean[];
+
+  const eligible = candidates.filter((p) =>
+    isPlanPublicEligible(p, activeSessionId, now)
+  );
+
+  // Prefer a workshop-named plan that is NOT the mentorship card.
+  const byNameSeparate = eligible.find(
+    (p) =>
+      String(p._id) !== mentorshipPlanId && looksLikeWorkshopName(p.name || '')
+  );
+  if (byNameSeparate) return byNameSeparate;
+
+  const nonMentorship = eligible.find(
+    (p) => String(p._id) !== mentorshipPlanId
+  );
+  if (nonMentorship) return nonMentorship;
+
+  // Single-plan DBs often mark "Live Workshop Pass" as isLandingPlan only.
+  // Still wire workshop CTAs to that plan so Reserve / Programs are not dead.
+  const byNameAny = eligible.find((p) =>
+    looksLikeWorkshopName(p.name || '')
+  );
+  if (byNameAny) return byNameAny;
+
+  if (mentorshipPlanId) {
+    const landing = eligible.find((p) => String(p._id) === mentorshipPlanId);
+    if (landing) return landing;
+  }
+
   return eligible[0] ?? null;
 }
 

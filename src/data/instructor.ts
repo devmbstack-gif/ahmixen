@@ -75,7 +75,7 @@ export const DEFAULT_HEADLINE_SUB =
 export const DEFAULT_DIFFERENCE_HEADING = 'What makes me different is simple:';
 
 export const DEFAULT_DIFFERENCE_BODY =
-  "I'm not an old professor teaching outdated theoretical formulas from old textbooks. I'm actively in the AI, startup, and automation ecosystem right now—learning what actually works, building real Agentic AI workflows, and identifying what industries genuinely demand today. I teach the exact same practical frameworks so you can start building and monetizing AI skills on the very same day.";
+  'As an active participant in the AI and startup ecosystem, I teach the practical, industry-demanded frameworks for building real-world Agentic AI workflows. My goal is to equip you with the skills to start building and monetizing AI immediately.';
 
 export const DEFAULT_INSTRUCTOR_BIO =
   'Ahmi teaches AI and agentic AI to university students and young people. As Chief AI Officer and Founder at AhmiXen, he has delivered hands-on AI and Agentic AI training to over 100+ students, with keynotes and workshops at Mukabbir University of Gujrat, TechnoCrats College, Comrade College, and more.';

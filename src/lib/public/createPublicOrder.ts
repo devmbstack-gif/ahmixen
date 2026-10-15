@@ -3,7 +3,6 @@ import { Order } from '@/models/Order';
 import { Plan } from '@/models/Plan';
 import { Session } from '@/models/Session';
 import { Lead } from '@/models/Lead';
-import { CouponRedemption } from '@/models/CouponRedemption';
 import { connectToDatabase } from '@/lib/db';
 import { expireStaleOrders } from '@/lib/orders/expire';
 import { ensureOrderIndexes } from '@/lib/orders/syncIndexes';
@@ -20,10 +19,7 @@ import {
   nextOrderNumber,
   normalizeEmail,
 } from '@/lib/orders/tokens';
-import { loadCouponForPricing } from '@/lib/public/couponLoad';
-import { validateCoupon, computeTotals } from '@/lib/coupons/pricing';
 import { ALLOW_INSTALLMENTS } from '@/lib/public/checkoutConfig';
-import { normalizeCouponCode } from '@/lib/coupons/code';
 import { getSeatSummary } from '@/lib/sessions/seats';
 
 function isDupKey(err: unknown): boolean {
@@ -41,7 +37,12 @@ export type PublicOrderCreateInput = {
   email: string;
   phone: string;
   profession?: string;
-  couponCode?: string;
+  sourceKind?: 'checkout' | 'workshop';
+  programId?: string;
+  programTitle?: string;
+  city?: string;
+  skillLevel?: string;
+  learningGoals?: string[];
   utm?: {
     source?: string;
     medium?: string;
@@ -135,54 +136,42 @@ export async function createPublicOrder(
   }
 
   const emailNormalized = normalizeEmail(input.email);
-  const planInput = {
-    id: String(plan._id),
-    type: plan.type as 'one_time' | 'installment',
-    currency: plan.currency as 'PKR' | 'USD',
-    price: plan.price,
-    installmentsCount: plan.installmentsCount ?? null,
-  };
 
-  let couponSnap: {
-    couponId: string;
-    code: string;
-    discountAmount: number;
-  } | null = null;
-  let pricedCoupon: Awaited<ReturnType<typeof loadCouponForPricing>> = null;
-
-  if (input.couponCode?.trim()) {
-    pricedCoupon = await loadCouponForPricing(
-      normalizeCouponCode(input.couponCode),
-      emailNormalized
-    );
-    const check = validateCoupon({
-      coupon: pricedCoupon,
-      planId: planInput.id,
-      plan: planInput,
-      email: emailNormalized,
-    });
-    if (!check.ok) {
+  const existingLive = await Order.findOne({
+    sessionId,
+    'customer.emailNormalized': emailNormalized,
+    isLive: true,
+  });
+  if (existingLive) {
+    if (existingLive.status === 'approved') {
       return {
         ok: false,
-        status: 400,
-        code: 'invalid_coupon',
-        message:
-          check.reason === 'You have already used this coupon'
-            ? check.reason
-            : 'This coupon code is not valid',
+        status: 409,
+        code: 'already_confirmed',
+        message: 'You already have a confirmed seat for this session',
       };
     }
-    pricedCoupon = check.coupon;
+    if (
+      existingLive.status === 'awaiting_payment' ||
+      existingLive.status === 'pending_verification'
+    ) {
+      return {
+        ok: false,
+        status: 409,
+        code: 'already_submitted',
+        message:
+          'You already submitted your form. Admin will shortly review your payment details and send you a seat confirmation email.',
+      };
+    }
   }
 
-  const finalTotals = computeTotals(planInput, pricedCoupon);
-  if (pricedCoupon) {
-    couponSnap = {
-      couponId: pricedCoupon.id,
-      code: pricedCoupon.code,
-      discountAmount: finalTotals.discountAmount,
-    };
-  }
+  const installmentsCount =
+    plan.type === 'installment' && plan.installmentsCount
+      ? plan.installmentsCount
+      : 1;
+  const basePrice = plan.price;
+  const finalPrice = basePrice;
+  const totalAmount = finalPrice * installmentsCount;
 
   const orderId = new mongoose.Types.ObjectId();
   const publicToken = createPublicToken();
@@ -219,13 +208,13 @@ export async function createPublicOrder(
               price: plan.price,
               installmentsCount: plan.installmentsCount ?? null,
             },
-            coupon: couponSnap,
+            coupon: null,
             amounts: {
-              basePrice: finalTotals.basePrice,
-              discountAmount: finalTotals.discountAmount,
-              finalPrice: finalTotals.finalPrice,
-              installmentsCount: finalTotals.installmentsCount,
-              totalAmount: finalTotals.totalAcrossInstallments,
+              basePrice,
+              discountAmount: 0,
+              finalPrice,
+              installmentsCount,
+              totalAmount,
             },
             paymentMethod: 'bank_transfer',
             proof: null,
@@ -233,7 +222,16 @@ export async function createPublicOrder(
             isLive: isLiveForStatus('awaiting_payment'),
             rejectionReason: '',
             adminNote: '',
-            events: [{ type: 'created', at: new Date(), note: 'Booking created' }],
+            events: [
+              {
+                type: 'created',
+                at: new Date(),
+                note:
+                  input.sourceKind === 'workshop'
+                    ? `Workshop booking: ${(input.programTitle || '').trim() || plan.name}`
+                    : 'Booking created',
+              },
+            ],
             utm: {
               source: input.utm?.source || '',
               medium: input.utm?.medium || '',
@@ -242,6 +240,25 @@ export async function createPublicOrder(
               term: input.utm?.term || '',
             },
             leadId: '',
+            sourceKind: input.sourceKind === 'workshop' ? 'workshop' : 'checkout',
+            programId:
+              input.sourceKind === 'workshop'
+                ? (input.programId || '').trim().slice(0, 80)
+                : '',
+            programTitle:
+              input.sourceKind === 'workshop'
+                ? (input.programTitle || '').trim().slice(0, 120)
+                : '',
+            workshopMeta:
+              input.sourceKind === 'workshop'
+                ? {
+                    city: (input.city || '').trim().slice(0, 80),
+                    skillLevel: (input.skillLevel || '').trim().slice(0, 40),
+                    learningGoals: Array.isArray(input.learningGoals)
+                      ? input.learningGoals.map(String).slice(0, 8)
+                      : [],
+                  }
+                : null,
             isTestData:
               Boolean(input.isTestData) ||
               emailNormalized.endsWith('@checkout-test.invalid'),
@@ -250,20 +267,6 @@ export async function createPublicOrder(
         ],
         { session: mongoSession ?? undefined }
       );
-
-      if (couponSnap) {
-        await CouponRedemption.create(
-          [
-            {
-              couponId: couponSnap.couponId,
-              orderId: String(orderId),
-              email: emailNormalized,
-              isActive: true,
-            },
-          ],
-          { session: mongoSession ?? undefined }
-        );
-      }
 
       return { doc: doc!, holdExpiresAt };
     });
@@ -329,21 +332,23 @@ export async function createPublicOrder(
           message: 'You already have a confirmed seat for this session',
         };
       }
+      if (
+        existing.status === 'awaiting_payment' ||
+        existing.status === 'pending_verification'
+      ) {
+        return {
+          ok: false,
+          status: 409,
+          code: 'already_submitted',
+          message:
+            'You already submitted your form. Admin will shortly review your payment details and send you a seat confirmation email.',
+        };
+      }
       return {
-        ok: true,
-        publicToken: existing.publicToken,
-        orderNumber: existing.orderNumber,
-        status: existing.status,
-        amounts: {
-          basePrice: existing.amounts.basePrice,
-          discountAmount: existing.amounts.discountAmount,
-          finalPrice: existing.amounts.finalPrice,
-          installmentsCount: existing.amounts.installmentsCount,
-          totalAmount: existing.amounts.totalAmount,
-          currency: existing.planSnapshot.currency,
-        },
-        holdExpiresAt: null,
-        alreadyExisted: true,
+        ok: false,
+        status: 409,
+        code: 'conflict',
+        message: 'Could not create your order. Please try again.',
       };
     }
 

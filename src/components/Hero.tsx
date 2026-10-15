@@ -45,11 +45,11 @@ export const Hero: React.FC<HeroProps> = ({
   content,
 }) => {
   const reduceMotion = useReducedMotion();
-  const { startReserveFlow, reserveCta } = useReserveFlow();
+  const { startWorkshopReserveFlow, workshopCta } = useReserveFlow();
   const heroCtaLabel =
-    reserveCta.label === 'Reserve'
+    workshopCta.label === 'Reserve'
       ? content.primaryCtaLabel
-      : reserveCta.label;
+      : workshopCta.label;
 
   const mainLine1Words = useMemo(
     () => splitWords(content.mainHeadlineLine1),
@@ -213,15 +213,19 @@ export const Hero: React.FC<HeroProps> = ({
             type="button"
             id="hero-reserve-cta"
             onClick={() => {
-              if (!reserveCta.disabled) startReserveFlow();
+              if (!workshopCta.disabled) {
+                startWorkshopReserveFlow(null, {
+                  forTitle: 'Live AI Workshop',
+                });
+              }
             }}
-            disabled={reserveCta.disabled}
-            aria-disabled={reserveCta.disabled}
+            disabled={workshopCta.disabled}
+            aria-disabled={workshopCta.disabled}
             className="btn-ahmixen relative py-3.5 px-8 sm:px-10 rounded-full font-bold text-base sm:text-lg inline-flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <span className="relative z-[2] inline-flex items-center gap-2">
               {heroCtaLabel}
-              {!reserveCta.disabled ? <ArrowRight className="w-5 h-5" /> : null}
+              {!workshopCta.disabled ? <ArrowRight className="w-5 h-5" /> : null}
             </span>
           </motion.button>
           <button

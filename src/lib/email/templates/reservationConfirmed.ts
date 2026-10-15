@@ -58,10 +58,15 @@ export function buildReservationConfirmedEmail(
     ['Amount paid', amount],
   ];
 
+  const whatsappNote =
+    'Your seat is confirmed. You will be added to our WhatsApp community, where we will share all workshop-related information with you.';
+
   const textLines = [
     `Hi ${firstName},`,
     '',
-    'Your seat is confirmed. Here are your details:',
+    whatsappNote,
+    '',
+    'Here are your booking details:',
     '',
     ...rows.map(([k, v]) => `${k}: ${v}`),
   ];
@@ -100,7 +105,8 @@ export function buildReservationConfirmedEmail(
         <tr><td>
           <p style="margin:0 0 16px;font-size:20px;font-weight:800;color:#5b21b6;letter-spacing:-0.02em;">AhmiXen</p>
           <p style="margin:0 0 8px;font-size:16px;color:#111;">Hi ${escapeHtml(firstName)},</p>
-          <p style="margin:0 0 16px;font-size:15px;color:#333;">Your seat is confirmed. Here are your details:</p>
+          <p style="margin:0 0 16px;font-size:15px;color:#333;">${escapeHtml(whatsappNote)}</p>
+          <p style="margin:0 0 12px;font-size:15px;color:#333;">Here are your booking details:</p>
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 16px;">
             ${htmlRows}
             ${joinHtml}

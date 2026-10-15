@@ -28,8 +28,13 @@ const PlanSchema = new Schema(
       required: true,
       default: 'hidden',
     },
-    /** At most one plan may be true (unique partial index). */
+    /** Mentorship fees card on the landing page. At most one may be true. */
     isLandingPlan: { type: Boolean, default: false },
+    /**
+     * Live Online Workshop checkout (`/reserve` from Nav/Hero/Programs).
+     * At most one may be true. Separate from mentorship (isLandingPlan).
+     */
+    isWorkshopPlan: { type: Boolean, default: false },
     sortOrder: { type: Number, default: 0 },
     version: { type: Number, default: 1 },
     createdBy: { type: String, default: '' },

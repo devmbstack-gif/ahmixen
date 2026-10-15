@@ -135,7 +135,7 @@ export function PaymentSettingsClient({
       initial={reduceMotion ? false : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: reduceMotion ? 0 : 0.3 }}
-      className="mx-auto w-full max-w-3xl space-y-4"
+      className="w-full space-y-6"
     >
       <div>
         <h2 className="text-lg font-semibold">Settings</h2>

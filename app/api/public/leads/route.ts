@@ -1,7 +1,4 @@
 import { Lead } from '@/models/Lead';
-import { Coupon } from '@/models/Coupon';
-import { Plan } from '@/models/Plan';
-import { Session } from '@/models/Session';
 import { connectToDatabase } from '@/lib/db';
 import { leadFieldsSchema } from '@/lib/public/schema';
 import {
@@ -16,10 +13,6 @@ import {
   rateLimitKey,
 } from '@/lib/public/rateLimit';
 import { PUBLIC_RATE_LIMITS } from '@/lib/public/rateLimitConfig';
-import { loadCouponForPricing } from '@/lib/public/couponLoad';
-import { validateCoupon, computeTotals } from '@/lib/coupons/pricing';
-import { discountLabelFor } from '@/lib/coupons/serialize';
-import { ALLOW_INSTALLMENTS } from '@/lib/public/checkoutConfig';
 
 function isDupKey(err: unknown): boolean {
   return (
@@ -28,68 +21,6 @@ function isDupKey(err: unknown): boolean {
     'code' in err &&
     (err as { code?: number }).code === 11000
   );
-}
-
-async function cheapestActivePlan() {
-  const session = await Session.findOne({
-    isLandingActive: true,
-    status: 'open',
-  }).lean();
-  if (!session) return null;
-  const sessionId = String(session._id);
-  const filter: Record<string, unknown> = {
-    status: 'active',
-    $or: [{ sessionId: '' }, { sessionId }],
-  };
-  if (!ALLOW_INSTALLMENTS) filter.type = 'one_time';
-  const plans = await Plan.find(filter).sort({ price: 1 }).limit(8).lean();
-  const now = new Date();
-  return (
-    plans.find(
-      (p) => !p.validUntil || new Date(p.validUntil).getTime() >= now.getTime()
-    ) ?? null
-  );
-}
-
-async function popupCouponForEmail(email: string) {
-  const popup = await Coupon.findOne({
-    isPopupCoupon: true,
-    status: 'active',
-  }).lean();
-  if (!popup) return null;
-
-  const plan = await cheapestActivePlan();
-  if (!plan) return null;
-
-  const coupon = await loadCouponForPricing(String(popup.code), email);
-  if (!coupon) return null;
-
-  const planInput = {
-    id: String(plan._id),
-    type: plan.type as 'one_time' | 'installment',
-    currency: plan.currency as 'PKR' | 'USD',
-    price: plan.price,
-    installmentsCount: plan.installmentsCount ?? null,
-  };
-
-  const check = validateCoupon({
-    coupon,
-    planId: planInput.id,
-    plan: planInput,
-    email,
-  });
-  if (!check.ok) return null;
-
-  computeTotals(planInput, check.coupon);
-
-  return {
-    code: check.coupon.code,
-    label: discountLabelFor(
-      check.coupon.discountType,
-      check.coupon.discountValue,
-      check.coupon.currency || 'PKR'
-    ),
-  };
 }
 
 export async function POST(request: Request) {
@@ -119,7 +50,7 @@ export async function POST(request: Request) {
     const data = parsed.data;
 
     if (data.website && data.website.trim()) {
-      return publicOk({ popupCoupon: null });
+      return publicOk({ ok: true });
     }
 
     const emailRule = PUBLIC_RATE_LIMITS.leadsEmail;
@@ -162,7 +93,6 @@ export async function POST(request: Request) {
         });
       } catch (err) {
         if (!isDupKey(err)) throw err;
-        // Parallel create race — retry once as update
         await Lead.updateOne(
           { emailNormalized },
           {
@@ -173,8 +103,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const popupCoupon = await popupCouponForEmail(emailNormalized);
-    return publicOk({ popupCoupon });
+    return publicOk({ ok: true });
   } catch (err) {
     console.error('[public leads]', err instanceof Error ? err.name : 'error');
     return publicError('server_error', 'Something went wrong', 500);

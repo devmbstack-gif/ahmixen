@@ -7,7 +7,6 @@ import { resolve } from 'node:path';
 import mongoose from 'mongoose';
 import { Order } from '../src/models/Order';
 import { Lead } from '../src/models/Lead';
-import { CouponRedemption } from '../src/models/CouponRedemption';
 import { deleteProof } from '../src/lib/orders/gridfs';
 import {
   releaseConfirmedSeat,
@@ -71,11 +70,8 @@ async function main() {
   let releasedHolds = 0;
   let releasedConfirmed = 0;
   let proofs = 0;
-  const orderIds: string[] = [];
-
   for (const doc of docs) {
     const id = String(doc._id);
-    orderIds.push(id);
     if (doc.status === 'approved') {
       await releaseConfirmedSeat(doc.sessionId);
       releasedConfirmed += 1;
@@ -94,9 +90,6 @@ async function main() {
     }
   }
 
-  const redemptions = orderIds.length
-    ? await CouponRedemption.deleteMany({ orderId: { $in: orderIds } })
-    : { deletedCount: 0 };
   const orders = await Order.deleteMany({
     'customer.emailNormalized': EMAIL_RE,
   });
@@ -107,7 +100,6 @@ async function main() {
       {
         ordersDeleted: orders.deletedCount ?? 0,
         leadsDeleted: leads.deletedCount ?? 0,
-        redemptionsDeleted: redemptions.deletedCount ?? 0,
         releasedHolds,
         releasedConfirmed,
         proofsRemoved: proofs,

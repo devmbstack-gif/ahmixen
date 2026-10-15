@@ -17,7 +17,7 @@ export const Navbar: React.FC = () => {
   const [hoveredHref, setHoveredHref] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const reduceMotion = useReducedMotion();
-  const { startReserveFlow, reserveCta } = useReserveFlow();
+  const { startWorkshopReserveFlow, workshopCta } = useReserveFlow();
 
   useEffect(() => {
     setMounted(true);
@@ -43,13 +43,13 @@ export const Navbar: React.FC = () => {
 
   const onReserve = () => {
     if (reserveDisabled) return;
-    startReserveFlow();
+    startWorkshopReserveFlow(null, { forTitle: 'Live AI Workshop' });
   };
 
   // Keep SSR/client first paint identical; apply sold-out/closed labels after mount.
-  const reserveDisabled = mounted ? reserveCta.disabled : false;
+  const reserveDisabled = mounted ? workshopCta.disabled : false;
   const reserveLabel =
-    !mounted || reserveCta.label === 'Reserve' ? 'Reserve' : reserveCta.label;
+    !mounted || workshopCta.label === 'Reserve' ? 'Reserve' : workshopCta.label;
 
   return (
     <header className="nav-bar sticky top-0 z-50 w-full">

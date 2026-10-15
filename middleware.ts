@@ -17,17 +17,30 @@ async function hasValidAdminSession(request: NextRequest): Promise<boolean> {
   }
 }
 
+const PUBLIC_ADMIN_PAGES = new Set([
+  '/admin/login',
+  '/admin/forgot-password',
+  '/admin/verify-otp',
+  '/admin/reset-password',
+]);
+
+const PUBLIC_ADMIN_APIS = new Set([
+  '/api/admin/auth/login',
+  '/api/admin/auth/logout',
+  '/api/admin/auth/warm',
+  '/api/admin/auth/forgot-password',
+  '/api/admin/auth/verify-otp',
+  '/api/admin/auth/reset-password',
+]);
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const isLoginPage = pathname === '/admin/login';
   const isAdminApi = pathname.startsWith('/api/admin');
   const isAdminPage = pathname.startsWith('/admin');
-  const isAuthApi =
-    pathname === '/api/admin/auth/login' ||
-    pathname === '/api/admin/auth/logout' ||
-    pathname === '/api/admin/auth/warm';
+  const isPublicAuthApi = PUBLIC_ADMIN_APIS.has(pathname);
+  const isPublicAuthPage = PUBLIC_ADMIN_PAGES.has(pathname);
 
-  if (isAuthApi) {
+  if (isPublicAuthApi) {
     return NextResponse.next();
   }
 
@@ -37,8 +50,8 @@ export async function middleware(request: NextRequest) {
 
   const authed = await hasValidAdminSession(request);
 
-  if (isLoginPage) {
-    if (authed) {
+  if (isPublicAuthPage) {
+    if (authed && pathname === '/admin/login') {
       return NextResponse.redirect(new URL('/admin', request.url));
     }
     return NextResponse.next();

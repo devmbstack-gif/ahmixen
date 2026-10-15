@@ -25,14 +25,20 @@ function InstagramIcon({ className }: { className?: string }) {
   );
 }
 
-/** Row-major 2-column footer nav order */
-const FOOTER_LINKS = [
+const PROGRAM_LINKS = [
   { label: 'Programs', href: '/programs' },
-  { label: 'Refund Policy', href: '/refund-policy' },
   { label: 'Testimonials', href: '/testimonials' },
-  { label: 'Terms of Service', href: '/terms' },
   { label: 'Our Mission', href: '/our-mission' },
 ] as const;
+
+const LEGAL_LINKS = [
+  { label: 'Refund Policy', href: '/refund-policy' },
+  { label: 'Terms of Service', href: '/terms' },
+  { label: 'Privacy Policy', href: '/privacy' },
+] as const;
+
+const linkClass =
+  'text-slate-400 hover:text-white transition-colors text-sm nav-focus';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -42,62 +48,123 @@ export const Footer: React.FC<{ instructor?: InstructorData }> = ({
   const reduceMotion = useReducedMotion();
 
   return (
-    <footer className="site-footer">
+    <footer className="site-footer relative overflow-hidden">
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-36 bg-[radial-gradient(ellipse_70%_100%_at_50%_0%,rgba(124,58,237,0.12)_0%,transparent_72%)]"
+        aria-hidden="true"
+      />
+
       <motion.div
-        className="container-narrow"
+        className="relative z-[1] mx-auto w-full max-w-6xl py-12 px-6 md:px-12"
         initial={reduceMotion ? false : { opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.2 }}
+        viewport={{ once: true, amount: 0.15 }}
         transition={{ duration: reduceMotion ? 0.01 : 0.55, ease: EASE }}
       >
-        <div className="site-footer-grid">
-          <div className="site-footer-brand">
-            <Link href="/" className="nav-focus inline-flex" aria-label="AhmiXen home">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-4 md:gap-12 md:items-start">
+          {/* Brand */}
+          <div className="flex min-w-0 flex-col gap-4">
+            <Link
+              href="/"
+              className="nav-focus inline-flex w-fit"
+              aria-label="AhmiXen home"
+            >
               <AhmiXenLogo className="text-2xl sm:text-3xl" />
             </Link>
-            <p className="site-footer-copy hidden lg:block">
-              &copy; {new Date().getFullYear()} {WORKSHOP_CONFIG.brandName}
+            <p className="m-0 max-w-xs text-sm leading-relaxed text-slate-400">
+              Practical AI for real work. Live online workshops to build,
+              automate, and monetize with practical AI.
+            </p>
+            <p className="m-0 mt-auto pt-2 text-sm text-slate-500">
+              &copy; 2026 {WORKSHOP_CONFIG.brandName}. All rights reserved.
             </p>
           </div>
 
-          <nav className="site-footer-nav" aria-label="Footer">
-            {FOOTER_LINKS.map((link) => (
-              <Link key={link.href} href={link.href} className="site-footer-link nav-focus">
-                {link.label}
-              </Link>
-            ))}
+          {/* Programs */}
+          <nav
+            className="flex min-w-0 flex-col"
+            aria-labelledby="footer-programs-heading"
+          >
+            <h2
+              id="footer-programs-heading"
+              className="mb-4 text-base font-medium text-slate-300"
+            >
+              Programs
+            </h2>
+            <ul className="m-0 flex list-none flex-col space-y-3 p-0">
+              {PROGRAM_LINKS.map((link) => (
+                <li key={link.href}>
+                  <Link href={link.href} className={linkClass}>
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </nav>
 
-          <div className="site-footer-contact">
-            <a
-              href={`mailto:${WORKSHOP_CONFIG.contactEmail}`}
-              className="site-footer-email nav-focus"
+          {/* Legal */}
+          <nav
+            className="flex min-w-0 flex-col"
+            aria-labelledby="footer-legal-heading"
+          >
+            <h2
+              id="footer-legal-heading"
+              className="mb-4 text-base font-medium text-slate-300"
             >
-              {WORKSHOP_CONFIG.contactEmail}
-            </a>
-            <div className="site-footer-socials">
-              <a
-                href={instructor.linkedin}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`${instructor.name} on LinkedIn`}
-                className="site-footer-social nav-focus"
-              >
-                <LinkedInIcon className="w-5 h-5" />
-              </a>
-              <a
-                href={instructor.instagram}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`${instructor.name} on Instagram`}
-                className="site-footer-social nav-focus"
-              >
-                <InstagramIcon className="w-5 h-5" />
-              </a>
-            </div>
-            <p className="site-footer-copy site-footer-copy-mobile lg:hidden">
-              &copy; {new Date().getFullYear()} {WORKSHOP_CONFIG.brandName}
-            </p>
+              Legal &amp; Policies
+            </h2>
+            <ul className="m-0 flex list-none flex-col space-y-3 p-0">
+              {LEGAL_LINKS.map((link) => (
+                <li key={link.href}>
+                  <Link href={link.href} className={linkClass}>
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          {/* Contact */}
+          <div
+            className="flex min-w-0 flex-col"
+            aria-labelledby="footer-contact-heading"
+          >
+            <h2
+              id="footer-contact-heading"
+              className="mb-4 text-base font-medium text-slate-300"
+            >
+              Contact
+            </h2>
+            <ul className="m-0 flex list-none flex-col space-y-3 p-0">
+              <li>
+                <a
+                  href={`mailto:${WORKSHOP_CONFIG.contactEmail}`}
+                  className={`${linkClass} break-all`}
+                >
+                  {WORKSHOP_CONFIG.contactEmail}
+                </a>
+              </li>
+              <li className="flex items-center gap-3 pt-1">
+                <a
+                  href={instructor.linkedin}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`${instructor.name} on LinkedIn`}
+                  className="nav-focus inline-flex h-10 w-10 items-center justify-center text-slate-400 transition-colors hover:text-white"
+                >
+                  <LinkedInIcon className="h-5 w-5" />
+                </a>
+                <a
+                  href={instructor.instagram}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`${instructor.name} on Instagram`}
+                  className="nav-focus inline-flex h-10 w-10 items-center justify-center text-slate-400 transition-colors hover:text-white"
+                >
+                  <InstagramIcon className="h-5 w-5" />
+                </a>
+              </li>
+            </ul>
           </div>
         </div>
       </motion.div>

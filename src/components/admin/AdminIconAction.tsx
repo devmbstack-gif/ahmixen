@@ -19,8 +19,14 @@ type AdminIconActionProps = {
   href?: string;
   /** Open href in a new tab (WhatsApp, mailto, etc.). */
   external?: boolean;
+  /** Purple — primary / landing highlight */
   accent?: boolean;
+  /** Red — destructive */
   danger?: boolean;
+  /** Blue — edit */
+  edit?: boolean;
+  /** Amber — lock / caution */
+  warn?: boolean;
   children: ReactNode;
 };
 
@@ -33,6 +39,8 @@ export function AdminIconAction({
   external,
   accent,
   danger,
+  edit,
+  warn,
   children,
 }: AdminIconActionProps) {
   const wrapRef = useRef<HTMLSpanElement | null>(null);
@@ -69,7 +77,9 @@ export function AdminIconAction({
 
   const className = [
     'admin-icon-btn admin-session-icon-btn nav-focus',
+    edit ? 'is-edit' : '',
     accent ? 'is-accent' : '',
+    warn ? 'is-warn' : '',
     danger ? 'is-danger' : '',
     disabled ? 'is-disabled' : '',
   ]

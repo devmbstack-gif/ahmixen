@@ -2,7 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Archive, Eye, EyeOff, Monitor, Pencil, Plus } from 'lucide-react';
+import {
+  Archive,
+  Eye,
+  EyeOff,
+  GraduationCap,
+  Monitor,
+  Pencil,
+  Plus,
+} from 'lucide-react';
 import { SearchInput } from '../SearchInput';
 import { SkeletonListPage } from '../skeletons';
 import { motion, useReducedMotion } from 'framer-motion';
@@ -101,25 +109,30 @@ function PlanActions({
   onToggleVisibility,
   onArchive,
   onShowOnLanding,
+  onShowAsWorkshop,
 }: {
   plan: AdminPlanDTO;
   busy: boolean;
   onToggleVisibility: () => void;
   onArchive: () => void;
   onShowOnLanding: () => void;
+  onShowAsWorkshop: () => void;
 }) {
   const isArchived = plan.status === 'archived';
   const isLanding = plan.isLandingPlan;
-  const canShowOnLanding =
-    !isLanding && !isArchived && plan.status === 'active' && plan.type === 'one_time';
+  const isWorkshop = plan.isWorkshopPlan;
+  const canSetRole =
+    !isArchived && plan.status === 'active' && plan.type === 'one_time';
+  const canShowOnLanding = canSetRole && !isLanding;
+  const canShowAsWorkshop = canSetRole && !isWorkshop;
   const showTip = isArchived
     ? 'Archived plans cannot be shown'
     : plan.status === 'active'
       ? 'Hide plan'
       : 'Show plan';
 
-  let landingTip = 'Show on landing page';
-  if (isLanding) landingTip = 'Already shown on landing page';
+  let landingTip = 'Use as Mentorship landing plan';
+  if (isLanding) landingTip = 'Already the Mentorship landing plan';
   else if (isArchived) landingTip = 'Archived plans cannot be shown on the landing page';
   else if (plan.status !== 'active')
     landingTip = 'Only active plans can be shown on the landing page';
@@ -127,19 +140,38 @@ function PlanActions({
     landingTip = 'Only one-time plans can be shown on the landing page';
   else if (busy) landingTip = 'Please wait';
 
+  let workshopTip = 'Use as Workshop reserve plan';
+  if (isWorkshop) workshopTip = 'Already the Workshop reserve plan';
+  else if (isArchived) workshopTip = 'Archived plans cannot be the workshop plan';
+  else if (plan.status !== 'active')
+    workshopTip = 'Only active plans can be the workshop plan';
+  else if (plan.type !== 'one_time')
+    workshopTip = 'Only one-time plans can be the workshop plan';
+  else if (busy) workshopTip = 'Please wait';
+
   return (
     <div className="admin-session-actions" role="group" aria-label="Plan actions">
       <AdminIconAction
         tip="Edit plan"
         ariaLabel="Edit plan"
         href={`/admin/pricing/${plan.id}/edit`}
+        edit
         disabled={busy}
       >
         <Pencil className="w-4 h-4" aria-hidden="true" />
       </AdminIconAction>
       <AdminIconAction
+        tip={workshopTip}
+        ariaLabel="Use as Workshop reserve plan"
+        accent={isWorkshop}
+        disabled={!canShowAsWorkshop || busy}
+        onClick={onShowAsWorkshop}
+      >
+        <GraduationCap className="w-4 h-4" aria-hidden="true" />
+      </AdminIconAction>
+      <AdminIconAction
         tip={landingTip}
-        ariaLabel="Show on landing page"
+        ariaLabel="Use as Mentorship landing plan"
         accent={isLanding}
         disabled={!canShowOnLanding || busy}
         onClick={onShowOnLanding}
@@ -149,6 +181,7 @@ function PlanActions({
       <AdminIconAction
         tip={showTip}
         ariaLabel={plan.status === 'active' ? 'Hide plan' : 'Show plan'}
+        warn
         disabled={isArchived || busy}
         onClick={onToggleVisibility}
       >
@@ -185,6 +218,7 @@ export function PlansListClient() {
   const [confirm, setConfirm] = useState<
     | { type: 'archive'; plan: AdminPlanDTO }
     | { type: 'landing'; plan: AdminPlanDTO }
+    | { type: 'workshop'; plan: AdminPlanDTO }
     | null
   >(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -309,7 +343,38 @@ export function PlansListClient() {
         });
         return;
       }
-      setToast({ message: `"${plan.name}" is now shown on the landing page` });
+      setToast({
+        message: `"${plan.name}" is now the Mentorship landing plan`,
+      });
+      await load();
+    } finally {
+      setBusyId(null);
+      setConfirm(null);
+    }
+  };
+
+  const runWorkshop = async (plan: AdminPlanDTO) => {
+    setBusyId(plan.id);
+    try {
+      const res = await fetch(`/api/admin/plans/${plan.id}/workshop`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ version: plan.version }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setToast({
+          message:
+            res.status === 409
+              ? 'This plan was changed elsewhere, reload'
+              : data.error || 'Could not update Workshop reserve plan',
+          tone: 'error',
+        });
+        return;
+      }
+      setToast({
+        message: `"${plan.name}" is now the Workshop reserve plan`,
+      });
       await load();
     } finally {
       setBusyId(null);
@@ -383,6 +448,9 @@ export function PlansListClient() {
                     onShowOnLanding={() =>
                       setConfirm({ type: 'landing', plan: p })
                     }
+                    onShowAsWorkshop={() =>
+                      setConfirm({ type: 'workshop', plan: p })
+                    }
                   />
                 </td>
               </tr>
@@ -438,6 +506,9 @@ export function PlansListClient() {
                 onArchive={() => setConfirm({ type: 'archive', plan: p })}
                 onShowOnLanding={() =>
                   setConfirm({ type: 'landing', plan: p })
+                }
+                onShowAsWorkshop={() =>
+                  setConfirm({ type: 'workshop', plan: p })
                 }
               />
             </div>
@@ -528,23 +599,34 @@ export function PlansListClient() {
       <AdminConfirmDialog
         open={Boolean(confirm)}
         title={
-          confirm?.type === 'landing'
-            ? 'Show on landing page?'
-            : 'Archive plan?'
+          confirm?.type === 'workshop'
+            ? 'Use as Workshop reserve plan?'
+            : confirm?.type === 'landing'
+              ? 'Use as Mentorship landing plan?'
+              : 'Archive plan?'
         }
         description={
-          confirm?.type === 'landing'
-            ? `"${confirm.plan.name}" will be the plan shown on the home page pricing card. Any other landing plan will be turned off.`
-            : confirm?.type === 'archive'
-              ? `"${confirm.plan.name}" will be archived and hidden from customers. You can still find it in the Archived filter.`
-              : ''
+          confirm?.type === 'workshop'
+            ? `"${confirm.plan.name}" will power Nav / Hero / Programs Reserve buttons. Any other workshop plan will be turned off.`
+            : confirm?.type === 'landing'
+              ? `"${confirm.plan.name}" will be the Mentorship fees / ENROLL plan. Any other Mentorship landing plan will be turned off.`
+              : confirm?.type === 'archive'
+                ? `"${confirm.plan.name}" will be archived and hidden from customers. You can still find it in the Archived filter.`
+                : ''
         }
-        confirmLabel={confirm?.type === 'landing' ? 'Show on landing' : 'Archive'}
+        confirmLabel={
+          confirm?.type === 'workshop'
+            ? 'Set workshop plan'
+            : confirm?.type === 'landing'
+              ? 'Set Mentorship plan'
+              : 'Archive'
+        }
         danger={confirm?.type === 'archive'}
         onCancel={() => setConfirm(null)}
         onConfirm={() => {
           if (!confirm) return;
-          if (confirm.type === 'landing') void runLanding(confirm.plan);
+          if (confirm.type === 'workshop') void runWorkshop(confirm.plan);
+          else if (confirm.type === 'landing') void runLanding(confirm.plan);
           else void runArchive(confirm.plan);
         }}
       />

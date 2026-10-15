@@ -27,6 +27,8 @@ export type AdminPlanDTO = {
   status: PlanStatus;
   displayStatus: 'active' | 'hidden' | 'expired' | 'archived';
   isLandingPlan: boolean;
+  /** Live Online Workshop plan for Nav / Hero / Programs → `/reserve`. */
+  isWorkshopPlan: boolean;
   /** When isLandingPlan: null = showing on site; else why not. */
   landingSiteIssue: LandingSiteIssue;
   landingSiteIssueMessage: string;
@@ -84,6 +86,7 @@ export function serializeAdminPlan(
       : Number(doc.installmentsCount);
 
   const isLandingPlan = Boolean(doc.isLandingPlan);
+  const isWorkshopPlan = Boolean(doc.isWorkshopPlan);
   const issue = landingPlanSiteIssue(
     {
       status,
@@ -113,6 +116,7 @@ export function serializeAdminPlan(
     status,
     displayStatus,
     isLandingPlan,
+    isWorkshopPlan,
     landingSiteIssue: issue,
     landingSiteIssueMessage: landingSiteIssueMessage(issue),
     sortOrder: doc.sortOrder ?? 0,

@@ -276,8 +276,8 @@ export const CONTENT_REGISTRY: Record<ContentKey, ContentRegistryEntry> = {
   },
   pricing: {
     key: 'pricing',
-    label: 'Pricing section',
-    description: 'Header copy above the pricing card',
+    label: 'Mentorship section',
+    description: 'Badge and heading above the mentorship / fees card',
     group: 'home',
     schema: pricingDataSchema,
     staticDefault: structuredClone(pricingStaticDefault),

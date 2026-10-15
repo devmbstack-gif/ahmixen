@@ -11,7 +11,6 @@ import { resolve } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import mongoose from 'mongoose';
 import { Session } from '../src/models/Session';
-import { Coupon } from '../src/models/Coupon';
 import { Setting } from '../src/models/Setting';
 import {
   holdSeat,
@@ -74,7 +73,6 @@ function groupIp(group: number): string {
 const IP = {
   checkout: groupIp(1),
   leads: groupIp(2),
-  coupons: groupIp(3),
   orders: groupIp(4),
   status: groupIp(5),
   payment: groupIp(6),
@@ -177,28 +175,6 @@ async function main() {
 
   await mongoose.connect(uri);
 
-  // Ensure a usable active coupon for coupon tests (create ephemeral if needed)
-  let couponCode = '';
-  {
-    const existing = await Coupon.findOne({
-      status: 'active',
-      discountType: 'percent',
-    }).lean();
-    if (existing) {
-      couponCode = String(existing.code);
-    } else {
-      const created = await Coupon.create({
-        code: `TCHK${randomBytes(2).toString('hex').toUpperCase()}`,
-        discountType: 'percent',
-        discountValue: 10,
-        status: 'active',
-        perEmailLimit: 1,
-        note: 'checkout harness',
-      });
-      couponCode = created.code;
-    }
-  }
-
   // Payment-info requires bank transfer enabled
   {
     const pay = await Setting.findOne({ key: 'payment' });
@@ -226,7 +202,6 @@ async function main() {
 
   const leadEmail = email('lead');
   const orderEmail = email('order');
-  const couponEmail = email('coupon');
 
   // --- leads ---
   {
@@ -273,37 +248,8 @@ async function main() {
     });
     push(
       'POST leads honeypot',
-      hp.status === 200 &&
-        hp.json?.ok === true &&
-        hp.json?.data?.popupCoupon === null,
+      hp.status === 200 && hp.json?.ok === true,
       `status=${hp.status}`
-    );
-  }
-
-  // --- coupons/check ---
-  {
-    const good = await api('/api/public/coupons/check', {
-      ip: IP.coupons,
-      body: { code: couponCode, planId, email: couponEmail },
-    });
-    push(
-      'POST coupons/check valid',
-      good.status === 200 &&
-        good.json?.ok === true &&
-        typeof good.json?.data?.finalPrice === 'number',
-      `status=${good.status}`
-    );
-
-    const bad = await api('/api/public/coupons/check', {
-      ip: IP.coupons,
-      body: { code: 'NOTAREALCODEZZ', planId, email: couponEmail },
-    });
-    push(
-      'POST coupons/check invalid',
-      bad.status === 400 &&
-        bad.json?.ok === false &&
-        bad.json?.error?.message === 'This coupon code is not valid',
-      `status=${bad.status}`
     );
   }
 
@@ -318,7 +264,6 @@ async function main() {
         email: orderEmail,
         phone: '+92 300 1234567',
         profession: 'Designer',
-        couponCode,
         utm: { source: 'harness', campaign: 'orders' },
       },
     });
@@ -332,7 +277,7 @@ async function main() {
       'POST orders create',
       ok,
       ok
-        ? `status=${r.json.data.status} discount=${r.json.data.amounts.discountAmount}`
+        ? `status=${r.json.data.status} final=${r.json.data.amounts.finalPrice}`
         : `status=${r.status} code=${r.json?.error?.code || '?'}`
     );
 

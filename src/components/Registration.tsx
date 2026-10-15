@@ -1,18 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Check, Loader2 } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useReserveFlow } from './checkout/ReserveFlowProvider';
-import {
-  checkoutFetch,
-  clearCheckoutCouponCode,
-  clearCouponCheckCache,
-  formatPublicMoney,
-  readCheckoutPrefill,
-  readCouponCheckCache,
-  saveCouponCheckCache,
-} from '@/lib/checkout-client';
+import { formatPublicMoney } from '@/lib/checkout-client';
 import type { PricingContentData } from '@/lib/content/landingSchemas';
 import type { PublicSessionDisplay } from '@/lib/sessions/publicShared';
 
@@ -23,122 +15,38 @@ interface RegistrationProps {
   content: PricingContentData;
 }
 
-type CouponTotals = {
-  code: string;
-  currency: string;
-  basePrice: number;
-  discountAmount: number;
-  finalPrice: number;
-};
-
 export const Registration: React.FC<RegistrationProps> = ({
   session,
   content,
 }) => {
   const reduceMotion = useReducedMotion();
-  const { startReserveFlow, reserveCta, config, configLoading } =
+  const { startMentorshipReserveFlow, mentorshipCta, config, configLoading } =
     useReserveFlow();
 
   const plan = useMemo(() => {
     if (!config?.plans?.length) return null;
-    if (config.landingPlanId) {
-      return (
-        config.plans.find((p) => p.id === config.landingPlanId) ||
-        config.plans[0] ||
-        null
-      );
+    const mentorshipId = config.mentorshipPlanId || config.landingPlanId;
+    if (mentorshipId) {
+      return config.plans.find((p) => p.id === mentorshipId) || null;
     }
-    return config.plans[0] || null;
+    return null;
   }, [config]);
 
-  const [coupon, setCoupon] = useState<CouponTotals | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (!plan) {
-        setCoupon(null);
-        return;
-      }
-      const prefill = readCheckoutPrefill();
-      const code = (prefill?.couponCode || '').trim();
-      const email = (prefill?.email || '').trim();
-      if (!code || !email) {
-        setCoupon(null);
-        return;
-      }
-
-      const cached = readCouponCheckCache(code, plan.id);
-      if (cached) {
-        if (!cancelled) {
-          setCoupon({
-            code: cached.code,
-            currency: cached.currency,
-            basePrice: cached.basePrice,
-            discountAmount: cached.discountAmount,
-            finalPrice: cached.finalPrice,
-          });
-        }
-        return;
-      }
-
-      try {
-        const data = await checkoutFetch<{
-          currency: string;
-          basePrice: number;
-          discountAmount: number;
-          finalPrice: number;
-        }>('/api/public/coupons/check', {
-          method: 'POST',
-          body: JSON.stringify({ code, planId: plan.id, email }),
-        });
-        if (cancelled) return;
-        saveCouponCheckCache({
-          code,
-          planId: plan.id,
-          currency: data.currency,
-          basePrice: data.basePrice,
-          discountAmount: data.discountAmount,
-          finalPrice: data.finalPrice,
-        });
-        setCoupon({
-          code,
-          currency: data.currency,
-          basePrice: data.basePrice,
-          discountAmount: data.discountAmount,
-          finalPrice: data.finalPrice,
-        });
-      } catch {
-        if (!cancelled) setCoupon(null);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [plan]);
-
-  const removeCoupon = () => {
-    clearCheckoutCouponCode();
-    clearCouponCheckCache();
-    setCoupon(null);
-  };
-
   const closedNoPlan = !configLoading && !plan;
-  const buttonDisabled = closedNoPlan || reserveCta.disabled;
+  const buttonDisabled = closedNoPlan || mentorshipCta.disabled;
   const buttonLabel = closedNoPlan
     ? 'Reservations closed'
-    : reserveCta.label === 'Reserve'
+    : mentorshipCta.label === 'Reserve'
       ? 'ENROLL NOW'
-      : reserveCta.label === 'Reserve Seat'
+      : mentorshipCta.label === 'Reserve Seat'
         ? 'ENROLL NOW'
-        : reserveCta.label;
+        : mentorshipCta.label;
   const showPrice = Boolean(plan) && Boolean(config?.reservationsOpen);
 
-  const displayCurrency = coupon?.currency || plan?.currency || 'PKR';
-  const displayPrice = coupon ? coupon.finalPrice : plan?.price ?? 0;
-  const originalForStrike = coupon
-    ? coupon.basePrice
-    : plan?.originalPrice != null && plan.originalPrice > plan.price
+  const displayCurrency = plan?.currency || 'PKR';
+  const displayPrice = plan?.price ?? 0;
+  const originalForStrike =
+    plan?.originalPrice != null && plan.originalPrice > plan.price
       ? plan.originalPrice
       : null;
 
@@ -184,23 +92,6 @@ export const Registration: React.FC<RegistrationProps> = ({
             delay: reduceMotion ? 0 : 0.06,
           }}
         >
-          {coupon ? (
-            <div className="pricing-coupon-banner">
-              <p className="pricing-coupon-text m-0">
-                <span aria-hidden="true">✓ </span>
-                Coupon <span className="font-semibold">{coupon.code}</span>{' '}
-                applied — discount unlocked
-              </p>
-              <button
-                type="button"
-                className="pricing-coupon-remove nav-focus"
-                onClick={removeCoupon}
-              >
-                Remove
-              </button>
-            </div>
-          ) : null}
-
           <div className="pricing-card-body">
             {showPrice && plan ? (
               <>
@@ -260,7 +151,17 @@ export const Registration: React.FC<RegistrationProps> = ({
               type="button"
               id="pricing-reserve-cta"
               onClick={() => {
-                if (!buttonDisabled) startReserveFlow();
+                if (!buttonDisabled) {
+                  startMentorshipReserveFlow({
+                    forTitle:
+                      plan?.name ||
+                      [content.headingLine1, content.headingLine2]
+                        .filter(Boolean)
+                        .join(' ')
+                        .trim() ||
+                      'Mentorship',
+                  });
+                }
               }}
               disabled={buttonDisabled}
               aria-disabled={buttonDisabled}

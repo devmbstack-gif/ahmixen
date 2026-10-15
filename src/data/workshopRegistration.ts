@@ -19,7 +19,7 @@ export const WORKSHOP_PAYMENT = {
   /** Canonical booking amount stored on Orders (matches Programs card). */
   amountPkr: 500,
   amountLabel: 'PKR 499 / Rs 500',
-  accountName: 'Ahmi',
+  accountName: 'Hafiz Ahmad Ali',
   walletLabel: 'JazzCash / EasyPaisa',
   walletNumber: '0321-4359182',
 } as const;

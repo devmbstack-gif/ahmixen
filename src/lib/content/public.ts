@@ -150,6 +150,10 @@ async function loadInstructorFromDb(): Promise<Instructor | null> {
     "Over the past 3+ years, I've been on a mission to empower youth";
   const legacyQuote =
     'We cannot win the race of AI without actively building with AI.';
+  const legacyDifferenceBodies = new Set([
+    legacyQuote,
+    "I'm not an old professor teaching outdated theoretical formulas from old textbooks. I'm actively in the AI, startup, and automation ecosystem right now—learning what actually works, building real Agentic AI workflows, and identifying what industries genuinely demand today. I teach the exact same practical frameworks so you can start building and monetizing AI skills on the very same day.",
+  ]);
 
   const greetingRaw = data.greeting.trim();
   const greeting = legacyGreeting.has(greetingRaw)
@@ -183,7 +187,9 @@ async function loadInstructorFromDb(): Promise<Instructor | null> {
     data.missionQuote?.trim() ||
     '';
   const differenceBody =
-    !differenceBodyRaw || differenceBodyRaw === legacyQuote
+    !differenceBodyRaw ||
+    legacyDifferenceBodies.has(differenceBodyRaw) ||
+    /^I'm not an old professor\b/i.test(differenceBodyRaw)
       ? staticInstructor.differenceBody
       : differenceBodyRaw;
 

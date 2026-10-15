@@ -22,6 +22,7 @@ import {
   rateLimitKey,
 } from '@/lib/public/rateLimit';
 import { PUBLIC_RATE_LIMITS } from '@/lib/public/rateLimitConfig';
+import { notifyAdminNewBooking } from '@/lib/email/outbox';
 
 type Ctx = { params: Promise<{ token: string }> };
 
@@ -241,6 +242,8 @@ export async function POST(request: Request, ctx: Ctx) {
       await deleteProof(previousFileId);
     }
     newFileId = null;
+
+    notifyAdminNewBooking(orderId);
 
     return publicOk({
       status: 'pending_verification',

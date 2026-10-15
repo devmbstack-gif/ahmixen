@@ -4,8 +4,6 @@ import { isLiveForStatus } from './isLive';
 import { releaseHold } from './seats';
 import { withOrdersTransaction } from './tx';
 import { ensureOrderIndexes } from './syncIndexes';
-import { deactivateRedemptionsForOrder } from '@/lib/coupons/redemptions';
-
 /**
  * Mark awaiting_payment orders whose seat hold has expired.
  * pending_verification is NEVER auto-expired.
@@ -77,7 +75,6 @@ export async function expireStaleOrders(now = new Date()): Promise<number> {
         if (!updated) return;
 
         await releaseHold(c.sessionId, orderId, { session: mongoSession });
-        await deactivateRedemptionsForOrder(orderId, { session: mongoSession });
       });
       expired += 1;
     } catch (err) {

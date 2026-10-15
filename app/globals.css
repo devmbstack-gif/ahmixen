@@ -424,181 +424,7 @@
   outline-offset: 2px;
 }
 
-/* Site footer */
-.site-footer {
-  position: relative;
-  padding-block: 1.75rem 1.15rem;
-  margin-top: 0.25rem;
-  background: transparent;
-  overflow: hidden;
-}
-
-.site-footer::before {
-  content: '';
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 7rem;
-  pointer-events: none;
-  background: radial-gradient(
-    ellipse 70% 100% at 50% 0%,
-    rgba(124, 58, 237, 0.16) 0%,
-    transparent 72%
-  );
-}
-
-
-.site-footer-grid {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  gap: 1.5rem;
-}
-
-@media (min-width: 768px) {
-  .site-footer-grid {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 1.75rem 2rem;
-  }
-}
-
-.site-footer-brand {
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-}
-
-.site-footer-tagline {
-  font-size: 0.75rem;
-  line-height: 1.4;
-  color: var(--text-secondary);
-  max-width: 16rem;
-}
-
-.site-footer-nav {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, max-content));
-  column-gap: 1.5rem; /* gap-x-6 */
-  row-gap: 0.5rem; /* gap-y-2 */
-  justify-content: start;
-  width: fit-content;
-}
-
-@media (min-width: 768px) {
-  .site-footer-nav {
-    justify-self: center;
-    column-gap: 1.75rem;
-  }
-}
-
-.site-footer-link {
-  position: relative;
-  width: fit-content;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-  transition: color 0.2s ease;
-  white-space: nowrap;
-}
-
-.site-footer-link::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  bottom: -2px;
-  width: 100%;
-  height: 1px;
-  background: var(--primary-purple);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.site-footer-link:hover {
-  color: var(--purple-soft-text);
-}
-
-.site-footer-link:hover::after {
-  transform: scaleX(1);
-}
-
-.site-footer-contact {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  align-items: flex-start;
-}
-
-@media (min-width: 768px) {
-  .site-footer-contact {
-    align-items: flex-end;
-  }
-}
-
-.site-footer-email {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--purple-soft-text);
-  width: fit-content;
-  transition: color 0.2s ease;
-}
-
-.site-footer-email:hover {
-  color: var(--text-main);
-}
-
-.site-footer-socials {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-}
-
-.site-footer-social {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 0.8rem;
-  border: 1px solid var(--border-subtle);
-  background: color-mix(in srgb, var(--primary-purple) 12%, var(--card-bg));
-  color: var(--purple-soft-text);
-  transition:
-    transform 0.2s ease,
-    color 0.2s ease,
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.site-footer-social:hover {
-  color: #c4b5fd;
-  border-color: var(--border-highlight);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 18px -10px rgba(124, 58, 237, 0.55);
-}
-
-.site-footer-copy {
-  margin: 0.15rem 0 0;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
-
-.site-footer-copy-mobile {
-  align-self: flex-start;
-  text-align: left;
-  margin-top: 0.35rem;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .site-footer-link::after,
-  .site-footer-social {
-    transition: none;
-  }
-
-  .site-footer-social:hover {
-    transform: none;
-  }
-}
+/* Site footer — layout/card styles live on Footer.tsx (Tailwind) */
 
 /* Brand purple gradient button — solid fill, lift only (no glow) */
 .btn-ahmixen {
@@ -2052,86 +1878,147 @@
   transform: scale(0.96);
 }
 
-/* Rise in AI-related jobs Ã¢â‚¬â€ seamless with page background */
-/* Agenda Ã¢â‚¬â€ temporary coming soon lock */
-.agenda-body-wrap {
-  position: relative;
-}
-
-.agenda-locked {
-  filter: blur(6px);
-  opacity: 0.55;
-  pointer-events: none;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.agenda-coming-soon-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
+/* Session Agenda — curriculum roadmap cards */
+.agenda-roadmap {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
+  flex-direction: column;
+  gap: 0.85rem;
 }
 
-.agenda-coming-soon-pill {
+.agenda-roadmap-card {
+  display: flex;
+  align-items: stretch;
+  gap: 0.9rem;
+  padding: 0.75rem;
+  border-radius: 1.15rem;
+  border: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--card-bg) 82%, transparent);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  box-shadow:
+    0 0 0 1px rgba(168, 85, 247, 0.06),
+    0 10px 28px -18px rgba(15, 10, 30, 0.65);
+  transition:
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.agenda-roadmap-card:hover {
+  border-color: rgba(192, 132, 252, 0.35);
+  box-shadow:
+    0 0 0 1px rgba(168, 85, 247, 0.12),
+    0 14px 32px -16px rgba(147, 51, 234, 0.35);
+}
+
+.agenda-roadmap-thumb {
+  position: relative;
+  flex-shrink: 0;
+  width: 4.75rem;
+  min-height: 4.75rem;
+  border-radius: 0.85rem;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--brand) 18%, var(--card-bg));
+  border: 1px solid rgba(192, 132, 252, 0.22);
+}
+
+.agenda-roadmap-thumb-badge {
+  position: absolute;
+  left: 0.35rem;
+  bottom: 0.35rem;
+  z-index: 1;
+  min-width: 1.55rem;
+  height: 1.55rem;
+  padding: 0 0.35rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.7rem 1.35rem;
   border-radius: 9999px;
-  font-size: 0.95rem;
+  font-size: 0.65rem;
   font-weight: 800;
   letter-spacing: 0.02em;
+  color: #fff;
+  background: color-mix(in srgb, var(--brand) 78%, #1a0b2e);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 12px -4px rgba(88, 28, 135, 0.7);
+}
+
+.agenda-roadmap-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.2rem;
+  padding: 0.15rem 0.35rem 0.15rem 0;
+}
+
+.agenda-roadmap-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.65rem;
+}
+
+.agenda-roadmap-cat {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--brand-soft, #c084fc) 88%, #fff);
+}
+
+.agenda-roadmap-instructor {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.agenda-roadmap-instructor::before {
+  content: '·';
+  margin-right: 0.45rem;
+  color: color-mix(in srgb, var(--text-muted) 70%, transparent);
+}
+
+.agenda-roadmap-title {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 800;
+  line-height: 1.25;
   color: var(--text-main);
-  background: color-mix(in srgb, var(--card-bg) 72%, transparent);
-  border: 1px solid rgba(192, 132, 252, 0.4);
-  backdrop-filter: blur(14px) saturate(1.25);
-  -webkit-backdrop-filter: blur(14px) saturate(1.25);
-  box-shadow:
-    0 0 0 1px rgba(168, 85, 247, 0.12),
-    0 0 28px -6px rgba(147, 51, 234, 0.55);
-  animation: agenda-coming-fade 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-
-.agenda-coming-soon-pulse {
-  animation:
-    agenda-coming-fade 0.45s cubic-bezier(0.16, 1, 0.3, 1) both,
-    agenda-coming-glow 2.6s ease-in-out 0.45s infinite;
+.agenda-roadmap-desc {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-@keyframes agenda-coming-fade {
-  from {
-    opacity: 0;
-    transform: translateY(6px) scale(0.98);
+@media (min-width: 640px) {
+  .agenda-roadmap-card {
+    gap: 1.1rem;
+    padding: 0.9rem 1rem;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
 
-@keyframes agenda-coming-glow {
-  0%,
-  100% {
-    box-shadow:
-      0 0 0 1px rgba(168, 85, 247, 0.12),
-      0 0 22px -6px rgba(147, 51, 234, 0.4);
+  .agenda-roadmap-thumb {
+    width: 5.5rem;
+    min-height: 5.5rem;
+    border-radius: 1rem;
   }
-  50% {
-    box-shadow:
-      0 0 0 1px rgba(216, 180, 254, 0.35),
-      0 0 36px -4px rgba(168, 85, 247, 0.7);
-  }
-}
 
-@media (prefers-reduced-motion: reduce) {
-  .agenda-coming-soon-pill,
-  .agenda-coming-soon-pulse {
-    animation: none !important;
+  .agenda-roadmap-title {
+    font-size: 1.05rem;
+  }
+
+  .agenda-roadmap-desc {
+    font-size: 0.9rem;
   }
 }
 
@@ -4048,44 +3935,6 @@
   background: color-mix(in srgb, var(--card-bg) 92%, var(--primary-purple));
   overflow: hidden;
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary-purple) 8%, transparent);
-}
-
-.pricing-coupon-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.7rem 1.1rem;
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--primary-purple) 88%, #000),
-    color-mix(in srgb, var(--bright-violet) 75%, var(--primary-purple))
-  );
-  border-bottom: 1px solid color-mix(in srgb, var(--primary-purple) 40%, transparent);
-}
-
-.pricing-coupon-text {
-  font-size: 0.875rem;
-  line-height: 1.4;
-  color: #f5f3ff;
-}
-
-.pricing-coupon-remove {
-  flex-shrink: 0;
-  min-height: 2.75rem;
-  padding-inline: 0.35rem;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: #ede9fe;
-  text-decoration: underline;
-  text-underline-offset: 0.15em;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-}
-
-.pricing-coupon-remove:hover {
-  color: #fff;
 }
 
 .pricing-card-body {
@@ -6900,25 +6749,57 @@ html.dark .admin-session-status-dot.is-completed {
   }
 }
 
+/* Purpose colors — always visible, not only on hover */
+.admin-icon-btn.is-edit,
+.admin-session-icon-btn.is-edit {
+  color: #3b82f6;
+}
+
+.admin-icon-btn.is-edit:hover,
+.admin-icon-btn.is-edit:focus-visible,
+.admin-session-icon-btn.is-edit:hover,
+.admin-session-icon-btn.is-edit:focus-visible {
+  color: #60a5fa;
+}
+
+.admin-icon-btn.is-accent,
 .admin-session-icon-btn.is-accent {
   color: var(--primary-purple);
 }
 
+.admin-icon-btn.is-accent:hover,
+.admin-icon-btn.is-accent:focus-visible,
 .admin-session-icon-btn.is-accent:hover,
 .admin-session-icon-btn.is-accent:focus-visible {
   color: color-mix(in srgb, var(--primary-purple) 85%, white);
 }
 
-.admin-session-icon-btn.is-danger:hover,
-.admin-session-icon-btn.is-danger:focus-visible {
-  color: #b91c1c;
+.admin-icon-btn.is-warn,
+.admin-session-icon-btn.is-warn {
+  color: #d97706;
+}
+
+.admin-icon-btn.is-warn:hover,
+.admin-icon-btn.is-warn:focus-visible,
+.admin-session-icon-btn.is-warn:hover,
+.admin-session-icon-btn.is-warn:focus-visible {
+  color: #fbbf24;
+}
+
+.admin-icon-btn.is-danger,
+.admin-session-icon-btn.is-danger {
+  color: #ef4444;
   background: transparent;
   border-color: transparent;
 }
 
-html.dark .admin-session-icon-btn.is-danger:hover,
-html.dark .admin-session-icon-btn.is-danger:focus-visible {
+.admin-icon-btn.is-danger:hover,
+.admin-icon-btn.is-danger:focus-visible,
+.admin-session-icon-btn.is-danger:hover,
+.admin-session-icon-btn.is-danger:focus-visible {
   color: #fca5a5;
+  background: transparent;
+  border-color: transparent;
 }
 
 .admin-session-icon-btn.is-disabled,

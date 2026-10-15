@@ -70,7 +70,12 @@ export async function POST(request: Request) {
       email: data.email,
       phone: data.phone,
       profession: data.profession,
-      couponCode: data.couponCode,
+      sourceKind: data.sourceKind,
+      programId: data.programId,
+      programTitle: data.programTitle,
+      city: data.city,
+      skillLevel: data.skillLevel,
+      learningGoals: data.learningGoals,
       utm: data.utm,
     });
 

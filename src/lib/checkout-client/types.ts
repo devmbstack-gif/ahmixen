@@ -2,6 +2,8 @@ export type PublicCheckoutConfig = {
   reservationsOpen: boolean;
   holdMinutes: number;
   landingPlanId: string | null;
+  mentorshipPlanId: string | null;
+  workshopPlanId: string | null;
   session: {
     startsAt: string;
     durationMinutes: number;
@@ -21,7 +23,6 @@ export type PublicCheckoutConfig = {
     savingsPercent: number | null;
     features: string[];
   }>;
-  popupCoupon: { label: string } | null;
 };
 
 export type ApiError = {
@@ -34,7 +35,6 @@ export type CheckoutPrefill = {
   email: string;
   phone: string;
   profession: string;
-  couponCode: string;
 };
 
 export type UtmPayload = {

@@ -7,7 +7,6 @@ import {
   SeatError,
 } from './seats';
 import { withOrdersTransaction, type TxMode } from './tx';
-import { deactivateRedemptionsForOrder } from '@/lib/coupons/redemptions';
 import {
   cancelReservationEmailJob,
   ensureReservationEmailJob,
@@ -182,7 +181,6 @@ export async function rejectOrder(
         await releaseHold(existing.sessionId, String(existing._id), {
           session,
         });
-        await deactivateRedemptionsForOrder(String(existing._id), { session });
       } catch (seatErr) {
         if (!session) {
           await Order.findOneAndUpdate(
@@ -269,7 +267,6 @@ export async function cancelOrder(
 
       try {
         await releaseConfirmedSeat(existing.sessionId, { session });
-        await deactivateRedemptionsForOrder(String(existing._id), { session });
       } catch (seatErr) {
         if (!session) {
           await Order.findOneAndUpdate(

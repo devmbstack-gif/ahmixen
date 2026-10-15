@@ -383,20 +383,6 @@ export function OrderDetailClient({ initial }: { initial: AdminOrderDetailDTO })
                     {formatMoneyLabel(order.currency, order.amounts.basePrice)}
                   </dd>
                 </div>
-                {order.coupon ? (
-                  <div className="flex justify-between gap-3">
-                    <dt className="text-[var(--text-muted)]">
-                      Coupon {order.coupon.code}
-                    </dt>
-                    <dd>
-                      −
-                      {formatMoneyLabel(
-                        order.currency,
-                        order.coupon.discountAmount
-                      )}
-                    </dd>
-                  </div>
-                ) : null}
               </dl>
               <p className="mt-3 text-base font-bold leading-snug">
                 {order.verifyHint}

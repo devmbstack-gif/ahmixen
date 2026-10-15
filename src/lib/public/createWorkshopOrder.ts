@@ -27,6 +27,7 @@ import {
 } from '@/lib/orders/tokens';
 import { getSeatSummary } from '@/lib/sessions/seats';
 import type { WorkshopRegistrationFields } from '@/lib/public/workshopRegistrationSchema';
+import { notifyAdminNewBooking } from '@/lib/email/outbox';
 
 function isDupKey(err: unknown): boolean {
   return (
@@ -125,6 +126,16 @@ export async function createWorkshopOrder(
         status: 409,
         code: 'already_confirmed',
         message: 'You already have a confirmed seat for this session',
+      };
+    }
+
+    if (existingLive.status === 'pending_verification') {
+      return {
+        ok: false,
+        status: 409,
+        code: 'already_submitted',
+        message:
+          'You already submitted your form. Admin will shortly review your payment details and send you a seat confirmation email.',
       };
     }
 
@@ -266,6 +277,8 @@ export async function createWorkshopOrder(
       throw err;
     }
 
+    notifyAdminNewBooking(String(existingLive._id));
+
     return {
       ok: true,
       orderId: String(existingLive._id),
@@ -385,6 +398,8 @@ export async function createWorkshopOrder(
         await orderDoc.save();
       }
     }
+
+    notifyAdminNewBooking(String(orderDoc._id));
 
     return {
       ok: true,

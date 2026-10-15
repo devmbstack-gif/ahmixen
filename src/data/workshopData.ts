@@ -73,10 +73,10 @@ export const WORKSHOP_CONFIG: WorkshopInfo = {
     currency: 'USD',
     label: 'Standard Registration',
   },
-  contactEmail: 'info@ahmixen.com',
+  contactEmail: 'ahmadalihafiz@icloud.com',
   whatsappNumber: '923390212102',
   whatsappPrefill:
-    "Hi AhmiXen! I'd like to know more about the live AI workshop.",
+    "Assalamualaikum Hafiz Ahmad Ali,\n\nI am interested in the AhmiXen live AI Automation workshop. Could you please share details about the upcoming session (date/time), fee, and how I can reserve a seat?\n\nThank you.",
 };
 
 export interface BenefitItem {
@@ -215,40 +215,91 @@ export interface AgendaModule {
   durationMin: string;
   title: string;
   summary: string;
+  /** Small category label above the title (roadmap cards). */
+  category?: string;
+  /** Optional left thumbnail path under /public. */
+  image?: string;
 }
+
+export const AGENDA_CATEGORY_DEFAULT = 'AI AUTOMATION';
+
+/** Shared thumbnail for all Session Agenda roadmap cards. */
+export const AGENDA_MODULE_IMAGE = '/session-agenda-pic.png';
+
+export const AGENDA_INSTRUCTOR_NAME = 'Ahmi';
 
 export const WORKSHOP_AGENDA: AgendaModule[] = [
   {
     id: 'module-1',
     moduleNumber: '01',
-    timeRange: '0:00 – 0:35',
-    durationMin: '35 min',
-    title: 'AI Fundamentals',
-    summary: 'What AI actually is, essential tools, and prompt patterns that work in real tasks.',
+    timeRange: '',
+    durationMin: '',
+    category: AGENDA_CATEGORY_DEFAULT,
+    title: 'AI Basics & Future Opportunities',
+    summary: 'Understand AI and where it’s creating opportunities today.',
+    image: AGENDA_MODULE_IMAGE,
   },
   {
     id: 'module-2',
     moduleNumber: '02',
-    timeRange: '0:35 – 1:10',
-    durationMin: '35 min',
-    title: 'AI Agents',
-    summary: 'How agents plan, use tools, and run tasks automatically — with a live walkthrough.',
+    timeRange: '',
+    durationMin: '',
+    category: AGENDA_CATEGORY_DEFAULT,
+    title: 'AI Automation & Agents',
+    summary: 'Learn how AI can automate repetitive work and complete real tasks.',
+    image: AGENDA_MODULE_IMAGE,
   },
   {
     id: 'module-3',
     moduleNumber: '03',
-    timeRange: '1:10 – 1:45',
-    durationMin: '35 min',
-    title: 'Automation Workflows',
-    summary: 'Build simple automated pipelines that save hours of manual follow-up and busywork.',
+    timeRange: '',
+    durationMin: '',
+    category: AGENDA_CATEGORY_DEFAULT,
+    title: 'AI Business Opportunity Finder',
+    summary: 'Discover business problems and turn them into service opportunities.',
+    image: AGENDA_MODULE_IMAGE,
   },
   {
     id: 'module-4',
     moduleNumber: '04',
-    timeRange: '1:45 – 2:30',
-    durationMin: '45 min',
-    title: 'Build with AI + Q&A',
-    summary: 'Create a small working prototype with AI, then open Q&A for your questions.',
+    timeRange: '',
+    durationMin: '',
+    category: AGENDA_CATEGORY_DEFAULT,
+    title: 'AI Viral Trend Finder',
+    summary: 'Find trending YouTube & TikTok topics automatically for any niche.',
+    image: AGENDA_MODULE_IMAGE,
+  },
+  {
+    id: 'module-5',
+    moduleNumber: '05',
+    timeRange: '',
+    durationMin: '',
+    category: AGENDA_CATEGORY_DEFAULT,
+    title: 'Real-World AI Workflows',
+    summary:
+      'See practical automations built for businesses, creators, and professionals.',
+    image: AGENDA_MODULE_IMAGE,
+  },
+  {
+    id: 'module-6',
+    moduleNumber: '06',
+    timeRange: '',
+    durationMin: '',
+    category: AGENDA_CATEGORY_DEFAULT,
+    title: 'AI Skills to Income',
+    summary:
+      'Learn how to sell AI solutions through freelancing, services, and monthly retainers.',
+    image: AGENDA_MODULE_IMAGE,
+  },
+  {
+    id: 'module-7',
+    moduleNumber: '07',
+    timeRange: '',
+    durationMin: '',
+    category: AGENDA_CATEGORY_DEFAULT,
+    title: 'Your AI Earning Roadmap',
+    summary: 'A simple path from Learn → Build → Solve → Sell → Earn.',
+    image: AGENDA_MODULE_IMAGE,
   },
 ];
 

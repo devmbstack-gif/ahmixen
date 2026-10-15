@@ -2,10 +2,14 @@ import type { ClientSession } from 'mongoose';
 import { EmailJob, type EmailJobDocument } from '@/models/EmailJob';
 import { Order } from '@/models/Order';
 import { Session } from '@/models/Session';
+import { Admin } from '@/models/Admin';
 import { connectToDatabase } from '@/lib/db';
-import { getEmailDailyLimit } from './config';
+import { getEmailDailyLimit, getEmailReplyTo, parseEmailAddress } from './config';
 import { sendOutboundEmail } from './sender';
 import { buildReservationConfirmedEmail } from './templates/reservationConfirmed';
+import { buildAdminNewBookingEmail } from './templates/adminNewBooking';
+import { ensureEmailJobIndexes } from './syncIndexes';
+import { after } from 'next/server';
 
 const MAX_ATTEMPTS = 5;
 const BACKOFF_MS = [
@@ -123,6 +127,102 @@ export async function cancelReservationEmailJob(
   );
 }
 
+/** Prefer Admin account email; fall back to EMAIL_REPLY_TO. */
+export async function resolveAdminNotifyEmail(): Promise<string | null> {
+  await connectToDatabase();
+  const admin = await Admin.findOne({})
+    .select({ email: 1 })
+    .sort({ createdAt: 1 })
+    .lean();
+  const fromAdmin = admin?.email?.trim().toLowerCase();
+  if (fromAdmin) return fromAdmin;
+
+  const reply = getEmailReplyTo();
+  if (!reply) return null;
+  return parseEmailAddress(reply) || reply.trim().toLowerCase() || null;
+}
+
+/**
+ * Idempotent upsert for admin "new booking to review" mail.
+ * Once sent, re-uploads do not create another alert.
+ */
+export async function ensureAdminNewBookingEmailJob(
+  orderId: string,
+  to: string,
+  opts?: { session?: ClientSession | null }
+): Promise<EmailJobDocument> {
+  await connectToDatabase();
+  const session = opts?.session ?? null;
+  const existing = await EmailJob.findOne(
+    { orderId, type: 'admin_new_booking' },
+    null,
+    session ? { session } : undefined
+  );
+  if (existing?.status === 'sent') {
+    return existing;
+  }
+
+  const updated = await EmailJob.findOneAndUpdate(
+    { orderId, type: 'admin_new_booking' },
+    {
+      $setOnInsert: {
+        orderId,
+        type: 'admin_new_booking',
+        attempts: 0,
+        sentCount: 0,
+        sendLog: [],
+        sentAt: null,
+      },
+      $set: {
+        to,
+        status: 'pending',
+        lastError: '',
+        lastNote: '',
+        nextAttemptAt: new Date(),
+      },
+    },
+    {
+      upsert: true,
+      new: true,
+      ...(session ? { session } : {}),
+    }
+  );
+  return updated!;
+}
+
+/**
+ * Queue + fire-and-forget send when a booking enters review.
+ * Never throws to callers — booking success must not depend on email.
+ */
+export function notifyAdminNewBooking(orderId: string): void {
+  const run = async () => {
+    try {
+      await ensureEmailJobIndexes();
+      const to = await resolveAdminNotifyEmail();
+      if (!to) {
+        console.error('[email:admin_new_booking] no admin recipient configured');
+        return;
+      }
+      const job = await ensureAdminNewBookingEmailJob(orderId, to);
+      if (job.status === 'sent') return;
+      await attemptSendEmailJob(String(job._id));
+    } catch (err) {
+      console.error(
+        '[email:admin_new_booking]',
+        err instanceof Error ? err.message : 'notify failed'
+      );
+    }
+  };
+
+  try {
+    after(() => {
+      void run();
+    });
+  } catch {
+    void run();
+  }
+}
+
 async function dailySentCount(): Promise<number> {
   const since = new Date(Date.now() - 24 * 60 * 60_000);
   return EmailJob.countDocuments({
@@ -131,7 +231,7 @@ async function dailySentCount(): Promise<number> {
   });
 }
 
-async function buildMailForOrder(orderId: string) {
+async function buildReservationMail(orderId: string) {
   const order = await Order.findById(orderId).lean();
   if (!order) return { error: 'Booking not found' as const };
   if (order.status !== 'approved') {
@@ -160,48 +260,68 @@ async function buildMailForOrder(orderId: string) {
   return { mail, order };
 }
 
-export async function attemptSendEmailJob(
-  jobId: string
+async function buildAdminNewBookingMail(orderId: string, adminTo: string) {
+  const order = await Order.findById(orderId).lean();
+  if (!order) return { error: 'Booking not found' as const };
+
+  const session = order.sessionId
+    ? await Session.findById(order.sessionId)
+        .select({ title: 1, startsAt: 1, timezone: 1 })
+        .lean()
+    : null;
+
+  const sourceKind =
+    (order as { sourceKind?: string }).sourceKind === 'workshop'
+      ? 'workshop'
+      : 'checkout';
+
+  const mail = buildAdminNewBookingEmail({
+    orderId: String(order._id),
+    orderNumber: order.orderNumber,
+    customerName: order.customer.name,
+    customerEmail: order.customer.email,
+    customerPhone: order.customer.phone || '',
+    planName: order.planSnapshot.name,
+    currency: order.planSnapshot.currency,
+    amount: order.amounts.finalPrice,
+    sessionTitle: session?.title || 'AhmiXen live session',
+    startsAt: session?.startsAt ? new Date(session.startsAt) : null,
+    timezone: session?.timezone || 'Asia/Karachi',
+    bookingTypeLabel: sourceKind === 'workshop' ? 'Workshop' : 'Checkout',
+    adminTo,
+  });
+  return { mail, order };
+}
+
+/** Hydrated EmailJob from findById — keep methods without fighting InferSchemaType. */
+type MutableEmailJob = {
+  status: string;
+  lastError: string;
+  attempts: number;
+  sentCount: number;
+  sentAt: Date | null;
+  sendLog: unknown;
+  lastNote: string;
+  nextAttemptAt: Date;
+  save: () => Promise<unknown>;
+  set: (path: string, val: unknown) => unknown;
+};
+
+async function finalizeJobSend(
+  job: MutableEmailJob,
+  mail: {
+    to: string;
+    subject: string;
+    text: string;
+    html: string;
+    attachments?: Array<{
+      filename: string;
+      content: string | Buffer;
+      contentType?: string;
+    }>;
+  }
 ): Promise<{ status: PublicEmailStatus; reason?: string }> {
-  await connectToDatabase();
-
-  const limit = getEmailDailyLimit();
-  const sentToday = await dailySentCount();
-  if (sentToday >= limit) {
-    await EmailJob.findByIdAndUpdate(jobId, {
-      $set: {
-        lastError: 'Daily sending limit reached.',
-        nextAttemptAt: new Date(Date.now() + 60 * 60_000),
-      },
-    });
-    return { status: 'pending', reason: 'Daily sending limit reached.' };
-  }
-
-  const job = await EmailJob.findById(jobId);
-  if (!job) return { status: 'not_sent' };
-
-  const built = await buildMailForOrder(job.orderId);
-  // Never send unless the order still exists and is approved.
-  if (
-    'error' in built &&
-    (built.error === 'Order is no longer approved' ||
-      built.error === 'Booking not found')
-  ) {
-    job.status = 'skipped';
-    job.lastError = 'Order is no longer approved';
-    await job.save();
-    return { status: 'skipped', reason: job.lastError };
-  }
-  if (!('mail' in built) || !built.mail) {
-    job.status = 'failed';
-    job.attempts += 1;
-    job.lastError = built.error || 'Email could not be sent.';
-    job.nextAttemptAt = nextBackoff(job.attempts);
-    await job.save();
-    return { status: 'failed', reason: job.lastError };
-  }
-
-  const result = await sendOutboundEmail(built.mail);
+  const result = await sendOutboundEmail(mail);
   if (result.status === 'skipped') {
     job.status = 'skipped';
     job.lastError = result.reason;
@@ -233,6 +353,71 @@ export async function attemptSendEmailJob(
   job.nextAttemptAt = nextBackoff(job.attempts);
   await job.save();
   return { status: 'failed', reason: result.reason };
+}
+
+export async function attemptSendEmailJob(
+  jobId: string
+): Promise<{ status: PublicEmailStatus; reason?: string }> {
+  await connectToDatabase();
+
+  const limit = getEmailDailyLimit();
+  const sentToday = await dailySentCount();
+  if (sentToday >= limit) {
+    await EmailJob.findByIdAndUpdate(jobId, {
+      $set: {
+        lastError: 'Daily sending limit reached.',
+        nextAttemptAt: new Date(Date.now() + 60 * 60_000),
+      },
+    });
+    return { status: 'pending', reason: 'Daily sending limit reached.' };
+  }
+
+  const job = await EmailJob.findById(jobId);
+  if (!job) return { status: 'not_sent' };
+
+  if (job.type === 'admin_new_booking') {
+    const built = await buildAdminNewBookingMail(job.orderId, job.to);
+    if ('mail' in built && built.mail) {
+      return finalizeJobSend(job as MutableEmailJob, built.mail);
+    }
+    const errMsg =
+      'error' in built ? built.error : 'Email could not be sent.';
+    if (errMsg === 'Booking not found') {
+      job.status = 'skipped';
+      job.lastError = errMsg;
+      await job.save();
+      return { status: 'skipped', reason: job.lastError };
+    }
+    job.status = 'failed';
+    job.attempts += 1;
+    job.lastError = errMsg;
+    job.nextAttemptAt = nextBackoff(job.attempts);
+    await job.save();
+    return { status: 'failed', reason: job.lastError };
+  }
+
+  const built = await buildReservationMail(job.orderId);
+  // Never send unless the order still exists and is approved.
+  if (
+    'error' in built &&
+    (built.error === 'Order is no longer approved' ||
+      built.error === 'Booking not found')
+  ) {
+    job.status = 'skipped';
+    job.lastError = 'Order is no longer approved';
+    await job.save();
+    return { status: 'skipped', reason: job.lastError };
+  }
+  if (!('mail' in built) || !built.mail) {
+    job.status = 'failed';
+    job.attempts += 1;
+    job.lastError = built.error || 'Email could not be sent.';
+    job.nextAttemptAt = nextBackoff(job.attempts);
+    await job.save();
+    return { status: 'failed', reason: job.lastError };
+  }
+
+  return finalizeJobSend(job as MutableEmailJob, built.mail);
 }
 
 /**

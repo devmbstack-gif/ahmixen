@@ -1,6 +1,5 @@
 import { Order } from '@/models/Order';
 import { Counter } from '@/models/Counter';
-import { CouponRedemption } from '@/models/CouponRedemption';
 import { Lead } from '@/models/Lead';
 import { RateLimit } from '@/models/RateLimit';
 
@@ -12,7 +11,6 @@ export async function ensureOrderIndexes(): Promise<void> {
     syncPromise = (async () => {
       await Counter.init();
       await Order.syncIndexes();
-      await CouponRedemption.syncIndexes();
       await Lead.syncIndexes();
       await RateLimit.syncIndexes();
     })().catch((err) => {

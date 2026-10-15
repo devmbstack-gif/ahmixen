@@ -26,11 +26,6 @@ export type CreateOrderInput = {
     price: number;
     installmentsCount: number | null;
   };
-  coupon?: {
-    couponId: string;
-    code: string;
-    discountAmount: number;
-  } | null;
   amounts: {
     basePrice: number;
     discountAmount: number;
@@ -91,7 +86,7 @@ export async function createOrderInternal(
         profession: input.customer.profession?.trim() || '',
       },
       planSnapshot: input.planSnapshot,
-      coupon: input.coupon ?? null,
+      coupon: null,
       amounts: input.amounts,
       paymentMethod: 'bank_transfer',
       proof: input.proof ?? null,

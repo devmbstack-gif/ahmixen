@@ -1,12 +1,11 @@
 'use client';
 
-import { useState } from 'react';
 import Image from 'next/image';
 import { GraduationCap, Lock } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { PublicSessionDisplay } from '../lib/sessions/publicShared';
 import type { ProgramCardPublic } from '@/lib/content/landingPublic';
-import { WorkshopRegisterModal } from './WorkshopRegisterModal';
+import { useReserveFlow } from './checkout/ReserveFlowProvider';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -26,10 +25,14 @@ export function ProgramsSection({
 }: ProgramsSectionProps) {
   const reduceMotion = useReducedMotion();
   const HeadingTag = headingAs;
-  const [registerOpen, setRegisterOpen] = useState(false);
-  const [activeProgram, setActiveProgram] = useState<ProgramCardPublic | null>(
-    null
-  );
+  const { startWorkshopReserveFlow, config, configLoading } = useReserveFlow();
+
+  const globalBlocked =
+    !configLoading &&
+    Boolean(
+      config &&
+        (!config.reservationsOpen || config.session?.soldOut)
+    );
 
   return (
     <section
@@ -45,6 +48,9 @@ export function ProgramsSection({
         <ul className="programs-grid">
           {cards.map((program, index) => {
             const locked = program.status === 'locked';
+            const planId = program.planId;
+            const canReserve =
+              !locked && !globalBlocked && Boolean(planId);
             const badges = program.badges.map((badge, badgeIndex) =>
               badgeIndex === 0 ? publicSession.durationLabel : badge
             );
@@ -124,10 +130,16 @@ export function ProgramsSection({
                   <button
                     type="button"
                     className="program-card program-card-open nav-focus"
-                    aria-label={`Register for ${program.title}`}
+                    aria-label={`Reserve seat for ${program.title}`}
+                    disabled={!canReserve}
+                    aria-disabled={!canReserve}
                     onClick={() => {
-                      setActiveProgram(program);
-                      setRegisterOpen(true);
+                      if (canReserve) {
+                        startWorkshopReserveFlow(planId, {
+                          programId: program.id,
+                          forTitle: program.title,
+                        });
+                      }
                     }}
                   >
                     {media}
@@ -138,18 +150,6 @@ export function ProgramsSection({
           })}
         </ul>
       </div>
-
-      {activeProgram ? (
-        <WorkshopRegisterModal
-          open={registerOpen}
-          onClose={() => {
-            setRegisterOpen(false);
-            setActiveProgram(null);
-          }}
-          programId={activeProgram.id}
-          programTitle={activeProgram.title}
-        />
-      ) : null}
     </section>
   );
 }

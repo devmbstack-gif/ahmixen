@@ -5,7 +5,6 @@ import {
   CreditCard,
   Ticket,
   Users,
-  Tag,
   BadgeDollarSign,
   MessageSquareQuote,
   PanelsTopLeft,
@@ -58,7 +57,6 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     collapsible: true,
     items: [
       { label: 'Pricing', href: '/admin/pricing', icon: BadgeDollarSign },
-      { label: 'Coupons', href: '/admin/coupons', icon: Tag },
       { label: 'Settings', href: '/admin/settings', icon: Settings },
     ],
   },

@@ -65,6 +65,10 @@ export async function POST(request: Request, ctx: Ctx) {
         : '';
 
       existing.isLandingPlan = true;
+      // Mentorship landing plan must stay separate from workshop reserve CTAs.
+      if (existing.isWorkshopPlan) {
+        existing.isWorkshopPlan = false;
+      }
       // Keep session binding aligned with the public landing session so
       // checkout filters and admin pills stay consistent.
       existing.sessionId = landingSessionId;

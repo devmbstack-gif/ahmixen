@@ -42,6 +42,16 @@ export function ContentEditorClient({ contentKey }: Props) {
   const [toolLogos, setToolLogos] = useState<Record<string, MediaPickerValue | null>>(
     {}
   );
+  const [planOptions, setPlanOptions] = useState<
+    Array<{
+      id: string;
+      name: string;
+      priceLabel: string;
+      isLandingPlan: boolean;
+      isWorkshopPlan: boolean;
+      status: string;
+    }>
+  >([]);
 
   const dirty = data ? JSON.stringify(data) !== baseline : false;
 
@@ -253,14 +263,24 @@ export function ContentEditorClient({ contentKey }: Props) {
       }
       if (contentKey === 'programs') {
         const cards = ((payload.cards as Array<Record<string, unknown>>) || []).map(
-          (c) => ({
-            ...c,
-            posterAssetId: cardPosters[String(c.id)]?.id || null,
-            image:
-              cardPosters[String(c.id)]?.id
-                ? undefined
-                : cardPosters[String(c.id)]?.url || c.image,
-          })
+          (c) => {
+            const rawPlan = c.planId;
+            const planId =
+              typeof rawPlan === 'string' && /^[a-f\d]{24}$/i.test(rawPlan)
+                ? rawPlan
+                : null;
+            return {
+              ...c,
+              planId,
+              status: c.status === 'open' ? 'open' : 'locked',
+              priceLabel: typeof c.priceLabel === 'string' ? c.priceLabel : '',
+              posterAssetId: cardPosters[String(c.id)]?.id || null,
+              image:
+                cardPosters[String(c.id)]?.id
+                  ? undefined
+                  : cardPosters[String(c.id)]?.url || c.image,
+            };
+          }
         );
         payload = { ...payload, cards };
       }
@@ -979,25 +999,19 @@ export function ContentEditorClient({ contentKey }: Props) {
                 onChange={(e) => patch({ heading: e.target.value })}
               />
             </label>
-            <label className="flex h-10 items-center gap-2 rounded-xl border border-[var(--border-subtle)] px-3">
-              <input
-                type="checkbox"
-                checked={Boolean(data.comingSoon)}
-                onChange={(e) => patch({ comingSoon: e.target.checked })}
-              />
-              <span className="text-sm">Coming soon</span>
-            </label>
             <p className="text-xs text-[var(--text-secondary)]">
-              While on, visitors see the Coming soon state instead of the agenda.
+              Curriculum roadmap cards on the home page. Category defaults to
+              &quot;AI AUTOMATION&quot;. Coming-soon blur is disabled — visitors
+              always see this roadmap.
             </p>
             <div className="flex items-center justify-between">
               <span className="text-xs text-[var(--text-secondary)]">
-                {list('items').length} of 10
+                {list('items').length} of 12
               </span>
               <button
                 type="button"
                 className="admin-logout-btn nav-focus inline-flex items-center gap-1"
-                disabled={list('items').length >= 10}
+                disabled={list('items').length >= 12}
                 onClick={() =>
                   setList('items', [
                     ...list('items'),
@@ -1008,6 +1022,7 @@ export function ContentEditorClient({ contentKey }: Props) {
                       durationMin: '',
                       title: '',
                       summary: '',
+                      category: 'AI AUTOMATION',
                     },
                   ])
                 }
@@ -1095,11 +1110,22 @@ export function ContentEditorClient({ contentKey }: Props) {
                     setList('items', items);
                   }}
                 />
+                <input
+                  className="admin-input h-10 w-full"
+                  placeholder="Category (e.g. AI AUTOMATION)"
+                  value={String(item.category || 'AI AUTOMATION')}
+                  maxLength={40}
+                  onChange={(e) => {
+                    const items = [...list('items')];
+                    items[index] = { ...item, category: e.target.value };
+                    setList('items', items);
+                  }}
+                />
                 <textarea
                   className="admin-input min-h-[72px] w-full py-2"
                   placeholder="Description"
                   value={String(item.summary || '')}
-                  maxLength={140}
+                  maxLength={200}
                   onChange={(e) => {
                     const items = [...list('items')];
                     items[index] = { ...item, summary: e.target.value };
@@ -1289,17 +1315,18 @@ export function ContentEditorClient({ contentKey }: Props) {
         {contentKey === 'programs' && (
           <>
             <p className="text-xs text-[var(--text-secondary)]">
-              Card price comes from the landing plan (or the cheapest active one-time plan).
-              When no plan exists, the price is hidden.
+              Link each open program to a Pricing plan for checkout. Mentorship
+              plans stay on the Mentorship / ENROLL section — do not use them
+              here. Create plans under Admin → Pricing first.
             </p>
             <div className="flex items-center justify-between">
               <span className="text-xs text-[var(--text-secondary)]">
-                {list('cards').length} of 6
+                {list('cards').length} of 8
               </span>
               <button
                 type="button"
                 className="admin-logout-btn nav-focus inline-flex items-center gap-1"
-                disabled={list('cards').length >= 6}
+                disabled={list('cards').length >= 8}
                 onClick={() => {
                   const id = `course-${Date.now()}`;
                   setList('cards', [
@@ -1307,10 +1334,13 @@ export function ContentEditorClient({ contentKey }: Props) {
                     {
                       id,
                       title: '',
-                      instructorLine: '',
+                      instructorLine: 'Ahmi',
                       badges: ['Live Session'],
                       posterAssetId: null,
-                      href: '/#pricing',
+                      href: '/#programs',
+                      status: 'locked',
+                      priceLabel: '',
+                      planId: null,
                     },
                   ]);
                   setCardPosters((m) => ({ ...m, [id]: null }));
@@ -1320,7 +1350,16 @@ export function ContentEditorClient({ contentKey }: Props) {
                 Add
               </button>
             </div>
-            {list('cards').map((card, index) => (
+            {list('cards').map((card, index) => {
+              const planId =
+                typeof card.planId === 'string' && card.planId
+                  ? String(card.planId)
+                  : '';
+              const selectedPlan = planOptions.find((p) => p.id === planId);
+              const workshopPlans = planOptions.filter((p) => !p.isLandingPlan);
+              const status = card.status === 'open' ? 'open' : 'locked';
+
+              return (
               <div
                 key={String(card.id)}
                 className="space-y-2 rounded-xl border border-[var(--border-subtle)] p-3"
@@ -1393,9 +1432,87 @@ export function ContentEditorClient({ contentKey }: Props) {
                     setList('cards', cards);
                   }}
                 />
+                <label className="block space-y-1">
+                  <span className="text-xs text-[var(--text-secondary)]">
+                    Status
+                  </span>
+                  <select
+                    className="admin-input h-10 w-full"
+                    value={status}
+                    onChange={(e) => {
+                      const cards = [...list('cards')];
+                      cards[index] = {
+                        ...card,
+                        status: e.target.value === 'open' ? 'open' : 'locked',
+                      };
+                      setList('cards', cards);
+                    }}
+                  >
+                    <option value="open">Open (clickable / reserve)</option>
+                    <option value="locked">Locked (coming soon)</option>
+                  </select>
+                </label>
+                <label className="block space-y-1">
+                  <span className="text-xs text-[var(--text-secondary)]">
+                    Checkout plan (pricing)
+                  </span>
+                  <select
+                    className="admin-input h-10 w-full"
+                    value={planId}
+                    onChange={(e) => {
+                      const cards = [...list('cards')];
+                      const nextId = e.target.value || null;
+                      const plan = planOptions.find((p) => p.id === nextId);
+                      cards[index] = {
+                        ...card,
+                        planId: nextId,
+                        priceLabel: plan?.priceLabel || card.priceLabel || '',
+                      };
+                      setList('cards', cards);
+                    }}
+                  >
+                    <option value="">
+                      {status === 'open'
+                        ? 'Default workshop plan'
+                        : 'None (locked)'}
+                    </option>
+                    {workshopPlans.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} — {p.priceLabel}
+                        {p.isWorkshopPlan ? ' (Workshop)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {selectedPlan ? (
+                  <p className="text-xs text-[var(--text-secondary)]">
+                    Card price: <strong>{selectedPlan.priceLabel}</strong>
+                    {selectedPlan.isLandingPlan
+                      ? ' — warning: this is the Mentorship plan'
+                      : ''}
+                  </p>
+                ) : status === 'open' ? (
+                  <p className="text-xs text-[var(--text-secondary)]">
+                    Uses the default Workshop reserve plan until you pick one.
+                    {planOptions.some((p) => p.isLandingPlan) &&
+                    workshopPlans.length === 0
+                      ? ' Create a separate one-time plan under Pricing (not Mentorship).'
+                      : ''}
+                  </p>
+                ) : null}
                 <input
                   className="admin-input h-10 w-full"
-                  placeholder="Link (/#pricing or https://…)"
+                  placeholder="Fallback price label (optional)"
+                  value={String(card.priceLabel || '')}
+                  onChange={(e) => {
+                    const cards = [...list('cards')];
+                    cards[index] = { ...card, priceLabel: e.target.value };
+                    setList('cards', cards);
+                  }}
+                />
+                <input
+                  className="admin-input h-10 w-full"
+                  placeholder="Link (/#programs or https://…)"
                   value={String(card.href || '')}
                   onChange={(e) => {
                     const cards = [...list('cards')];
@@ -1404,7 +1521,7 @@ export function ContentEditorClient({ contentKey }: Props) {
                   }}
                 />
                 <span className="block text-xs text-[var(--text-secondary)]">
-                  Internal path (/… or /#anchor) or https:// only.
+                  Open cards reserve via their plan (link is unused for checkout).
                 </span>
                 <MediaField
                   label="Poster"
@@ -1414,7 +1531,8 @@ export function ContentEditorClient({ contentKey }: Props) {
                   }
                 />
               </div>
-            ))}
+              );
+            })}
           </>
         )}
 
@@ -1467,7 +1585,6 @@ export function ContentEditorClient({ contentKey }: Props) {
             })}
           </>
         )}
-
 
         {error && (
           <p className="text-sm text-red-600 dark:text-red-400" role="alert">

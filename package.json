@@ -16,10 +16,10 @@
     "seed:payment": "tsx scripts/seed-payment.ts",
     "seed:orders": "tsx scripts/seed-orders.ts",
     "seed:orders:clear": "tsx scripts/seed-orders-clear.ts",
+    "clear:user-data": "tsx scripts/clear-user-data.ts",
     "seed:content": "tsx scripts/seed-content.ts",
     "seed:plan": "tsx scripts/seed-plan.ts",
     "proof:plan-landing": "tsx scripts/proof-plan-landing-index.ts",
-    "migrate:redemptions": "tsx scripts/migrate-redemptions.ts",
     "test:checkout": "tsx scripts/test-checkout.ts",
     "test:checkout:clear": "tsx scripts/test-checkout-clear.ts"
   },

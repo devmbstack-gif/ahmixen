@@ -1,16 +1,15 @@
 import { connectToDatabase } from '@/lib/db';
 import { Session } from '@/models/Session';
 import { Plan } from '@/models/Plan';
-import { Coupon } from '@/models/Coupon';
 import { getSeatSummary } from '@/lib/sessions/seats';
 import { sessionTimezone } from '@/lib/sessions/datetime';
 import { savingsPercent } from '@/lib/plans/money';
-import { discountLabelFor } from '@/lib/coupons/serialize';
 import { localDateTimeToUtc } from '@/lib/sessions/datetime';
 import { getCheckoutHoldMinutes } from '@/lib/orders/holdMinutes';
 import {
   isPlanPublicEligible,
   selectLandingPlan,
+  selectWorkshopPlan,
   type PlanLean,
 } from '@/lib/plans/landing';
 import { ensurePlanIndexes } from '@/lib/plans/syncIndexes';
@@ -33,7 +32,11 @@ export type PublicCheckoutPlan = {
 export type PublicCheckoutConfig = {
   reservationsOpen: boolean;
   holdMinutes: number;
+  /** Mentorship ENROLL / fees card (isLandingPlan). */
   landingPlanId: string | null;
+  mentorshipPlanId: string | null;
+  /** Workshop Nav / Hero / Programs → /reserve (isWorkshopPlan). */
+  workshopPlanId: string | null;
   session: {
     startsAt: string;
     durationMinutes: number;
@@ -43,7 +46,6 @@ export type PublicCheckoutConfig = {
     showLimitedSeatsBadge: boolean;
   } | null;
   plans: PublicCheckoutPlan[];
-  popupCoupon: { label: string } | null;
 };
 
 function mapPlan(p: PlanLean): PublicCheckoutPlan {
@@ -76,9 +78,10 @@ export async function getPublicCheckoutConfig(): Promise<PublicCheckoutConfig> {
       reservationsOpen: false,
       holdMinutes,
       landingPlanId: null,
+      mentorshipPlanId: null,
+      workshopPlanId: null,
       session: null,
       plans: [],
-      popupCoupon: null,
     };
   }
 
@@ -112,44 +115,28 @@ export async function getPublicCheckoutConfig(): Promise<PublicCheckoutConfig> {
 
   const landing = await selectLandingPlan(sessionId, now);
   const landingPlanId = landing ? String(landing._id) : null;
+  const mentorshipPlanId = landingPlanId;
+  const workshop = await selectWorkshopPlan(sessionId, mentorshipPlanId, now);
+  const workshopPlanId = workshop ? String(workshop._id) : null;
 
   const ordered: PlanLean[] = [];
-  if (landing) {
-    ordered.push(landing);
-  }
-  for (const p of eligible) {
-    if (landing && String(p._id) === String(landing._id)) continue;
+  const seen = new Set<string>();
+  for (const p of [workshop, landing, ...eligible]) {
+    if (!p) continue;
+    const id = String(p._id);
+    if (seen.has(id)) continue;
+    seen.add(id);
     ordered.push(p);
   }
 
   const plans = ordered.map(mapPlan);
 
-  const popup = await Coupon.findOne({
-    isPopupCoupon: true,
-    status: 'active',
-  }).lean();
-
-  let popupCoupon: { label: string } | null = null;
-  if (popup) {
-    const startsOk =
-      !popup.startsAt || new Date(popup.startsAt).getTime() <= now.getTime();
-    const endsOk =
-      !popup.endsAt || new Date(popup.endsAt).getTime() >= now.getTime();
-    if (startsOk && endsOk) {
-      popupCoupon = {
-        label: discountLabelFor(
-          popup.discountType as 'percent' | 'fixed',
-          Number(popup.discountValue),
-          popup.currency || 'PKR'
-        ),
-      };
-    }
-  }
-
   return {
     reservationsOpen: true,
     holdMinutes,
     landingPlanId,
+    mentorshipPlanId,
+    workshopPlanId,
     session: {
       startsAt: new Date(sessionDoc.startsAt).toISOString(),
       durationMinutes: sessionDoc.durationMinutes,
@@ -159,7 +146,6 @@ export async function getPublicCheckoutConfig(): Promise<PublicCheckoutConfig> {
       showLimitedSeatsBadge: Boolean(sessionDoc.showLimitedSeatsBadge),
     },
     plans,
-    popupCoupon,
   };
 }
 

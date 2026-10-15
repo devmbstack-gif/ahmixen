@@ -12,10 +12,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   captureAttributionFromUrl,
   fetchCheckoutConfig,
-  isPopupDone,
   type PublicCheckoutConfig,
 } from '@/lib/checkout-client';
-import { DiscountPopup } from './DiscountPopup';
+import {
+  buildReservePath,
+  type ReserveContext,
+  type ReserveIntent,
+} from '@/lib/checkout-client/reserveIntent';
 
 function isAdminPath(pathname: string | null): boolean {
   return Boolean(pathname?.startsWith('/admin'));
@@ -25,8 +28,23 @@ type ReserveFlowContextValue = {
   config: PublicCheckoutConfig | null;
   configLoading: boolean;
   refreshConfig: () => Promise<void>;
+  /** @deprecated Prefer startWorkshopReserveFlow or startMentorshipReserveFlow */
   startReserveFlow: () => void;
+  /** Optional planId overrides the default workshop plan (per-program cards). */
+  startWorkshopReserveFlow: (
+    planId?: string | null,
+    context?: ReserveContext
+  ) => void;
+  startMentorshipReserveFlow: (context?: ReserveContext) => void;
   reserveCta: {
+    label: string;
+    disabled: boolean;
+  };
+  workshopCta: {
+    label: string;
+    disabled: boolean;
+  };
+  mentorshipCta: {
     label: string;
     disabled: boolean;
   };
@@ -34,10 +52,10 @@ type ReserveFlowContextValue = {
 
 const ReserveFlowContext = createContext<ReserveFlowContextValue | null>(null);
 
-function ctaFromConfig(config: PublicCheckoutConfig | null): {
-  label: string;
-  disabled: boolean;
-} {
+function ctaFromConfig(
+  config: PublicCheckoutConfig | null,
+  planId: string | null | undefined
+): { label: string; disabled: boolean } {
   if (!config) {
     return { label: 'Reserve', disabled: false };
   }
@@ -46,6 +64,9 @@ function ctaFromConfig(config: PublicCheckoutConfig | null): {
   }
   if (config.session?.soldOut) {
     return { label: 'Sold out', disabled: true };
+  }
+  if (!planId) {
+    return { label: 'Reserve', disabled: true };
   }
   return { label: 'Reserve', disabled: false };
 }
@@ -60,7 +81,6 @@ export function ReserveFlowProvider({
   const adminRoute = isAdminPath(pathname);
   const [config, setConfig] = useState<PublicCheckoutConfig | null>(null);
   const [configLoading, setConfigLoading] = useState(true);
-  const [popupOpen, setPopupOpen] = useState(false);
 
   const refreshConfig = useCallback(async () => {
     if (adminRoute) {
@@ -80,7 +100,6 @@ export function ReserveFlowProvider({
   useEffect(() => {
     if (adminRoute) {
       setConfigLoading(false);
-      setPopupOpen(false);
       return;
     }
     captureAttributionFromUrl(
@@ -90,22 +109,80 @@ export function ReserveFlowProvider({
     void refreshConfig();
   }, [adminRoute, refreshConfig]);
 
-  const goReserve = useCallback(() => {
-    setPopupOpen(false);
-    router.push('/reserve');
-  }, [router]);
+  const beginReserve = useCallback(
+    (
+      intent: ReserveIntent,
+      planId: string | null | undefined,
+      context?: ReserveContext
+    ) => {
+      if (!config?.reservationsOpen) return;
+      if (config.session?.soldOut) return;
+      if (!planId) return;
 
-  const startReserveFlow = useCallback(() => {
-    if (!config?.reservationsOpen) return;
-    if (config.session?.soldOut) return;
-    if (config.popupCoupon && !isPopupDone()) {
-      setPopupOpen(true);
-      return;
-    }
-    router.push('/reserve');
-  }, [config, router]);
+      const planName =
+        config.plans.find((p) => p.id === planId)?.name || null;
+      const path = buildReservePath(intent, planId, {
+        programId: context?.programId,
+        forTitle: context?.forTitle?.trim() || planName,
+      });
+      router.push(path);
+    },
+    [config, router]
+  );
 
-  const reserveCta = useMemo(() => ctaFromConfig(config), [config]);
+  const startWorkshopReserveFlow = useCallback(
+    (planId?: string | null, context?: ReserveContext) => {
+      const mentorshipId =
+        config?.mentorshipPlanId || config?.landingPlanId || null;
+      const requested = planId?.trim() || null;
+      // Never send workshop CTAs to the Mentorship plan when another plan exists.
+      const resolved =
+        requested && requested !== mentorshipId
+          ? requested
+          : config?.workshopPlanId && config.workshopPlanId !== mentorshipId
+            ? config.workshopPlanId
+            : requested || config?.workshopPlanId || null;
+      beginReserve('workshop', resolved, context);
+    },
+    [
+      beginReserve,
+      config?.workshopPlanId,
+      config?.mentorshipPlanId,
+      config?.landingPlanId,
+    ]
+  );
+
+  const startMentorshipReserveFlow = useCallback(
+    (context?: ReserveContext) => {
+      const mentorshipId =
+        config?.mentorshipPlanId || config?.landingPlanId || null;
+      const planName =
+        mentorshipId != null
+          ? config?.plans.find((p) => p.id === mentorshipId)?.name
+          : null;
+      beginReserve('mentorship', mentorshipId, {
+        forTitle: context?.forTitle?.trim() || planName || 'Mentorship',
+      });
+    },
+    [beginReserve, config?.mentorshipPlanId, config?.landingPlanId, config?.plans]
+  );
+
+  /** Default = workshop so legacy callers don't open mentorship. */
+  const startReserveFlow = startWorkshopReserveFlow;
+
+  const workshopCta = useMemo(
+    () => ctaFromConfig(config, config?.workshopPlanId),
+    [config]
+  );
+  const mentorshipCta = useMemo(
+    () =>
+      ctaFromConfig(
+        config,
+        config?.mentorshipPlanId || config?.landingPlanId
+      ),
+    [config]
+  );
+  const reserveCta = workshopCta;
 
   const value = useMemo(
     () => ({
@@ -113,22 +190,28 @@ export function ReserveFlowProvider({
       configLoading,
       refreshConfig,
       startReserveFlow,
+      startWorkshopReserveFlow,
+      startMentorshipReserveFlow,
       reserveCta,
+      workshopCta,
+      mentorshipCta,
     }),
-    [config, configLoading, refreshConfig, startReserveFlow, reserveCta]
+    [
+      config,
+      configLoading,
+      refreshConfig,
+      startReserveFlow,
+      startWorkshopReserveFlow,
+      startMentorshipReserveFlow,
+      reserveCta,
+      workshopCta,
+      mentorshipCta,
+    ]
   );
 
   return (
     <ReserveFlowContext.Provider value={value}>
       {children}
-      {!adminRoute && (
-        <DiscountPopup
-          open={popupOpen}
-          label={config?.popupCoupon?.label || 'your discount'}
-          onClose={() => setPopupOpen(false)}
-          onDone={goReserve}
-        />
-      )}
     </ReserveFlowContext.Provider>
   );
 }

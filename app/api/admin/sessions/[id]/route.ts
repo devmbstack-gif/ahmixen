@@ -137,7 +137,11 @@ export async function PATCH(request: Request, ctx: Ctx) {
   }
 }
 
-/** Soft-delete: archive only. */
+/**
+ * Hard-delete a session so it leaves admin lists.
+ * Prefer closed/completed (or draft/archived). Block while it is the landing
+ * session or while open with active payment holds.
+ */
 export async function DELETE(request: Request, ctx: Ctx) {
   const gate = await withAdminMutating(request);
   if (gate.error || !gate.admin) return gate.error!;
@@ -149,36 +153,39 @@ export async function DELETE(request: Request, ctx: Ctx) {
     const existing = await Session.findById(id);
     if (!existing) return notFound();
 
-    if (existing.status === 'archived') {
-      return NextResponse.json({ session: serializeAdminSession(existing) });
-    }
-
-    const seats = getSeatSummary(existing);
-    if (seats.confirmed > 0 || seats.held > 0) {
+    if (existing.isLandingActive) {
       return badRequest(
-        'Cannot archive a session with confirmed seats or active holds'
+        'Cannot delete the landing session. Show another session on the landing page first.'
       );
     }
 
-    if (!canTransitionStatus(existing.status as SessionStatus, 'archived')) {
-      return badRequest('Invalid status change');
+    const status = existing.status as SessionStatus;
+    const seats = getSeatSummary(existing);
+
+    if (status === 'open' && seats.held > 0) {
+      return badRequest(
+        'Cannot delete an open session with active payment holds. Close reservations first.'
+      );
     }
 
-    existing.status = 'archived';
-    existing.isLandingActive = false;
-    existing.updatedBy = gate.admin.sub;
-    existing.version = (existing.version ?? 1) + 1;
-    await existing.save();
+    if (status === 'open' && seats.confirmed > 0) {
+      return badRequest(
+        'Cannot delete an open session with confirmed seats. Close the session first, then delete.'
+      );
+    }
+
+    const title = existing.title;
+    await existing.deleteOne();
 
     await logAudit({
       adminId: gate.admin.sub,
-      action: 'session.archive',
+      action: 'session.delete',
       entity: 'session',
       entityId: id,
-      meta: { title: existing.title },
+      meta: { title, status },
     });
 
-    return NextResponse.json({ session: serializeAdminSession(existing) });
+    return NextResponse.json({ ok: true, deleted: true });
   } catch (err) {
     console.error('[sessions DELETE]', err instanceof Error ? err.message : 'error');
     return serverError();

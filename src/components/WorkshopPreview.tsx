@@ -19,9 +19,9 @@ export const WorkshopPreview: React.FC<WorkshopPreviewProps> = ({
   heading,
   posterUrl,
 }) => {
-  const { startReserveFlow, reserveCta } = useReserveFlow();
+  const { startWorkshopReserveFlow, workshopCta } = useReserveFlow();
   const label =
-    reserveCta.label === 'Reserve' ? 'Reserve My Seat' : reserveCta.label;
+    workshopCta.label === 'Reserve' ? 'Reserve My Seat' : workshopCta.label;
 
   const parts = heading.split(/\s+[—–-]\s+/);
   const headingBefore = parts.length > 1 ? parts.slice(0, -1).join(' — ') : heading;
@@ -152,14 +152,18 @@ export const WorkshopPreview: React.FC<WorkshopPreviewProps> = ({
           <button
             type="button"
             onClick={() => {
-              if (!reserveCta.disabled) startReserveFlow();
+              if (!workshopCta.disabled) {
+                startWorkshopReserveFlow(null, {
+                  forTitle: 'Live AI Workshop',
+                });
+              }
             }}
-            disabled={reserveCta.disabled}
-            aria-disabled={reserveCta.disabled}
+            disabled={workshopCta.disabled}
+            aria-disabled={workshopCta.disabled}
             className="btn-ahmixen py-3 px-7 rounded-xl font-semibold text-sm inline-flex items-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {label}
-            {!reserveCta.disabled ? <ArrowRight className="w-4 h-4" /> : null}
+            {!workshopCta.disabled ? <ArrowRight className="w-4 h-4" /> : null}
           </button>
         </Reveal>
       </div>

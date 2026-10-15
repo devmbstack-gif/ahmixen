@@ -1,5 +1,6 @@
 import { PaymentSettingsClient } from '@/components/admin/settings/PaymentSettingsClient';
 import { EmailSettingsClient } from '@/components/admin/settings/EmailSettingsClient';
+import { AccountSettingsClient } from '@/components/admin/settings/AccountSettingsClient';
 import { connectToDatabase } from '@/lib/db';
 import { Setting } from '@/models/Setting';
 import { requireAdmin } from '@/lib/auth/admin-session';
@@ -12,7 +13,8 @@ export default async function Page() {
   await connectToDatabase();
   const doc = await Setting.findOne({ key: 'payment' });
   return (
-    <div className="space-y-6">
+    <div className="w-full max-w-3xl space-y-6">
+      <AccountSettingsClient currentEmail={admin.email} />
       <PaymentSettingsClient initial={serializePaymentSettings(doc)} />
       <EmailSettingsClient adminEmail={admin.email} />
     </div>
