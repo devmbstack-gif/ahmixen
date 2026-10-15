@@ -53,18 +53,28 @@ export function parseEmailAddress(from: string): string {
 }
 
 export function isSmtpConfigured(): boolean {
+  return smtpConfigGaps().length === 0;
+}
+
+/** Missing pieces for SMTP send (safe labels only — no secret values). */
+export function smtpConfigGaps(): string[] {
   const { host, port, user, pass } = getSmtpConfig();
   const from = getEmailFrom();
   const site = getSiteUrl();
-  return Boolean(
-    host &&
-      Number.isFinite(port) &&
-      port > 0 &&
-      user &&
-      pass &&
-      from &&
-      site
-  );
+  const gaps: string[] = [];
+  if (!host) gaps.push('SMTP_HOST');
+  if (!Number.isFinite(port) || port <= 0) gaps.push('SMTP_PORT');
+  if (!user) gaps.push('SMTP_USER');
+  if (!pass) gaps.push('SMTP_PASS');
+  if (!from) gaps.push('EMAIL_FROM');
+  if (!site) gaps.push('SITE_URL');
+  return gaps;
+}
+
+export function smtpConfigGapReason(): string {
+  const gaps = smtpConfigGaps();
+  if (gaps.length === 0) return '';
+  return `Email is not configured (missing ${gaps.join(', ')})`;
 }
 
 export function fromAddressMismatch(): boolean {

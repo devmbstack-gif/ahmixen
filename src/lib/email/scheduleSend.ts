@@ -2,7 +2,8 @@ import { after } from 'next/server';
 import { attemptSendEmailJob } from './outbox';
 
 /**
- * Fire-and-forget send after the HTTP response. Errors never reach the client.
+ * Send after the HTTP response. Must return/await the promise so Next/Vercel
+ * keeps the isolate alive until SMTP finishes (voiding the promise drops it).
  */
 export function scheduleEmailJobSend(jobId: string): void {
   const run = async () => {
@@ -17,8 +18,8 @@ export function scheduleEmailJobSend(jobId: string): void {
   };
 
   try {
-    after(() => {
-      void run();
+    after(async () => {
+      await run();
     });
   } catch {
     // Fallback when after() is unavailable in this context

@@ -23,6 +23,7 @@ import {
 } from '@/lib/public/rateLimit';
 import { PUBLIC_RATE_LIMITS } from '@/lib/public/rateLimitConfig';
 import { notifyAdminNewBooking } from '@/lib/email/outbox';
+import { upsertLeadFromSubmission } from '@/lib/leads/upsert';
 
 type Ctx = { params: Promise<{ token: string }> };
 
@@ -243,7 +244,45 @@ export async function POST(request: Request, ctx: Ctx) {
     }
     newFileId = null;
 
-    notifyAdminNewBooking(orderId);
+    try {
+      const { leadId } = await upsertLeadFromSubmission({
+        name: order.customer.name,
+        email: order.customer.email,
+        phone: order.customer.phone,
+        profession: order.customer.profession || '',
+        kind: order.sourceKind === 'workshop' ? 'workshop' : 'general',
+        programId: order.programId || '',
+        programTitle: order.programTitle || '',
+        city: order.workshopMeta?.city || '',
+        skillLevel: order.workshopMeta?.skillLevel || '',
+        learningGoals: order.workshopMeta?.learningGoals || [],
+        paidConfirmed: true,
+        markConverted: false,
+        orderId,
+        utm: order.utm,
+        message:
+          order.sourceKind === 'workshop'
+            ? `Workshop booking: ${order.programTitle || 'program'}`
+            : 'Payment screenshot uploaded',
+        proof: {
+          fileId: saved.fileId,
+          contentType: saved.contentType,
+          size: saved.size,
+          uploadedAt: new Date(),
+        },
+      });
+      if (!order.leadId) {
+        order.leadId = leadId;
+        await order.save().catch(() => undefined);
+      }
+    } catch (err) {
+      console.error(
+        '[public proof lead]',
+        err instanceof Error ? err.message : 'upsert failed'
+      );
+    }
+
+    await notifyAdminNewBooking(orderId);
 
     return publicOk({
       status: 'pending_verification',

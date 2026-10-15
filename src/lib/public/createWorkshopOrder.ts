@@ -4,9 +4,9 @@
  */
 import mongoose from 'mongoose';
 import { Order } from '@/models/Order';
-import { Lead } from '@/models/Lead';
 import { Session } from '@/models/Session';
 import { connectToDatabase } from '@/lib/db';
+import { upsertLeadFromSubmission } from '@/lib/leads/upsert';
 import { PROGRAMS } from '@/data/programs';
 import { WORKSHOP_PAYMENT } from '@/data/workshopRegistration';
 import { ensureOrderIndexes } from '@/lib/orders/syncIndexes';
@@ -277,7 +277,46 @@ export async function createWorkshopOrder(
       throw err;
     }
 
-    notifyAdminNewBooking(String(existingLive._id));
+    try {
+      const { leadId } = await upsertLeadFromSubmission({
+        name: input.name,
+        email: input.email,
+        phone: input.phone,
+        profession: input.profession,
+        city: input.city,
+        skillLevel: input.skillLevel,
+        learningGoals: input.learningGoals,
+        kind: 'workshop',
+        programId: input.programId,
+        programTitle,
+        paidConfirmed: true,
+        markConverted: true,
+        orderId: String(existingLive._id),
+        message: `Workshop registration: ${programTitle}`,
+        utm: {
+          source: 'workshop_registration',
+          medium: 'programs',
+          campaign: input.programId,
+        },
+        proof: {
+          fileId: input.proof.fileId,
+          contentType: input.proof.contentType,
+          size: input.proof.size,
+          uploadedAt: input.proof.uploadedAt,
+        },
+      });
+      if (!existingLive.leadId || existingLive.leadId !== leadId) {
+        existingLive.leadId = leadId;
+        await existingLive.save().catch(() => undefined);
+      }
+    } catch (err) {
+      console.error(
+        '[createWorkshopOrder lead]',
+        err instanceof Error ? err.message : 'upsert failed'
+      );
+    }
+
+    await notifyAdminNewBooking(String(existingLive._id));
 
     return {
       ok: true,
@@ -383,23 +422,44 @@ export async function createWorkshopOrder(
 
     const orderDoc = result.doc;
 
-    // Link / create lead as converted
-    let lead = await Lead.findOne({ emailNormalized });
-    if (lead) {
-      lead.status = 'converted';
-      lead.convertedOrderId = String(orderDoc._id);
-      lead.lastSeenAt = new Date();
-      lead.kind = 'workshop';
-      lead.programId = input.programId;
-      lead.programTitle = programTitle;
-      await lead.save();
-      if (!orderDoc.leadId) {
-        orderDoc.leadId = String(lead._id);
-        await orderDoc.save();
-      }
+    try {
+      const { leadId } = await upsertLeadFromSubmission({
+        name: input.name,
+        email: input.email,
+        phone: input.phone,
+        profession: input.profession,
+        city: input.city,
+        skillLevel: input.skillLevel,
+        learningGoals: input.learningGoals,
+        kind: 'workshop',
+        programId: input.programId,
+        programTitle,
+        paidConfirmed: true,
+        markConverted: true,
+        orderId: String(orderDoc._id),
+        message: `Workshop registration: ${programTitle}`,
+        utm: {
+          source: 'workshop_registration',
+          medium: 'programs',
+          campaign: input.programId,
+        },
+        proof: {
+          fileId: input.proof.fileId,
+          contentType: input.proof.contentType,
+          size: input.proof.size,
+          uploadedAt: input.proof.uploadedAt,
+        },
+      });
+      orderDoc.leadId = leadId;
+      await orderDoc.save();
+    } catch (err) {
+      console.error(
+        '[createWorkshopOrder lead]',
+        err instanceof Error ? err.message : 'upsert failed'
+      );
     }
 
-    notifyAdminNewBooking(String(orderDoc._id));
+    await notifyAdminNewBooking(String(orderDoc._id));
 
     return {
       ok: true,

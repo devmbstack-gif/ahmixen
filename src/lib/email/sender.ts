@@ -8,6 +8,7 @@ import {
   getSmtpConfig,
   isSmtpConfigured,
   parseEmailAddress,
+  smtpConfigGapReason,
 } from './config';
 import { mapSmtpError, stripLineBreaks } from './sanitize';
 
@@ -72,12 +73,25 @@ export function recipientAllowed(to: string): {
   const smtpUser = getSmtpConfig().user.toLowerCase();
 
   if (!isProd) {
+    // Local/dev: if EMAIL_ALLOWLIST is set, only those addresses. If empty and
+    // EMAIL_MODE=smtp was set explicitly, allow all (you opted into real sends).
+    // Otherwise (default log→smtp edge cases) only the SMTP mailbox.
+    const explicitSmtp =
+      (process.env.EMAIL_MODE || '').trim().toLowerCase() === 'smtp';
     if (allowlist.length > 0) {
       if (!allowlist.includes(addr)) {
-        return { ok: false, reason: 'Recipient is not allowed in this environment' };
+        return {
+          ok: false,
+          reason:
+            'Recipient is not on EMAIL_ALLOWLIST. Add this address for local SMTP tests.',
+        };
       }
-    } else if (addr !== smtpUser) {
-      return { ok: false, reason: 'Recipient is not allowed in this environment' };
+    } else if (!explicitSmtp && addr !== smtpUser) {
+      return {
+        ok: false,
+        reason:
+          'Recipient is not allowed in this environment. Set EMAIL_ALLOWLIST or EMAIL_MODE=smtp.',
+      };
     }
   } else if (allowlist.length > 0 && !allowlist.includes(addr)) {
     return { ok: false, reason: 'Recipient is not allowed in this environment' };
@@ -114,7 +128,11 @@ export async function sendOutboundEmail(
   }
 
   if (!isSmtpConfigured()) {
-    return { ok: false, status: 'failed', reason: 'Email is not configured' };
+    return {
+      ok: false,
+      status: 'failed',
+      reason: smtpConfigGapReason(),
+    };
   }
 
   try {

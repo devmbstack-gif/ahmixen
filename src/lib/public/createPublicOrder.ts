@@ -2,8 +2,8 @@ import mongoose from 'mongoose';
 import { Order } from '@/models/Order';
 import { Plan } from '@/models/Plan';
 import { Session } from '@/models/Session';
-import { Lead } from '@/models/Lead';
 import { connectToDatabase } from '@/lib/db';
+import { upsertLeadFromSubmission } from '@/lib/leads/upsert';
 import { expireStaleOrders } from '@/lib/orders/expire';
 import { ensureOrderIndexes } from '@/lib/orders/syncIndexes';
 import { withOrdersTransaction } from '@/lib/orders/tx';
@@ -143,6 +143,43 @@ export async function createPublicOrder(
     isLive: true,
   });
   if (existingLive) {
+    // Ensure a Leads row exists even for bookings created before lead upsert.
+    try {
+      const { leadId } = await upsertLeadFromSubmission({
+        name: existingLive.customer.name || input.name,
+        email: existingLive.customer.email || input.email,
+        phone: existingLive.customer.phone || input.phone,
+        profession:
+          existingLive.customer.profession || input.profession || '',
+        kind: existingLive.sourceKind === 'workshop' ? 'workshop' : 'general',
+        programId: existingLive.programId || input.programId || '',
+        programTitle: existingLive.programTitle || input.programTitle || '',
+        city: existingLive.workshopMeta?.city || input.city || '',
+        skillLevel:
+          existingLive.workshopMeta?.skillLevel || input.skillLevel || '',
+        learningGoals:
+          existingLive.workshopMeta?.learningGoals ||
+          input.learningGoals ||
+          [],
+        paidConfirmed:
+          existingLive.status === 'pending_verification' ||
+          existingLive.status === 'approved',
+        markConverted: existingLive.status === 'approved',
+        orderId: String(existingLive._id),
+        utm: existingLive.utm || input.utm,
+        message:
+          existingLive.sourceKind === 'workshop'
+            ? `Workshop booking: ${existingLive.programTitle || 'program'}`
+            : 'Reserve form submission',
+      });
+      if (!existingLive.leadId) {
+        existingLive.leadId = leadId;
+        await existingLive.save().catch(() => undefined);
+      }
+    } catch {
+      // Lead upsert must not block the booking conflict response.
+    }
+
     if (existingLive.status === 'approved') {
       return {
         ok: false,
@@ -273,14 +310,35 @@ export async function createPublicOrder(
 
     const orderDoc = result.doc;
     const holdExpiresAt = result.holdExpiresAt;
+    const isWorkshop = orderDoc.sourceKind === 'workshop';
 
-    const lead = await Lead.findOne({ emailNormalized });
-    if (lead) {
-      lead.status = 'converted';
-      lead.convertedOrderId = String(orderDoc._id);
-      lead.lastSeenAt = new Date();
-      orderDoc.leadId = String(lead._id);
-      await Promise.all([lead.save(), orderDoc.save()]);
+    try {
+      const { leadId } = await upsertLeadFromSubmission({
+        name: orderDoc.customer.name,
+        email: orderDoc.customer.email,
+        phone: orderDoc.customer.phone,
+        profession: orderDoc.customer.profession || '',
+        kind: isWorkshop ? 'workshop' : 'general',
+        programId: orderDoc.programId || '',
+        programTitle: orderDoc.programTitle || '',
+        city: orderDoc.workshopMeta?.city || '',
+        skillLevel: orderDoc.workshopMeta?.skillLevel || '',
+        learningGoals: orderDoc.workshopMeta?.learningGoals || [],
+        paidConfirmed: false,
+        markConverted: false,
+        orderId: String(orderDoc._id),
+        utm: orderDoc.utm,
+        message: isWorkshop
+          ? `Workshop booking: ${orderDoc.programTitle || orderDoc.planSnapshot.name}`
+          : 'Reserve form submission',
+      });
+      orderDoc.leadId = leadId;
+      await orderDoc.save();
+    } catch (err) {
+      console.error(
+        '[createPublicOrder lead]',
+        err instanceof Error ? err.message : 'upsert failed'
+      );
     }
 
     return {

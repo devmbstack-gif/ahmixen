@@ -14,6 +14,7 @@ import { serializeAdminOrderDetail } from '@/lib/orders/serialize';
 import { getSeatSummary } from '@/lib/sessions/seats';
 import { ensureOrderIndexes } from '@/lib/orders/syncIndexes';
 import { scheduleEmailJobSend } from '@/lib/email/scheduleSend';
+import { attemptSendEmailJob } from '@/lib/email/outbox';
 
 export const runtime = 'nodejs';
 
@@ -34,8 +35,23 @@ export async function POST(request: Request, ctx: Ctx) {
       return badRequest(result.error);
     }
 
+    // Send in-request first (reliable on serverless). Retry via after() if still pending/failed.
     if (result.emailJobId) {
-      scheduleEmailJobSend(result.emailJobId);
+      try {
+        const sendResult = await attemptSendEmailJob(result.emailJobId);
+        if (
+          sendResult.status === 'pending' ||
+          sendResult.status === 'failed'
+        ) {
+          scheduleEmailJobSend(result.emailJobId);
+        }
+      } catch (err) {
+        console.error(
+          '[orders approve email]',
+          err instanceof Error ? err.message : 'send failed'
+        );
+        scheduleEmailJobSend(result.emailJobId);
+      }
     }
 
     await logAudit({

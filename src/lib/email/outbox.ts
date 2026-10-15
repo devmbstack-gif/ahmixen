@@ -191,35 +191,38 @@ export async function ensureAdminNewBookingEmailJob(
 }
 
 /**
- * Queue + fire-and-forget send when a booking enters review.
+ * Queue + send when a booking enters review.
+ * Prefer awaiting this from route handlers so SMTP finishes before the isolate
+ * freezes; falls back to after() when called fire-and-forget.
  * Never throws to callers — booking success must not depend on email.
  */
-export function notifyAdminNewBooking(orderId: string): void {
-  const run = async () => {
-    try {
-      await ensureEmailJobIndexes();
-      const to = await resolveAdminNotifyEmail();
-      if (!to) {
-        console.error('[email:admin_new_booking] no admin recipient configured');
-        return;
-      }
-      const job = await ensureAdminNewBookingEmailJob(orderId, to);
-      if (job.status === 'sent') return;
-      await attemptSendEmailJob(String(job._id));
-    } catch (err) {
-      console.error(
-        '[email:admin_new_booking]',
-        err instanceof Error ? err.message : 'notify failed'
-      );
-    }
-  };
-
+export async function notifyAdminNewBooking(orderId: string): Promise<void> {
   try {
-    after(() => {
-      void run();
+    await ensureEmailJobIndexes();
+    const to = await resolveAdminNotifyEmail();
+    if (!to) {
+      console.error('[email:admin_new_booking] no admin recipient configured');
+      return;
+    }
+    const job = await ensureAdminNewBookingEmailJob(orderId, to);
+    if (job.status === 'sent') return;
+    await attemptSendEmailJob(String(job._id));
+  } catch (err) {
+    console.error(
+      '[email:admin_new_booking]',
+      err instanceof Error ? err.message : 'notify failed'
+    );
+  }
+}
+
+/** Schedule admin notify after the response when the caller cannot await. */
+export function scheduleNotifyAdminNewBooking(orderId: string): void {
+  try {
+    after(async () => {
+      await notifyAdminNewBooking(orderId);
     });
   } catch {
-    void run();
+    void notifyAdminNewBooking(orderId);
   }
 }
 

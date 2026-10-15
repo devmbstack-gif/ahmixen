@@ -12,6 +12,7 @@ import {
   ensureReservationEmailJob,
 } from '@/lib/email/outbox';
 import { ensureEmailJobIndexes } from '@/lib/email/syncIndexes';
+import { markLeadConvertedForOrder } from '@/lib/leads/upsert';
 
 export type TransitionResult =
   | {
@@ -102,6 +103,21 @@ export async function approveOrder(
 
       return { order: updated, emailJobId };
     });
+
+    try {
+      await markLeadConvertedForOrder({
+        email: result.order.customer.email,
+        orderId: String(result.order._id),
+        name: result.order.customer.name,
+        phone: result.order.customer.phone,
+        profession: result.order.customer.profession || '',
+      });
+    } catch (err) {
+      console.error(
+        '[approveOrder lead]',
+        err instanceof Error ? err.message : 'mark converted failed'
+      );
+    }
 
     return {
       ok: true,

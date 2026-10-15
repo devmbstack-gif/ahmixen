@@ -378,7 +378,7 @@ export function LeadsListClient() {
         <div className="admin-card text-center py-10">
           <p className="font-semibold">{emptyCopy}</p>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
-            New leads appear here when someone submits the discount popup.
+            New leads appear here when someone submits a reserve or workshop form.
           </p>
         </div>
       )}
