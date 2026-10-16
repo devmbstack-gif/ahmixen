@@ -21,6 +21,8 @@ export type OutboundEmail = {
     filename: string;
     content: string | Buffer;
     contentType?: string;
+    /** Inline embed id — HTML uses src="cid:..." */
+    cid?: string;
   }>;
 };
 
@@ -150,6 +152,7 @@ export async function sendOutboundEmail(
         filename: a.filename,
         content: a.content,
         contentType: a.contentType,
+        ...(a.cid ? { cid: a.cid } : {}),
       })),
     });
     return { ok: true, status: 'sent' };

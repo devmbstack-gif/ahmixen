@@ -58,6 +58,8 @@ export function PayClient({ token }: { token: string }) {
   const [order, setOrder] = useState<OrderStatus | null>(null);
   const [payInfo, setPayInfo] = useState<PaymentInfo | null>(null);
   const [payInfoUnavailable, setPayInfoUnavailable] = useState(false);
+  /** Start true so first paint never flashes the “not available” error. */
+  const [payInfoLoading, setPayInfoLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [clockOffsetMs, setClockOffsetMs] = useState(0);
@@ -71,7 +73,6 @@ export function PayClient({ token }: { token: string }) {
   const [soldOutAlert, setSoldOutAlert] = useState('');
   const [copiedKey, setCopiedKey] = useState('');
   const [linkCopied, setLinkCopied] = useState(false);
-  const [replacing, setReplacing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const pollStopped = useRef(false);
 
@@ -104,6 +105,8 @@ export function PayClient({ token }: { token: string }) {
   }, [token, offsetReady]);
 
   const loadPaymentInfo = useCallback(async () => {
+    setPayInfoLoading(true);
+    setPayInfoUnavailable(false);
     try {
       const data = await checkoutFetch<PaymentInfo>(
         `/api/public/orders/${token}/payment-info`
@@ -113,6 +116,8 @@ export function PayClient({ token }: { token: string }) {
     } catch {
       setPayInfo(null);
       setPayInfoUnavailable(true);
+    } finally {
+      setPayInfoLoading(false);
     }
   }, [token]);
 
@@ -224,7 +229,6 @@ export function PayClient({ token }: { token: string }) {
         return;
       }
       if (json?.ok && json.data) {
-        setReplacing(false);
         setFile(null);
         if (previewUrl) URL.revokeObjectURL(previewUrl);
         setPreviewUrl(null);
@@ -315,6 +319,7 @@ export function PayClient({ token }: { token: string }) {
             order={order}
             payInfo={payInfo}
             payInfoUnavailable={payInfoUnavailable}
+            payInfoLoading={payInfoLoading}
             holdMs={holdMs}
             file={file}
             previewUrl={previewUrl}
@@ -333,34 +338,7 @@ export function PayClient({ token }: { token: string }) {
           <EndedHold />
         )}
 
-        {order.status === 'pending_verification' && !replacing && (
-          <PendingState
-            order={order}
-            linkCopied={linkCopied}
-            onCopyLink={copyPageLink}
-            onReplace={() => setReplacing(true)}
-          />
-        )}
-
-        {order.status === 'pending_verification' && replacing && (
-          <AwaitingPayment
-            order={order}
-            payInfo={payInfo}
-            payInfoUnavailable={payInfoUnavailable}
-            holdMs={null}
-            file={file}
-            previewUrl={previewUrl}
-            fileInputRef={fileInputRef}
-            onPickFile={onPickFile}
-            onUpload={uploadProof}
-            uploading={uploading}
-            uploadProgress={uploadProgress}
-            error={error}
-            copiedKey={copiedKey}
-            onCopy={copyText}
-            replaceMode
-          />
-        )}
+        {order.status === 'pending_verification' && <PendingState />}
 
         {order.status === 'approved' && (
           <ApprovedState
@@ -423,43 +401,20 @@ function EndedHold() {
   );
 }
 
-function PendingState({
-  order,
-  linkCopied,
-  onCopyLink,
-  onReplace,
-}: {
-  order: OrderStatus;
-  linkCopied: boolean;
-  onCopyLink: () => void;
-  onReplace: () => void;
-}) {
+function PendingState() {
   return (
     <div className="checkout-card space-y-3">
       <h1 className="text-2xl font-bold">We received your payment proof</h1>
       <p className="text-sm text-[var(--text-secondary)]">
-        We will check it and confirm your seat. You can leave this page and come
-        back with the same link.
+        We will check it and confirm your seat. You will get a confirmation email
+        once your payment is verified.
       </p>
-      <button
-        type="button"
-        onClick={onCopyLink}
-        className="btn-ahmixen min-h-10 px-4 py-2.5 rounded-xl font-semibold"
+      <Link
+        href="/"
+        className="btn-ahmixen inline-flex min-h-10 px-5 py-2.5 rounded-xl font-semibold"
       >
-        {linkCopied ? 'Copied' : 'Copy link to this page'}
-      </button>
-      <span className="sr-only" aria-live="polite">
-        {linkCopied ? 'Copied' : ''}
-      </span>
-      {order.canReplaceProof ? (
-        <button
-          type="button"
-          onClick={onReplace}
-          className="block text-sm font-medium text-purple-400 underline-offset-2 hover:underline min-h-10"
-        >
-          Replace screenshot
-        </button>
-      ) : null}
+        Back to home
+      </Link>
     </div>
   );
 }
@@ -500,6 +455,7 @@ function AwaitingPayment({
   order,
   payInfo,
   payInfoUnavailable,
+  payInfoLoading,
   holdMs,
   file,
   previewUrl,
@@ -516,6 +472,7 @@ function AwaitingPayment({
   order: OrderStatus;
   payInfo: PaymentInfo | null;
   payInfoUnavailable: boolean;
+  payInfoLoading: boolean;
   holdMs: number | null;
   file: File | null;
   previewUrl: string | null;
@@ -563,7 +520,14 @@ function AwaitingPayment({
         </p>
       </div>
 
-      {payInfoUnavailable || !payInfo ? (
+      {payInfoLoading ? (
+        <p
+          className="checkout-card text-sm text-[var(--text-secondary)]"
+          aria-live="polite"
+        >
+          Payment details are loading, please wait a second…
+        </p>
+      ) : payInfoUnavailable || !payInfo ? (
         <p className="checkout-card text-sm text-[var(--text-secondary)]">
           Payment details are not available right now. Please contact us.
         </p>

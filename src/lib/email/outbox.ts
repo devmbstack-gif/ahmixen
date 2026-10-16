@@ -321,6 +321,7 @@ async function finalizeJobSend(
       filename: string;
       content: string | Buffer;
       contentType?: string;
+      cid?: string;
     }>;
   }
 ): Promise<{ status: PublicEmailStatus; reason?: string }> {

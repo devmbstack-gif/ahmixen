@@ -4,6 +4,11 @@ import {
 } from '../formatters';
 import { escapeHtml, stripLineBreaks } from '../sanitize';
 import { getSiteUrl } from '../config';
+import {
+  buildEmailLogoHeaderHtml,
+  withEmailLogoAttachment,
+  type EmailAttachment,
+} from '../branding';
 
 export type AdminNewBookingInput = {
   orderId: string;
@@ -26,7 +31,7 @@ export type BuiltAdminEmail = {
   subject: string;
   text: string;
   html: string;
-  attachments: [];
+  attachments: EmailAttachment[];
 };
 
 export function buildAdminNewBookingEmail(
@@ -71,6 +76,8 @@ export function buildAdminNewBookingEmail(
     )
     .join('');
 
+  const logoHeader = buildEmailLogoHeaderHtml();
+
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="utf-8"/><meta name="viewport" content="width=device-width"/></head>
@@ -79,7 +86,7 @@ export function buildAdminNewBookingEmail(
     <tr><td align="center">
       <table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:12px;padding:28px 24px;border:1px solid #e8e8ee;">
         <tr><td>
-          <p style="margin:0 0 16px;font-size:20px;font-weight:800;color:#5b21b6;letter-spacing:-0.02em;">AhmiXen</p>
+          ${logoHeader}
           <p style="margin:0 0 8px;font-size:16px;color:#111;font-weight:700;">New booking received</p>
           <p style="margin:0 0 16px;font-size:15px;color:#333;">A customer submitted a booking. Please review the payment and approve or reject it.</p>
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 20px;">
@@ -100,6 +107,6 @@ export function buildAdminNewBookingEmail(
     subject,
     text,
     html,
-    attachments: [],
+    attachments: withEmailLogoAttachment([]),
   };
 }

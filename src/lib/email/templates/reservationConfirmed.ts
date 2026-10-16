@@ -7,6 +7,12 @@ import {
 import { escapeHtml, firstNameFrom, stripLineBreaks } from '../sanitize';
 import { getEmailReplyTo, getSiteUrl } from '../config';
 import { buildReservationIcs } from '../ics';
+import {
+  buildCommunityWhatsAppUrl,
+  buildEmailLogoHeaderHtml,
+  withEmailLogoAttachment,
+  type EmailAttachment,
+} from '../branding';
 
 export type ReservationConfirmedInput = {
   orderId: string;
@@ -29,11 +35,7 @@ export type BuiltEmail = {
   subject: string;
   text: string;
   html: string;
-  attachments: Array<{
-    filename: string;
-    content: string;
-    contentType: string;
-  }>;
+  attachments: EmailAttachment[];
 };
 
 export function buildReservationConfirmedEmail(
@@ -48,6 +50,15 @@ export function buildReservationConfirmedEmail(
   const joinHttps = isHttpsUrl(input.meetingLink) ? input.meetingLink.trim() : '';
   const replyTo = getEmailReplyTo();
 
+  const waUrl = buildCommunityWhatsAppUrl({
+    customerName: input.customerName.trim(),
+    orderNumber: input.orderNumber,
+    dateLine,
+    duration,
+    planName: input.planName,
+    amountPaid: amount,
+  });
+
   const subject = stripLineBreaks('Your seat is confirmed');
 
   const rows: Array<[string, string]> = [
@@ -59,7 +70,7 @@ export function buildReservationConfirmedEmail(
   ];
 
   const whatsappNote =
-    'Your seat is confirmed. You will be added to our WhatsApp community, where we will share all workshop-related information with you.';
+    'Your seat is confirmed. Tap the button below to message us on WhatsApp and ask to be added to our community — we will share all workshop-related information there.';
 
   const textLines = [
     `Hi ${firstName},`,
@@ -75,7 +86,15 @@ export function buildReservationConfirmedEmail(
   } else {
     textLines.push('We will share the joining link before the session.');
   }
-  textLines.push('', `View your reservation: ${viewUrl}`, '', 'See you at the session.');
+  textLines.push(
+    '',
+    'Please add me in the community (WhatsApp):',
+    waUrl,
+    '',
+    `Reservation page: ${viewUrl}`,
+    '',
+    'See you at the session.'
+  );
   if (replyTo) {
     textLines.push('', 'Questions? Just reply to this email.');
   }
@@ -95,6 +114,8 @@ export function buildReservationConfirmedEmail(
     ? `<p style="margin:16px 0 0;color:#555;font-size:14px;">Questions? Just reply to this email.</p>`
     : '';
 
+  const logoHeader = buildEmailLogoHeaderHtml();
+
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="utf-8"/><meta name="viewport" content="width=device-width"/></head>
@@ -103,7 +124,7 @@ export function buildReservationConfirmedEmail(
     <tr><td align="center">
       <table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:12px;padding:28px 24px;border:1px solid #e8e8ee;">
         <tr><td>
-          <p style="margin:0 0 16px;font-size:20px;font-weight:800;color:#5b21b6;letter-spacing:-0.02em;">AhmiXen</p>
+          ${logoHeader}
           <p style="margin:0 0 8px;font-size:16px;color:#111;">Hi ${escapeHtml(firstName)},</p>
           <p style="margin:0 0 16px;font-size:15px;color:#333;">${escapeHtml(whatsappNote)}</p>
           <p style="margin:0 0 12px;font-size:15px;color:#333;">Here are your booking details:</p>
@@ -112,7 +133,10 @@ export function buildReservationConfirmedEmail(
             ${joinHtml}
           </table>
           <p style="margin:0 0 16px;">
-            <a href="${escapeHtml(viewUrl)}" style="display:inline-block;background:#7c3aed;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 18px;border-radius:10px;">View your reservation</a>
+            <a href="${escapeHtml(waUrl)}" style="display:inline-block;background:#25D366;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 18px;border-radius:10px;">Please add me in the community</a>
+          </p>
+          <p style="margin:0 0 16px;font-size:13px;color:#666;">
+            <a href="${escapeHtml(viewUrl)}" style="color:#7c3aed;">View your reservation online</a>
           </p>
           <p style="margin:0;color:#333;font-size:15px;">See you at the session.</p>
           ${replyHtml}
@@ -127,6 +151,7 @@ export function buildReservationConfirmedEmail(
     `Order ${input.orderNumber}`,
     `Plan: ${input.planName}`,
     joinHttps ? `Join: ${joinHttps}` : '',
+    `WhatsApp community: ${waUrl}`,
     `Reservation: ${viewUrl}`,
   ]
     .filter(Boolean)
@@ -145,12 +170,12 @@ export function buildReservationConfirmedEmail(
     subject,
     text: textLines.join('\n'),
     html,
-    attachments: [
+    attachments: withEmailLogoAttachment([
       {
         filename: 'ahmixen-session.ics',
         content: ics,
         contentType: 'text/calendar; charset=utf-8; method=PUBLISH',
       },
-    ],
+    ]),
   };
 }
