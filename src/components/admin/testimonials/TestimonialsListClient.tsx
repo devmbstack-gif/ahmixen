@@ -5,8 +5,10 @@ import Link from 'next/link';
 import {
   ArrowDown,
   ArrowUp,
+  Copy,
   Eye,
   EyeOff,
+  Link2,
   Pencil,
   Plus,
   Trash2,
@@ -26,6 +28,18 @@ function initials(name: string) {
     .join('');
 }
 
+function statusLabel(item: AdminTestimonialDTO) {
+  if (item.visible) return 'Visible';
+  if (item.source === 'feedback') return 'Pending';
+  return 'Hidden';
+}
+
+function statusDotClass(item: AdminTestimonialDTO) {
+  if (item.visible) return 'is-open';
+  if (item.source === 'feedback') return 'is-draft';
+  return 'is-draft';
+}
+
 export function TestimonialsListClient() {
   const [items, setItems] = useState<AdminTestimonialDTO[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,6 +48,19 @@ export function TestimonialsListClient() {
     null
   );
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  const copyFeedbackLink = async () => {
+    const url = `${window.location.origin}/feedback`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setLinkCopied(true);
+      setToast({ message: 'Feedback link copied' });
+      window.setTimeout(() => setLinkCopied(false), 2000);
+    } catch {
+      setToast({ message: 'Could not copy link', tone: 'error' });
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -47,7 +74,15 @@ export function TestimonialsListClient() {
         setToast({ message: data.error || 'Could not load testimonials', tone: 'error' });
         return;
       }
-      setItems(data.items || []);
+      const list = data.items || [];
+      // Pending public feedback at top so they are easy to approve
+      list.sort((a, b) => {
+        const ap = !a.visible && a.source === 'feedback' ? 0 : 1;
+        const bp = !b.visible && b.source === 'feedback' ? 0 : 1;
+        if (ap !== bp) return ap - bp;
+        return a.sortOrder - b.sortOrder;
+      });
+      setItems(list);
     } catch {
       setToast({ message: 'Could not load testimonials', tone: 'error' });
     } finally {
@@ -113,7 +148,9 @@ export function TestimonialsListClient() {
       }
       setItems((prev) => prev.map((i) => (i.id === data.item!.id ? data.item! : i)));
       setToast({
-        message: data.item.visible ? 'Now visible on the website' : 'Hidden from the website',
+        message: data.item.visible
+          ? 'Approved — now visible on the website'
+          : 'Hidden from the website',
       });
     } finally {
       setBusyId(null);
@@ -146,16 +183,31 @@ export function TestimonialsListClient() {
             Testimonials
           </h1>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
-            Reviews shown on the website.
+            Reviews shown on the website. Public feedback stays Pending until you
+            show it.
           </p>
         </div>
-        <Link
-          href="/admin/testimonials/new"
-          className="btn-ahmixen nav-focus inline-flex min-h-10 items-center gap-2 px-4"
-        >
-          <Plus className="h-4 w-4" aria-hidden="true" />
-          New testimonial
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => void copyFeedbackLink()}
+            className="admin-logout-btn nav-focus inline-flex min-h-10 items-center gap-2 px-4 rounded-xl text-sm font-semibold"
+          >
+            {linkCopied ? (
+              <Copy className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <Link2 className="h-4 w-4" aria-hidden="true" />
+            )}
+            {linkCopied ? 'Copied' : 'Copy feedback link'}
+          </button>
+          <Link
+            href="/admin/testimonials/new"
+            className="btn-ahmixen nav-focus inline-flex min-h-10 items-center gap-2 px-4"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            New testimonial
+          </Link>
+        </div>
       </div>
 
       {loading ? (
@@ -215,12 +267,10 @@ export function TestimonialsListClient() {
                     <td>
                       <span className="inline-flex items-center gap-1.5 text-sm">
                         <span
-                          className={`admin-session-status-dot ${
-                            item.visible ? 'is-open' : 'is-draft'
-                          }`}
+                          className={`admin-session-status-dot ${statusDotClass(item)}`}
                           aria-hidden="true"
                         />
-                        {item.visible ? 'Visible' : 'Hidden'}
+                        {statusLabel(item)}
                       </span>
                     </td>
                     <td>
@@ -253,8 +303,20 @@ export function TestimonialsListClient() {
                           <Pencil className="h-4 w-4" aria-hidden="true" />
                         </AdminIconAction>
                         <AdminIconAction
-                          tip={item.visible ? 'Hide' : 'Show'}
-                          ariaLabel={item.visible ? 'Hide testimonial' : 'Show testimonial'}
+                          tip={
+                            item.visible
+                              ? 'Hide'
+                              : item.source === 'feedback'
+                                ? 'Approve (show on site)'
+                                : 'Show'
+                          }
+                          ariaLabel={
+                            item.visible
+                              ? 'Hide testimonial'
+                              : item.source === 'feedback'
+                                ? 'Approve testimonial'
+                                : 'Show testimonial'
+                          }
                           disabled={busyId === item.id}
                           onClick={() => void toggleVisible(item)}
                         >
@@ -301,12 +363,10 @@ export function TestimonialsListClient() {
                   </div>
                   <span className="inline-flex items-center gap-1 text-xs">
                     <span
-                      className={`admin-session-status-dot ${
-                        item.visible ? 'is-open' : 'is-draft'
-                      }`}
+                      className={`admin-session-status-dot ${statusDotClass(item)}`}
                       aria-hidden="true"
                     />
-                    {item.visible ? 'Visible' : 'Hidden'}
+                    {statusLabel(item)}
                   </span>
                 </div>
                 <p className="line-clamp-2 text-sm" title={item.quote}>
@@ -341,8 +401,20 @@ export function TestimonialsListClient() {
                       <Pencil className="h-4 w-4" aria-hidden="true" />
                     </AdminIconAction>
                     <AdminIconAction
-                      tip={item.visible ? 'Hide' : 'Show'}
-                      ariaLabel={item.visible ? 'Hide' : 'Show'}
+                      tip={
+                        item.visible
+                          ? 'Hide'
+                          : item.source === 'feedback'
+                            ? 'Approve (show on site)'
+                            : 'Show'
+                      }
+                      ariaLabel={
+                        item.visible
+                          ? 'Hide'
+                          : item.source === 'feedback'
+                            ? 'Approve'
+                            : 'Show'
+                      }
                       onClick={() => void toggleVisible(item)}
                     >
                       {item.visible ? (

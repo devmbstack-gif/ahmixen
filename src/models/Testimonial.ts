@@ -8,6 +8,12 @@ const TestimonialSchema = new Schema(
     rating: { type: Number, default: null, min: 1, max: 5 },
     avatarAssetId: { type: String, default: null },
     visible: { type: Boolean, default: true },
+    /** admin = created in panel; feedback = public /feedback form (starts hidden). */
+    source: {
+      type: String,
+      enum: ['admin', 'feedback'],
+      default: 'admin',
+    },
     sortOrder: { type: Number, default: 0 },
     version: { type: Number, default: 1 },
     createdBy: { type: String, default: '' },

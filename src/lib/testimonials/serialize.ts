@@ -10,6 +10,7 @@ export type AdminTestimonialDTO = {
   avatarAssetId: string | null;
   avatarUrl: string | null;
   visible: boolean;
+  source: 'admin' | 'feedback';
   sortOrder: number;
   version: number;
   createdAt: string;
@@ -44,6 +45,7 @@ export function serializeTestimonial(
     avatarAssetId: doc.avatarAssetId || null,
     avatarUrl,
     visible: Boolean(doc.visible),
+    source: doc.source === 'feedback' ? 'feedback' : 'admin',
     sortOrder: doc.sortOrder ?? 0,
     version: doc.version ?? 1,
     createdAt:

@@ -65,6 +65,7 @@ export async function POST(request: Request) {
       rating: data.rating ?? null,
       avatarAssetId: data.avatarAssetId || null,
       visible: data.visible ?? true,
+      source: 'admin',
       sortOrder,
       version: 1,
       createdBy: gate.admin.sub,

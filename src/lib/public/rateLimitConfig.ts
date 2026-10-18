@@ -60,4 +60,9 @@ export const PUBLIC_RATE_LIMITS = {
     limit: intEnv('RATE_LIMIT_PROOF_TOKEN', 10),
     windowSeconds: intEnv('RATE_LIMIT_PROOF_TOKEN_WINDOW', 3600),
   },
+  /** POST /api/public/feedback */
+  feedbackIp: {
+    limit: intEnv('RATE_LIMIT_FEEDBACK_IP', 20),
+    windowSeconds: intEnv('RATE_LIMIT_FEEDBACK_IP_WINDOW', 3600),
+  },
 } as const satisfies Record<string, RateLimitRule>;
