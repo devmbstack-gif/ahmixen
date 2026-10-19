@@ -10,8 +10,21 @@ import { AdminConfirmDialog } from '../AdminConfirmDialog';
 import { AdminIconAction } from '../AdminIconAction';
 import { SkeletonForm } from '../skeletons';
 import { DEFAULT_HERO_TOOLS } from '@/lib/content/landingSchemas';
+import { formatMoneyLabel } from '@/lib/plans/money';
+import type { AdminPlanDTO } from '@/lib/plans/serialize';
 
 type Props = { contentKey: string };
+
+type PlanOption = {
+  id: string;
+  name: string;
+  priceLabel: string;
+  isLandingPlan: boolean;
+  isWorkshopPlan: boolean;
+  status: string;
+  type: string;
+  displayStatus: string;
+};
 
 function CharCount({ value, max }: { value: string; max: number }) {
   return (
@@ -42,18 +55,64 @@ export function ContentEditorClient({ contentKey }: Props) {
   const [toolLogos, setToolLogos] = useState<Record<string, MediaPickerValue | null>>(
     {}
   );
-  const [planOptions, setPlanOptions] = useState<
-    Array<{
-      id: string;
-      name: string;
-      priceLabel: string;
-      isLandingPlan: boolean;
-      isWorkshopPlan: boolean;
-      status: string;
-    }>
-  >([]);
+  const [planOptions, setPlanOptions] = useState<PlanOption[]>([]);
+  const [plansLoading, setPlansLoading] = useState(false);
+  const [plansError, setPlansError] = useState<string | null>(null);
 
   const dirty = data ? JSON.stringify(data) !== baseline : false;
+
+  useEffect(() => {
+    if (contentKey !== 'programs') {
+      setPlanOptions([]);
+      setPlansLoading(false);
+      setPlansError(null);
+      return;
+    }
+
+    let cancelled = false;
+    setPlansLoading(true);
+    setPlansError(null);
+
+    void (async () => {
+      try {
+        const res = await fetch('/api/admin/plans?status=active');
+        const json = (await res.json().catch(() => ({}))) as {
+          plans?: AdminPlanDTO[];
+          error?: string;
+        };
+        if (cancelled) return;
+        if (!res.ok) {
+          setPlanOptions([]);
+          setPlansError(json.error || 'Could not load pricing plans');
+          return;
+        }
+        const plans = Array.isArray(json.plans) ? json.plans : [];
+        setPlanOptions(
+          plans.map((p) => ({
+            id: p.id,
+            name: p.name,
+            priceLabel: formatMoneyLabel(p.currency, p.price),
+            isLandingPlan: Boolean(p.isLandingPlan),
+            isWorkshopPlan: Boolean(p.isWorkshopPlan),
+            status: p.status,
+            type: p.type,
+            displayStatus: p.displayStatus,
+          }))
+        );
+      } catch {
+        if (!cancelled) {
+          setPlanOptions([]);
+          setPlansError('Could not load pricing plans');
+        }
+      } finally {
+        if (!cancelled) setPlansLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [contentKey]);
 
   useEffect(() => {
     void (async () => {
@@ -1316,9 +1375,13 @@ export function ContentEditorClient({ contentKey }: Props) {
           <>
             <p className="text-xs text-[var(--text-secondary)]">
               Link each open program to a Pricing plan for checkout. Mentorship
-              plans stay on the Mentorship / ENROLL section — do not use them
-              here. Create plans under Admin → Pricing first.
+              plans stay on the Mentorship / ENROLL (Fees Structure) section —
+              they never appear in this dropdown. Create active one-time plans
+              under Admin → Pricing first.
             </p>
+            {plansError ? (
+              <p className="text-xs text-red-400">{plansError}</p>
+            ) : null}
             <div className="flex items-center justify-between">
               <span className="text-xs text-[var(--text-secondary)]">
                 {list('cards').length} of 8
@@ -1356,8 +1419,20 @@ export function ContentEditorClient({ contentKey }: Props) {
                   ? String(card.planId)
                   : '';
               const selectedPlan = planOptions.find((p) => p.id === planId);
-              const workshopPlans = planOptions.filter((p) => !p.isLandingPlan);
+              // Programs checkout: one-time workshop plans only (never Mentorship landing).
+              const workshopPlans = planOptions.filter(
+                (p) =>
+                  !p.isLandingPlan &&
+                  p.type === 'one_time' &&
+                  p.status === 'active' &&
+                  p.displayStatus !== 'expired'
+              );
               const status = card.status === 'open' ? 'open' : 'locked';
+              const orphanPlanId =
+                Boolean(planId) &&
+                !selectedPlan &&
+                !plansLoading &&
+                !plansError;
 
               return (
               <div
@@ -1459,6 +1534,7 @@ export function ContentEditorClient({ contentKey }: Props) {
                   <select
                     className="admin-input h-10 w-full"
                     value={planId}
+                    disabled={plansLoading}
                     onChange={(e) => {
                       const cards = [...list('cards')];
                       const nextId = e.target.value || null;
@@ -1476,6 +1552,11 @@ export function ContentEditorClient({ contentKey }: Props) {
                         ? 'Default workshop plan'
                         : 'None (locked)'}
                     </option>
+                    {orphanPlanId ? (
+                      <option value={planId}>
+                        Linked plan (unavailable — re-select)
+                      </option>
+                    ) : null}
                     {workshopPlans.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.name} — {p.priceLabel}
@@ -1484,19 +1565,28 @@ export function ContentEditorClient({ contentKey }: Props) {
                     ))}
                   </select>
                 </label>
-                {selectedPlan ? (
+                {plansLoading ? (
+                  <p className="text-xs text-[var(--text-secondary)]">
+                    Loading pricing plans…
+                  </p>
+                ) : plansError ? (
+                  <p className="text-xs text-red-400">{plansError}</p>
+                ) : selectedPlan ? (
                   <p className="text-xs text-[var(--text-secondary)]">
                     Card price: <strong>{selectedPlan.priceLabel}</strong>
                     {selectedPlan.isLandingPlan
                       ? ' — warning: this is the Mentorship plan'
                       : ''}
                   </p>
+                ) : orphanPlanId ? (
+                  <p className="text-xs text-amber-400">
+                    Saved plan is missing or not active. Pick another plan.
+                  </p>
                 ) : status === 'open' ? (
                   <p className="text-xs text-[var(--text-secondary)]">
                     Uses the default Workshop reserve plan until you pick one.
-                    {planOptions.some((p) => p.isLandingPlan) &&
-                    workshopPlans.length === 0
-                      ? ' Create a separate one-time plan under Pricing (not Mentorship).'
+                    {workshopPlans.length === 0
+                      ? ' Create an active one-time plan under Pricing (not Mentorship), then refresh.'
                       : ''}
                   </p>
                 ) : null}
