@@ -377,7 +377,7 @@ export async function getStatsContent(): Promise<StatsContentData> {
   return applyTrainedStatFromInstructor(stats, instructor.stats);
 }
 
-/** Map legacy pricing copy → mentorship branding without requiring a CMS republish. */
+/** Map legacy single-mentorship pricing copy → multi-plan section headings. */
 function healPricingCopy(data: PricingContentData): PricingContentData {
   const badgeNorm = data.badge.trim().toUpperCase();
   const line2Norm = data.headingLine2.trim().toUpperCase();
@@ -387,25 +387,24 @@ function healPricingCopy(data: PricingContentData): PricingContentData {
   let headingLine1 = data.headingLine1;
   let headingLine2 = data.headingLine2;
 
-  if (badgeNorm === 'PRICING' || badgeNorm === 'PRICE') {
-    badge = 'MENTORSHIP';
+  const legacyMentorshipHeading =
+    line1Norm.includes('FEES STRUCTURE') ||
+    line2Norm.includes('MENTORSHIP') ||
+    badgeNorm === 'MENTORSHIP';
+
+  if (legacyMentorshipHeading && badgeNorm !== 'PRICING') {
+    badge = 'PRICING';
+    headingLine1 = 'CHOOSE YOUR';
+    headingLine2 = 'AHMIXEN PLAN';
   }
 
   if (
-    line2Norm === 'AHMIXEN AI' ||
-    line2Norm === 'AHMIXEN AI.' ||
-    line2Norm === 'AHMI XEN AI'
+    line1Norm === 'FEES STRUCTURE OF AHMIXEN AI' ||
+    (line1Norm === 'FEES STRUCTURE OF' && line2Norm.includes('MENTORSHIP'))
   ) {
-    headingLine2 = 'AHMIXEN AI MENTORSHIP';
-  }
-
-  // Older one-line style stored entirely in line1
-  if (
-    line1Norm === 'FEES STRUCTURE OF AHMIXEN AI' &&
-    !line2Norm.includes('MENTORSHIP')
-  ) {
-    headingLine1 = 'FEES STRUCTURE OF';
-    headingLine2 = 'AHMIXEN AI MENTORSHIP';
+    badge = 'PRICING';
+    headingLine1 = 'CHOOSE YOUR';
+    headingLine2 = 'AHMIXEN PLAN';
   }
 
   if (
@@ -550,8 +549,9 @@ export async function getProgramsContent(): Promise<{
     }
     const locked = card.status !== 'open';
     const linked = card.planId ? planById.get(card.planId) : undefined;
-    // Never checkout Mentorship landing plan from a workshop program card.
-    const linkedOk = linked && !linked.isLandingPlan ? linked : undefined;
+    // Prefer the card's linked plan (workshop or Mentorship). Fall back to
+    // default workshop only when no valid link is set.
+    const linkedOk = linked || undefined;
     const resolvedPlanId = locked
       ? null
       : linkedOk

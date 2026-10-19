@@ -28,7 +28,7 @@ function InstagramIcon({ className }: { className?: string }) {
 const PROGRAM_LINKS = [
   { label: 'Programs', href: '/programs' },
   { label: 'Testimonials', href: '/testimonials' },
-  { label: 'Feedback', href: '/feedback' },
+  { label: 'Give us a review', href: '/feedback' },
   { label: 'Our Mission', href: '/our-mission' },
 ] as const;
 

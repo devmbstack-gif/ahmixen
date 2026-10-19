@@ -74,11 +74,11 @@ export function FeedbackForm() {
       <div className="mx-auto max-w-lg space-y-5">
         <header className="space-y-2">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            Share your feedback
+            Give us a review
           </h1>
           <p className="text-sm text-[var(--text-secondary)]">
-            Tell us about your AhmiXen workshop experience. After we approve it,
-            your review can appear on the site.
+            Tell us about your AhmiXen experience. After we approve it, your
+            review can appear on the testimonials page.
           </p>
         </header>
 

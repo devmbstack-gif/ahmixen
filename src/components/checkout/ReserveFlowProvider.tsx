@@ -36,6 +36,11 @@ type ReserveFlowContextValue = {
     context?: ReserveContext
   ) => void;
   startMentorshipReserveFlow: (context?: ReserveContext) => void;
+  /** Enroll for a specific plan (Programs / Pricing cards). Mentorship vs workshop by plan id. */
+  startPlanReserveFlow: (
+    planId: string | null | undefined,
+    context?: ReserveContext
+  ) => void;
   reserveCta: {
     label: string;
     disabled: boolean;
@@ -167,6 +172,32 @@ export function ReserveFlowProvider({
     [beginReserve, config?.mentorshipPlanId, config?.landingPlanId, config?.plans]
   );
 
+  const startPlanReserveFlow = useCallback(
+    (planId: string | null | undefined, context?: ReserveContext) => {
+      const requested = planId?.trim() || null;
+      if (!requested) return;
+      const mentorshipId =
+        config?.mentorshipPlanId || config?.landingPlanId || null;
+      if (mentorshipId && requested === mentorshipId) {
+        beginReserve('mentorship', requested, {
+          programId: context?.programId,
+          forTitle:
+            context?.forTitle?.trim() ||
+            config?.plans.find((p) => p.id === requested)?.name ||
+            'Mentorship',
+        });
+        return;
+      }
+      beginReserve('workshop', requested, context);
+    },
+    [
+      beginReserve,
+      config?.mentorshipPlanId,
+      config?.landingPlanId,
+      config?.plans,
+    ]
+  );
+
   /** Default = workshop so legacy callers don't open mentorship. */
   const startReserveFlow = startWorkshopReserveFlow;
 
@@ -192,6 +223,7 @@ export function ReserveFlowProvider({
       startReserveFlow,
       startWorkshopReserveFlow,
       startMentorshipReserveFlow,
+      startPlanReserveFlow,
       reserveCta,
       workshopCta,
       mentorshipCta,
@@ -203,6 +235,7 @@ export function ReserveFlowProvider({
       startReserveFlow,
       startWorkshopReserveFlow,
       startMentorshipReserveFlow,
+      startPlanReserveFlow,
       reserveCta,
       workshopCta,
       mentorshipCta,

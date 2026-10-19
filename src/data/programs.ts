@@ -12,36 +12,36 @@ export type ProgramCard = {
   status: ProgramStatus;
 };
 
-/** Course catalog — one open workshop + two locked upcoming */
+/** Course catalog — Workshop, Mentorship, Accelerator */
 export const PROGRAMS: readonly ProgramCard[] = [
   {
-    id: 'ai-automation-live',
-    title: 'AI Automation Live Workshop',
+    id: 'workshop',
+    title: 'Workshop',
     instructor: 'Ahmi',
-    badges: ['2.5 Hours', 'Live Session'],
-    price: 'Rs 500',
+    badges: ['Live Session'],
+    price: 'PKR 999',
     image: '/course4.jpeg',
-    href: '/#programs',
+    href: '/#pricing',
     status: 'open',
   },
   {
-    id: 'course-1',
-    title: 'AI Workshop',
+    id: 'mentorship-1-month',
+    title: 'one month Mentorship',
     instructor: 'Ahmi',
-    badges: ['2.5 Hours', 'Live Session'],
-    price: '',
+    badges: ['1 Month', 'Mentorship'],
+    price: 'PKR 8,999',
     image: '/course1.jpeg',
-    href: '/programs',
-    status: 'locked',
+    href: '/#pricing',
+    status: 'open',
   },
   {
-    id: 'course-2',
-    title: 'AI Workshop',
+    id: 'ai-generalist-accelerator',
+    title: 'AI Generalist Accelerator Program',
     instructor: 'Ahmi',
-    badges: ['2.5 Hours', 'Live Session'],
-    price: '',
+    badges: ['Accelerator'],
+    price: 'PKR 29,999',
     image: '/course2.jpeg',
-    href: '/programs',
-    status: 'locked',
+    href: '/#pricing',
+    status: 'open',
   },
 ] as const;

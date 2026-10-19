@@ -4,15 +4,41 @@ import { useMemo } from 'react';
 import { Check, Loader2 } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useReserveFlow } from './checkout/ReserveFlowProvider';
-import { formatPublicMoney } from '@/lib/checkout-client';
+import {
+  formatPublicMoney,
+  type PublicCheckoutConfig,
+} from '@/lib/checkout-client';
 import type { PricingContentData } from '@/lib/content/landingSchemas';
 import type { PublicSessionDisplay } from '@/lib/sessions/publicShared';
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
+type OfferPlan = PublicCheckoutConfig['plans'][number];
+
 interface RegistrationProps {
   session: PublicSessionDisplay;
   content: PricingContentData;
+}
+
+function orderOfferPlans(
+  plans: OfferPlan[],
+  workshopPlanId: string | null | undefined,
+  mentorshipPlanId: string | null | undefined
+): OfferPlan[] {
+  const byId = new Map(plans.map((p) => [p.id, p]));
+  const ordered: OfferPlan[] = [];
+  const push = (id: string | null | undefined) => {
+    if (!id) return;
+    const p = byId.get(id);
+    if (p && !ordered.some((o) => o.id === p.id)) ordered.push(p);
+  };
+  push(workshopPlanId);
+  push(mentorshipPlanId);
+  const rest = plans
+    .filter((p) => !ordered.some((o) => o.id === p.id))
+    .slice()
+    .sort((a, b) => a.price - b.price);
+  return [...ordered, ...rest];
 }
 
 export const Registration: React.FC<RegistrationProps> = ({
@@ -20,35 +46,24 @@ export const Registration: React.FC<RegistrationProps> = ({
   content,
 }) => {
   const reduceMotion = useReducedMotion();
-  const { startMentorshipReserveFlow, mentorshipCta, config, configLoading } =
+  const { startPlanReserveFlow, config, configLoading, workshopCta, mentorshipCta } =
     useReserveFlow();
 
-  const plan = useMemo(() => {
-    if (!config?.plans?.length) return null;
-    const mentorshipId = config.mentorshipPlanId || config.landingPlanId;
-    if (mentorshipId) {
-      return config.plans.find((p) => p.id === mentorshipId) || null;
-    }
-    return null;
-  }, [config]);
+  const mentorshipId = config?.mentorshipPlanId || config?.landingPlanId || null;
 
-  const closedNoPlan = !configLoading && !plan;
-  const buttonDisabled = closedNoPlan || mentorshipCta.disabled;
-  const buttonLabel = closedNoPlan
-    ? 'Reservations closed'
-    : mentorshipCta.label === 'Reserve'
-      ? 'ENROLL NOW'
-      : mentorshipCta.label === 'Reserve Seat'
-        ? 'ENROLL NOW'
-        : mentorshipCta.label;
-  const showPrice = Boolean(plan) && Boolean(config?.reservationsOpen);
+  const offerPlans = useMemo(() => {
+    if (!config?.plans?.length) return [];
+    return orderOfferPlans(
+      config.plans,
+      config.workshopPlanId,
+      mentorshipId
+    );
+  }, [config, mentorshipId]);
 
-  const displayCurrency = plan?.currency || 'PKR';
-  const displayPrice = plan?.price ?? 0;
-  const originalForStrike =
-    plan?.originalPrice != null && plan.originalPrice > plan.price
-      ? plan.originalPrice
-      : null;
+  const closedNoPlans = !configLoading && offerPlans.length === 0;
+  const globalBlocked =
+    !configLoading &&
+    Boolean(config && (!config.reservationsOpen || config.session?.soldOut));
 
   const sessionLine = `${session.dateShort} · ${session.timeLabel}`;
   const showSeats =
@@ -56,7 +71,7 @@ export const Registration: React.FC<RegistrationProps> = ({
       config?.session?.showLimitedSeatsBadge ?? session.showLimitedSeatsBadge
     ) &&
     (config?.session?.seatsAvailable ?? session.seatsAvailable) > 0 &&
-    showPrice;
+    Boolean(config?.reservationsOpen);
   const seatsLeft = config?.session?.seatsAvailable ?? session.seatsAvailable;
 
   const fade = {
@@ -69,108 +84,150 @@ export const Registration: React.FC<RegistrationProps> = ({
     },
   };
 
+  const enrollLabel = (plan: OfferPlan) => {
+    const isMentorship = mentorshipId != null && plan.id === mentorshipId;
+    const cta = isMentorship ? mentorshipCta : workshopCta;
+    if (cta.disabled) return cta.label;
+    if (cta.label === 'Reserve' || cta.label === 'Reserve Seat') {
+      return 'ENROLL NOW';
+    }
+    return cta.label;
+  };
+
   return (
     <section
       id="pricing"
       className="section-y bg-transparent"
       aria-labelledby="pricing-heading"
     >
-      <div className="mx-auto max-w-3xl page-x">
+      <div className="mx-auto max-w-6xl page-x">
         <motion.div className="pricing-header text-center mb-6 space-y-2.5" {...fade}>
           <span className="pricing-badge">{content.badge}</span>
           <h2 id="pricing-heading" className="pricing-title">
             <span className="pricing-title-lead">{content.headingLine1}</span>{' '}
             <span className="gradient-text-ahmixen">{content.headingLine2}</span>
           </h2>
+          {content.subtext ? (
+            <p className="pricing-subtext m-0">{content.subtext}</p>
+          ) : null}
         </motion.div>
 
-        <motion.div
-          className="pricing-card"
-          {...fade}
-          transition={{
-            ...fade.transition,
-            delay: reduceMotion ? 0 : 0.06,
-          }}
-        >
-          <div className="pricing-card-body">
-            {showPrice && plan ? (
-              <>
-                <div className="pricing-price-block">
-                  {originalForStrike != null ? (
-                    <p className="pricing-was m-0">
-                      The Price was -{' '}
-                      {formatPublicMoney(displayCurrency, originalForStrike)}
-                    </p>
-                  ) : null}
-                  <p className="pricing-amount m-0">
-                    {formatPublicMoney(displayCurrency, displayPrice)}
-                  </p>
-                  <p className="pricing-once m-0">One-time payment</p>
-                </div>
-
-                {plan.features.length > 0 ? (
-                  <ul className="pricing-features">
-                    {plan.features.map((f) => (
-                      <li key={f}>
-                        <Check
-                          className="pricing-feature-check"
-                          aria-hidden="true"
-                        />
-                        <span>{f}</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-
-                <div className="pricing-session-meta">
-                  <p className="m-0">{sessionLine}</p>
-                  {showSeats ? (
-                    <p className="pricing-seats m-0">{seatsLeft} seats left</p>
-                  ) : null}
-                </div>
-              </>
-            ) : (
-              !configLoading && (
-                <p className="pricing-closed m-0">
-                  Reservations are closed right now.
-                </p>
-              )
-            )}
-
-            {configLoading && !plan ? (
-              <div className="pricing-loading">
-                <Loader2
-                  className="w-5 h-5 animate-spin text-[var(--text-muted)]"
-                  aria-hidden="true"
-                />
-                <span className="sr-only">Loading pricing</span>
-              </div>
-            ) : null}
-
-            <button
-              type="button"
-              id="pricing-reserve-cta"
-              onClick={() => {
-                if (!buttonDisabled) {
-                  startMentorshipReserveFlow({
-                    forTitle:
-                      plan?.name ||
-                      [content.headingLine1, content.headingLine2]
-                        .filter(Boolean)
-                        .join(' ')
-                        .trim() ||
-                      'Mentorship',
-                  });
-                }
-              }}
-              disabled={buttonDisabled}
-              aria-disabled={buttonDisabled}
-              className="pricing-cta nav-focus"
-            >
-              {buttonLabel}
-            </button>
+        {configLoading && offerPlans.length === 0 ? (
+          <div className="pricing-loading">
+            <Loader2
+              className="w-5 h-5 animate-spin text-[var(--text-muted)]"
+              aria-hidden="true"
+            />
+            <span className="sr-only">Loading pricing</span>
           </div>
-        </motion.div>
+        ) : null}
+
+        {closedNoPlans ? (
+          <p className="pricing-closed m-0">
+            Reservations are closed right now.
+          </p>
+        ) : (
+          <ul className="pricing-grid">
+            {offerPlans.map((plan, index) => {
+              const isMentorship =
+                mentorshipId != null && plan.id === mentorshipId;
+              const originalForStrike =
+                plan.originalPrice != null && plan.originalPrice > plan.price
+                  ? plan.originalPrice
+                  : null;
+              const disabled = globalBlocked;
+              const label = closedNoPlans
+                ? 'Reservations closed'
+                : enrollLabel(plan);
+
+              return (
+                <motion.li
+                  key={plan.id}
+                  className={
+                    isMentorship
+                      ? 'pricing-grid-item pricing-grid-item-featured'
+                      : 'pricing-grid-item'
+                  }
+                  {...fade}
+                  transition={{
+                    ...fade.transition,
+                    delay: reduceMotion ? 0 : 0.05 + index * 0.05,
+                  }}
+                >
+                  <article className="pricing-card h-full">
+                    <div className="pricing-card-body">
+                      <div className="pricing-plan-name-block">
+                        <p className="pricing-plan-name m-0">{plan.name}</p>
+                        {plan.shortDescription ? (
+                          <p className="pricing-plan-desc m-0">
+                            {plan.shortDescription}
+                          </p>
+                        ) : null}
+                      </div>
+
+                      <div className="pricing-price-block">
+                        {originalForStrike != null ? (
+                          <p className="pricing-was m-0">
+                            The Price was -{' '}
+                            {formatPublicMoney(plan.currency, originalForStrike)}
+                          </p>
+                        ) : null}
+                        <p className="pricing-amount m-0">
+                          {formatPublicMoney(plan.currency, plan.price)}
+                        </p>
+                        <p className="pricing-once m-0">One-time payment</p>
+                      </div>
+
+                      {plan.features.length > 0 ? (
+                        <ul className="pricing-features pricing-features-stack">
+                          {plan.features.map((f) => (
+                            <li key={f}>
+                              <Check
+                                className="pricing-feature-check"
+                                aria-hidden="true"
+                              />
+                              <span>{f}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
+
+                      <div className="pricing-session-meta">
+                        <p className="m-0">{sessionLine}</p>
+                        {showSeats ? (
+                          <p className="pricing-seats m-0">
+                            {seatsLeft} seats left
+                          </p>
+                        ) : null}
+                      </div>
+
+                      <button
+                        type="button"
+                        id={
+                          isMentorship
+                            ? 'pricing-reserve-cta'
+                            : `pricing-enroll-${plan.id}`
+                        }
+                        onClick={() => {
+                          if (!disabled) {
+                            startPlanReserveFlow(plan.id, {
+                              forTitle: plan.name,
+                            });
+                          }
+                        }}
+                        disabled={disabled}
+                        aria-disabled={disabled}
+                        className="pricing-cta nav-focus"
+                      >
+                        {label}
+                      </button>
+                    </div>
+                  </article>
+                </motion.li>
+              );
+            })}
+          </ul>
+        )}
 
         <p className="pricing-helper">
           You pay by JazzCash / Easypaisa on the next step.

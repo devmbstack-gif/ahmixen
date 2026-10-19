@@ -2,7 +2,8 @@
 
 import { useCallback, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Star } from 'lucide-react';
+import Link from 'next/link';
+import { MessageSquarePlus, Star } from 'lucide-react';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
 import { TestimonialsCatalogCard } from './testimonials/TestimonialsCatalogCard';
@@ -43,7 +44,18 @@ export const TestimonialsPage: React.FC<{
 
       <main className="testimonials-page flex-1">
         <div className="container-narrow testimonials-page-inner">
-          <h1 className="programs-heading purple-badge">Testimonials</h1>
+          <div className="tp-page-header">
+            <h1 className="programs-heading purple-badge tp-page-title">
+              Testimonials
+            </h1>
+            <Link
+              href="/feedback"
+              className="btn-ahmixen nav-focus tp-review-cta inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold"
+            >
+              <MessageSquarePlus className="w-4 h-4" aria-hidden="true" />
+              Give us a review
+            </Link>
+          </div>
 
           {reviews.length > 0 && averageLabel !== null && (
             <>

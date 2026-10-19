@@ -356,11 +356,11 @@ const pricingFields = z.object({
 export const pricingDataSchema = pricingFields;
 
 export const pricingStaticDefault = {
-  badge: 'MENTORSHIP',
-  headingLine1: 'FEES STRUCTURE OF',
-  headingLine2: 'AHMIXEN AI MENTORSHIP',
+  badge: 'PRICING',
+  headingLine1: 'CHOOSE YOUR',
+  headingLine2: 'AHMIXEN PLAN',
   subtext:
-    'Takes about 2 minutes. You pay by JazzCash / Easypaisa on the next step.',
+    'Pick a plan below — or enroll from Programs above. Pay by JazzCash / Easypaisa on the next step.',
 };
 
 export const programsStaticDefault = {

@@ -55,7 +55,7 @@ export function TestimonialsListClient() {
     try {
       await navigator.clipboard.writeText(url);
       setLinkCopied(true);
-      setToast({ message: 'Feedback link copied' });
+      setToast({ message: 'Give us a review link copied' });
       window.setTimeout(() => setLinkCopied(false), 2000);
     } catch {
       setToast({ message: 'Could not copy link', tone: 'error' });
@@ -198,7 +198,7 @@ export function TestimonialsListClient() {
             ) : (
               <Link2 className="h-4 w-4" aria-hidden="true" />
             )}
-            {linkCopied ? 'Copied' : 'Copy feedback link'}
+            {linkCopied ? 'Copied' : 'Copy Give us a review link'}
           </button>
           <Link
             href="/admin/testimonials/new"

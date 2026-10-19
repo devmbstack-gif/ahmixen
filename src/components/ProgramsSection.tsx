@@ -25,7 +25,7 @@ export function ProgramsSection({
 }: ProgramsSectionProps) {
   const reduceMotion = useReducedMotion();
   const HeadingTag = headingAs;
-  const { startWorkshopReserveFlow, config, configLoading } = useReserveFlow();
+  const { startPlanReserveFlow, config, configLoading } = useReserveFlow();
 
   const globalBlocked =
     !configLoading &&
@@ -135,7 +135,7 @@ export function ProgramsSection({
                     aria-disabled={!canReserve}
                     onClick={() => {
                       if (canReserve) {
-                        startWorkshopReserveFlow(planId, {
+                        startPlanReserveFlow(planId, {
                           programId: program.id,
                           forTitle: program.title,
                         });

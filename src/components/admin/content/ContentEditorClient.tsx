@@ -1374,10 +1374,10 @@ export function ContentEditorClient({ contentKey }: Props) {
         {contentKey === 'programs' && (
           <>
             <p className="text-xs text-[var(--text-secondary)]">
-              Link each open program to a Pricing plan for checkout. Mentorship
-              plans stay on the Mentorship / ENROLL (Fees Structure) section —
-              they never appear in this dropdown. Create active one-time plans
-              under Admin → Pricing first.
+              Link each open program to a Pricing plan for checkout (Workshop,
+              Mentorship, or Accelerator). Create active one-time plans under
+              Admin → Pricing first. The Pricing section on the site shows the
+              same plans for enroll.
             </p>
             {plansError ? (
               <p className="text-xs text-red-400">{plansError}</p>
@@ -1419,10 +1419,9 @@ export function ContentEditorClient({ contentKey }: Props) {
                   ? String(card.planId)
                   : '';
               const selectedPlan = planOptions.find((p) => p.id === planId);
-              // Programs checkout: one-time workshop plans only (never Mentorship landing).
+              // Programs checkout: any active one-time plan (incl. Mentorship).
               const workshopPlans = planOptions.filter(
                 (p) =>
-                  !p.isLandingPlan &&
                   p.type === 'one_time' &&
                   p.status === 'active' &&
                   p.displayStatus !== 'expired'
@@ -1560,7 +1559,11 @@ export function ContentEditorClient({ contentKey }: Props) {
                     {workshopPlans.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.name} — {p.priceLabel}
-                        {p.isWorkshopPlan ? ' (Workshop)' : ''}
+                        {p.isLandingPlan
+                          ? ' (Mentorship)'
+                          : p.isWorkshopPlan
+                            ? ' (Workshop)'
+                            : ''}
                       </option>
                     ))}
                   </select>
