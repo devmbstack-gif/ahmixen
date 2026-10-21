@@ -68,12 +68,22 @@ export const Hero: React.FC<HeroProps> = ({
   const infoCards = useMemo(
     () =>
       HERO_INFO_CARDS.map((card) =>
-        card.label === 'Program Length'
+        card.label === 'Workshop Length'
           ? { ...card, value: session.durationLabel || card.value }
           : card
       ),
     [session.durationLabel]
   );
+
+  const workshopWhenLabel = useMemo(() => {
+    const long = session.dateLong?.trim() || '';
+    // Prefer "Saturday, Oct 24, 2026 · 10:00 PM PKT"
+    const weekday = long.split(',')[0]?.trim();
+    if (weekday && session.dateShort && session.timeLabel) {
+      return `${weekday}, ${session.dateShort} · ${session.timeLabel}`;
+    }
+    return 'Saturday, Oct 24, 2026 · 10:00 PM PKT';
+  }, [session.dateLong, session.dateShort, session.timeLabel]);
 
   const wordInitial = reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 28 };
   const wordAnimate = { opacity: 1, y: 0 };
@@ -191,6 +201,7 @@ export const Hero: React.FC<HeroProps> = ({
           transition={{ delay: reduceMotion ? 0 : 0.78 }}
           className="mt-8 md:mt-10 flex flex-col items-center gap-3"
         >
+          <p className="hero-workshop-when m-0">{workshopWhenLabel}</p>
           {session.showLimitedSeatsBadge && (
             <span className="hero-urgency-badge">
               <span className="hero-urgency-dot" aria-hidden="true" />

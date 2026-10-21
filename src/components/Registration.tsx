@@ -65,14 +65,41 @@ export const Registration: React.FC<RegistrationProps> = ({
     !configLoading &&
     Boolean(config && (!config.reservationsOpen || config.session?.soldOut));
 
-  const sessionLine = `${session.dateShort} · ${session.timeLabel}`;
-  const showSeats =
+  const workshopWhenLine = useMemo(() => {
+    const long = session.dateLong?.trim() || '';
+    const weekday = long.split(',')[0]?.trim();
+    // "Sat, Oct 24, 2026 · 10:00 PM PKT"
+    const shortWeekday = weekday ? weekday.slice(0, 3) : 'Sat';
+    if (session.dateShort && session.timeLabel) {
+      return `${shortWeekday}, ${session.dateShort} · ${session.timeLabel}`;
+    }
+    return 'Sat, Oct 24, 2026 · 10:00 PM PKT';
+  }, [session.dateLong, session.dateShort, session.timeLabel]);
+
+  const workshopSeatsVisible =
     Boolean(
       config?.session?.showLimitedSeatsBadge ?? session.showLimitedSeatsBadge
     ) &&
     (config?.session?.seatsAvailable ?? session.seatsAvailable) > 0 &&
     Boolean(config?.reservationsOpen);
   const seatsLeft = config?.session?.seatsAvailable ?? session.seatsAvailable;
+
+  const planSchedule = (
+    plan: OfferPlan,
+    isWorkshop: boolean,
+    isMentorship: boolean
+  ) => {
+    if (isWorkshop) {
+      return { dateLine: workshopWhenLine, showSeats: workshopSeatsVisible };
+    }
+    if (isMentorship) {
+      return { dateLine: 'Starts Nov 1, 2026', showSeats: false };
+    }
+    if (/generalist|accelerator/i.test(plan.name)) {
+      return { dateLine: 'Starts Nov 15, 2026', showSeats: false };
+    }
+    return { dateLine: workshopWhenLine, showSeats: false };
+  };
 
   const fade = {
     initial: reduceMotion ? false : ({ opacity: 0, y: 12 } as const),
@@ -131,6 +158,10 @@ export const Registration: React.FC<RegistrationProps> = ({
             {offerPlans.map((plan, index) => {
               const isMentorship =
                 mentorshipId != null && plan.id === mentorshipId;
+              const isWorkshop =
+                Boolean(config?.workshopPlanId) &&
+                plan.id === config?.workshopPlanId;
+              const schedule = planSchedule(plan, isWorkshop, isMentorship);
               const originalForStrike =
                 plan.originalPrice != null && plan.originalPrice > plan.price
                   ? plan.originalPrice
@@ -193,8 +224,8 @@ export const Registration: React.FC<RegistrationProps> = ({
                       ) : null}
 
                       <div className="pricing-session-meta">
-                        <p className="m-0">{sessionLine}</p>
-                        {showSeats ? (
+                        <p className="m-0">{schedule.dateLine}</p>
+                        {schedule.showSeats ? (
                           <p className="pricing-seats m-0">
                             {seatsLeft} seats left
                           </p>

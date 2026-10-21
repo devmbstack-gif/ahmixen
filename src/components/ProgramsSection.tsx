@@ -18,7 +18,7 @@ type ProgramsSectionProps = {
 };
 
 export function ProgramsSection({
-  publicSession,
+  publicSession: _publicSession,
   cards,
   headingAs = 'h2',
   className = '',
@@ -51,9 +51,8 @@ export function ProgramsSection({
             const planId = program.planId;
             const canReserve =
               !locked && !globalBlocked && Boolean(planId);
-            const badges = program.badges.map((badge, badgeIndex) =>
-              badgeIndex === 0 ? publicSession.durationLabel : badge
-            );
+            // Use CMS badges as authored — do not overwrite with workshop duration.
+            const badges = program.badges;
 
             const media = (
               <>

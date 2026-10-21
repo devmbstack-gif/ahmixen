@@ -95,7 +95,7 @@ export const Countdown: React.FC<{ className?: string; startsAt: string }> = ({
   if (time.done) {
     return (
       <p className={`hero-countdown-live text-sm font-semibold ${className}`}>
-        Workshop is live — join now
+        Workshop is live / Registration closed
       </p>
     );
   }

@@ -58,9 +58,11 @@ const heroFields = z.object({
   headlineLine2: plain(80, 0, 'Top line 2'),
   /** Large display title under the soft intro. */
   mainHeadlineLine1: plain(60, 1, 'Main headline 1').default(
-    'BECOME A CERTIFIED AI'
+    'LEARN 5 REAL AI MONEY IDEAS'
   ),
-  mainHeadlineLine2: plain(60, 1, 'Main headline 2').default('EXPERT IN 90 DAYS'),
+  mainHeadlineLine2: plain(60, 1, 'Main headline 2').default(
+    'IN JUST 2 HOURS'
+  ),
   /** Description under the main title (was badge callout). */
   badgeText: plain(220, 1, 'Subtext'),
   badgeSuffix: plain(80, 0, 'Subtext suffix').default(''),
@@ -268,8 +270,8 @@ export const heroStaticDefault = {
   headlineLine1:
     'AI Will Replace You In The Next 12 Months... Unless You Become The One Who Uses It',
   headlineLine2: '',
-  mainHeadlineLine1: 'BECOME A CERTIFIED AI',
-  mainHeadlineLine2: 'EXPERT IN 90 DAYS',
+  mainHeadlineLine1: 'LEARN 5 REAL AI MONEY IDEAS',
+  mainHeadlineLine2: 'IN JUST 2 HOURS',
   badgeText:
     'Master the best AI tools, use them in real life, build real solutions and then we show you how to sell AI services to high paying businesses.',
   badgeSuffix: '',
@@ -281,8 +283,8 @@ export const heroStaticDefault = {
 
 /** Hero info cards — fixed on the site, not CMS-editable. */
 export const HERO_INFO_CARDS = [
-  { label: 'Program Format', value: WORKSHOP_CONFIG.deliveryFormat },
-  { label: 'Program Length', value: WORKSHOP_CONFIG.durationLabel },
+  { label: 'Workshop Format', value: WORKSHOP_CONFIG.deliveryFormat },
+  { label: 'Workshop Length', value: WORKSHOP_CONFIG.durationLabel },
   { label: 'Topic', value: 'Practical AI' },
 ] as const;
 

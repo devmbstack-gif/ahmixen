@@ -141,13 +141,16 @@ export function ContentEditorClient({ contentKey }: Props) {
             typeof loaded.mainHeadlineLine1 !== 'string' ||
             !String(loaded.mainHeadlineLine1).trim()
           ) {
-            loaded = { ...loaded, mainHeadlineLine1: 'BECOME A CERTIFIED AI' };
+            loaded = {
+              ...loaded,
+              mainHeadlineLine1: 'LEARN 5 REAL AI MONEY IDEAS',
+            };
           }
           if (
             typeof loaded.mainHeadlineLine2 !== 'string' ||
             !String(loaded.mainHeadlineLine2).trim()
           ) {
-            loaded = { ...loaded, mainHeadlineLine2: 'EXPERT IN 90 DAYS' };
+            loaded = { ...loaded, mainHeadlineLine2: 'IN JUST 2 HOURS' };
           }
           if (!Array.isArray(loaded.tools) || loaded.tools.length === 0) {
             loaded = {
@@ -660,7 +663,7 @@ export function ContentEditorClient({ contentKey }: Props) {
               </label>
             </div>
             <p className="text-xs text-[var(--text-secondary)]">
-              Program Format / Length / Topic cards are fixed on the site. Countdown
+              Workshop Format / Length / Topic cards are fixed on the site. Countdown
               and seats come from Live Sessions.
             </p>
             <label className="block">

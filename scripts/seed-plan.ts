@@ -118,7 +118,7 @@ async function main() {
 
   const doc = await Plan.create({
     name: 'Live Workshop Pass',
-    shortDescription: 'One live session. Hands-on and beginner friendly.',
+    shortDescription: 'Hands-on live workshop. Beginner friendly.',
     type: 'one_time',
     currency: args.currency,
     price: args.price,

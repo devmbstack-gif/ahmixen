@@ -696,6 +696,14 @@
   color: #f87171;
 }
 
+.hero-workshop-when {
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--text-secondary);
+  text-wrap: balance;
+}
+
 .hero-urgency-badge {
   display: inline-flex;
   align-items: center;
@@ -4523,8 +4531,9 @@ button.program-card {
   min-height: 2.5em;
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   overflow: hidden;
+  text-wrap: balance;
 }
 
 .program-card-price,
