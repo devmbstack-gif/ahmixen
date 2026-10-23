@@ -50,6 +50,7 @@ There is **no SQL migration folder**. Schema is defined in Mongoose models under
    - `MONGODB_URI`
    - `AUTH_SECRET` (e.g. `openssl rand -hex 32`)
    - `SITE_URL=http://localhost:3000`
+   - `NEXT_PUBLIC_CONTACT_EMAIL` and `NEXT_PUBLIC_WHATSAPP_NUMBER` (footer / WhatsApp float)
 
    For real email locally: set `EMAIL_MODE=smtp` and SMTP vars (see `.env.example`).
 

@@ -1,4 +1,5 @@
 import { instructor } from './instructor';
+import { getContactEmail, getWhatsAppNumber } from '@/lib/siteContact';
 
 export interface WorkshopInfo {
   brandName: string;
@@ -73,8 +74,13 @@ export const WORKSHOP_CONFIG: WorkshopInfo = {
     currency: 'USD',
     label: 'Standard Registration',
   },
-  contactEmail: 'ahmadalihafiz@icloud.com',
-  whatsappNumber: '923390212102',
+  // Overridable via NEXT_PUBLIC_CONTACT_EMAIL / NEXT_PUBLIC_WHATSAPP_NUMBER
+  get contactEmail() {
+    return getContactEmail();
+  },
+  get whatsappNumber() {
+    return getWhatsAppNumber();
+  },
   whatsappPrefill:
     "Assalamualaikum Hafiz Ahmad Ali,\n\nI am interested in the AhmiXen live AI Automation workshop. Could you please share details about the upcoming session (date/time), fee, and how I can reserve a seat?\n\nThank you.",
 };

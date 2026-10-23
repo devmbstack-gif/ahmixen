@@ -20,7 +20,10 @@ function WhatsAppIcon({ className }: { className?: string }) {
 }
 
 export const WhatsAppFloat: React.FC = () => {
-  const href = `https://wa.me/${WORKSHOP_CONFIG.whatsappNumber}?text=${encodeURIComponent(
+  const digits = (WORKSHOP_CONFIG.whatsappNumber || '').replace(/\D/g, '');
+  if (!digits) return null;
+
+  const href = `https://wa.me/${digits}?text=${encodeURIComponent(
     WORKSHOP_CONFIG.whatsappPrefill
   )}`;
 

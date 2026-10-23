@@ -226,7 +226,7 @@ export const Hero: React.FC<HeroProps> = ({
             onClick={() => {
               if (!workshopCta.disabled) {
                 startWorkshopReserveFlow(null, {
-                  forTitle: 'Live AI Workshop',
+                  forTitle: 'AI Money Lab',
                 });
               }
             }}

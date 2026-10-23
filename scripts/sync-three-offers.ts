@@ -82,15 +82,15 @@ async function main() {
   );
 
   for (const [doc, meta] of [
-    [workshop, { name: 'Workshop', price: 999, role: 'workshop' }],
+    [workshop, { name: 'AI Money Lab', price: 999, role: 'workshop' }],
     [
       mentorship,
-      { name: 'one month Mentorship', price: 8999, role: 'mentorship' },
+      { name: '30-Day AI Builder Sprint', price: 8999, role: 'mentorship' },
     ],
     [
       generalist,
       {
-        name: 'AI Generalist Accelerator Program',
+        name: 'Zero to AI Pro',
         price: 29999,
         role: 'program',
       },
@@ -139,9 +139,9 @@ async function main() {
   const cards = [
     {
       id: 'workshop',
-      title: 'Workshop',
+      title: 'AI Money Lab',
       instructorLine: 'Ahmi',
-      badges: ['Live Session'],
+      badges: ['Live Event', '2 Hours'],
       posterAssetId: null,
       image: '/course4.jpeg',
       href: '/#pricing',
@@ -151,9 +151,9 @@ async function main() {
     },
     {
       id: 'mentorship-1-month',
-      title: 'one month Mentorship',
+      title: '30-Day AI Builder Sprint',
       instructorLine: 'Ahmi',
-      badges: ['1 Month', 'Mentorship'],
+      badges: ['Group Mentorship', '30 Days', '5 days/week · 2 hrs/session'],
       posterAssetId: null,
       image: '/course1.jpeg',
       href: '/#pricing',
@@ -163,9 +163,9 @@ async function main() {
     },
     {
       id: 'ai-generalist-accelerator',
-      title: 'AI Generalist Accelerator Program',
+      title: 'Zero to AI Pro',
       instructorLine: 'Ahmi',
-      badges: ['Accelerator'],
+      badges: ['3 Months', '5 days/week · 2 hrs/session'],
       posterAssetId: null,
       image: '/course2.jpeg',
       href: '/#pricing',

@@ -1,9 +1,9 @@
 /**
  * Set the three product pricing tiers and wire Programs / Mentorship flags.
  *
- *   Workshop                          = PKR 999   (isWorkshopPlan)
- *   Mentorship 1 month                = PKR 8,999 (isLandingPlan / Fees Structure)
- *   AI Generalist Accelerator Program = PKR 29,999
+ *   AI Money Lab              = PKR 999   (isWorkshopPlan)
+ *   30-Day AI Builder Sprint  = PKR 8,999 (isLandingPlan / Fees Structure)
+ *   Zero to AI Pro            = PKR 29,999 (3 months)
  *
  * Usage: npx tsx scripts/sync-pricing-tiers.ts
  */
@@ -42,14 +42,14 @@ const TIER_META: Record<
   TierKey,
   { name: string; price: number; role: 'workshop' | 'mentorship' | 'program' }
 > = {
-  workshop: { name: 'Workshop', price: 999, role: 'workshop' },
+  workshop: { name: 'AI Money Lab', price: 999, role: 'workshop' },
   mentorship: {
-    name: 'Mentorship 1 month',
+    name: '30-Day AI Builder Sprint',
     price: 8999,
     role: 'mentorship',
   },
   generalist: {
-    name: 'AI Generalist Accelerator Program',
+    name: 'Zero to AI Pro',
     price: 29999,
     role: 'program',
   },

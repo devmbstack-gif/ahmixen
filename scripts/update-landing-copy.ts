@@ -47,7 +47,7 @@ const MENTORSHIP_FEATURES = [
 ];
 
 const ACCELERATOR_LEAD =
-  '6 months of live sessions, 5 days a week, 2 hours per session';
+  '3 months of live sessions, 5 days a week, 2 hours per session';
 
 function scrubFeature(f: string): string | null {
   const t = f.trim();
@@ -92,24 +92,27 @@ async function main() {
   const plans = await Plan.find({ status: { $ne: 'archived' } });
   const workshop =
     plans.find((p) => p.isWorkshopPlan) ||
-    plans.find((p) => /^workshop$/i.test(String(p.name))) ||
+    plans.find((p) => /money lab|^workshop$/i.test(String(p.name))) ||
     null;
   const mentorship =
     plans.find((p) => p.isLandingPlan) ||
-    plans.find((p) => /mentorship/i.test(String(p.name))) ||
+    plans.find((p) => /builder sprint|mentorship/i.test(String(p.name))) ||
     null;
   const generalist =
     plans.find(
       (p) =>
-        /generalist|accelerator/i.test(String(p.name)) && p.status === 'active'
+        /zero to ai pro|generalist|accelerator/i.test(String(p.name)) &&
+        p.status === 'active'
     ) ||
-    plans.find((p) => /generalist|accelerator/i.test(String(p.name))) ||
+    plans.find((p) =>
+      /zero to ai pro|generalist|accelerator/i.test(String(p.name))
+    ) ||
     null;
 
   if (workshop) {
     const w = await Plan.findById(workshop._id);
     if (w) {
-      w.name = 'Workshop';
+      w.name = 'AI Money Lab';
       w.shortDescription = w.shortDescription?.replace(/one live session\.?\s*/gi, '').trim()
         || 'Hands-on live workshop. Beginner friendly.';
       if (/one live session/i.test(String(w.shortDescription))) {
@@ -119,16 +122,16 @@ async function main() {
         .map((f) => scrubFeature(String(f)))
         .filter((f): f is string => Boolean(f));
       await w.save();
-      console.log(`Plan Workshop: PKR ${w.price} (${w.features.length} features)`);
+      console.log(`Plan AI Money Lab: PKR ${w.price} (${w.features.length} features)`);
     }
   }
 
   if (mentorship) {
     const m = await Plan.findById(mentorship._id);
     if (m) {
-      m.name = 'one month Mentorship';
+      m.name = '30-Day AI Builder Sprint';
       m.shortDescription =
-        'Group mentorship: master top AI tools live in one month and ship real products.';
+        'Group mentorship: master top AI tools live in 30 days and ship real products.';
       const kept = (m.features || [])
         .map((f) => scrubFeature(String(f)))
         .filter((f): f is string => Boolean(f))
@@ -155,16 +158,20 @@ async function main() {
   if (generalist) {
     const g = await Plan.findById(generalist._id);
     if (g) {
-      g.name = 'AI Generalist Accelerator';
+      g.name = 'Zero to AI Pro';
       g.shortDescription =
-        'A 6-month, hands-on and beginner-friendly program.';
+        'A 3-month, hands-on and beginner-friendly program.';
       const cleaned = (g.features || [])
         .map((f) => scrubFeature(String(f)))
         .filter((f): f is string => Boolean(f))
-        .filter((f) => !/^6 months of live sessions/i.test(f));
+        .filter(
+          (f) =>
+            !/^\d+\s*months? of live sessions/i.test(f) &&
+            !/^6 months of live sessions/i.test(f)
+        );
       g.features = [ACCELERATOR_LEAD, ...cleaned].slice(0, 8);
       await g.save();
-      console.log(`Plan Accelerator: PKR ${g.price}`);
+      console.log(`Plan Zero to AI Pro: PKR ${g.price}`);
       console.log(`  features: ${g.features.join(' | ')}`);
     }
   }
@@ -193,7 +200,7 @@ async function main() {
   const cards = [
     {
       id: 'workshop',
-      title: 'Workshop',
+      title: 'AI Money Lab',
       instructorLine: 'Ahmi',
       badges: ['Live Event', '2 Hours'],
       posterAssetId: null as string | null,
@@ -205,9 +212,9 @@ async function main() {
     },
     {
       id: 'mentorship-1-month',
-      title: 'one month Mentorship',
+      title: '30-Day AI Builder Sprint',
       instructorLine: 'Ahmi',
-      badges: ['Group Mentorship', '1 Month', '5 days/week · 2 hrs/session'],
+      badges: ['Group Mentorship', '30 Days', '5 days/week · 2 hrs/session'],
       posterAssetId: null as string | null,
       image: '/course1.jpeg',
       href: '/#pricing',
@@ -217,9 +224,9 @@ async function main() {
     },
     {
       id: 'ai-generalist-accelerator',
-      title: 'AI Generalist Accelerator',
+      title: 'Zero to AI Pro',
       instructorLine: 'Ahmi',
-      badges: ['6 Months', '5 days/week · 2 hrs/session'],
+      badges: ['3 Months', '5 days/week · 2 hrs/session'],
       posterAssetId: null as string | null,
       image: '/course2.jpeg',
       href: '/#pricing',

@@ -3,7 +3,24 @@ import { RateLimit } from '@/models/RateLimit';
 import { connectToDatabase } from '@/lib/db';
 
 function salt(): string {
-  return process.env.RATE_LIMIT_SALT || process.env.AUTH_SECRET || 'dev-salt';
+  const fromEnv = (
+    process.env.RATE_LIMIT_SALT ||
+    process.env.AUTH_SECRET ||
+    ''
+  ).trim();
+  if (fromEnv) return fromEnv;
+
+  if (process.env.NODE_ENV === 'production') {
+    // Never use a shared weak constant in production — hashes would be forgeable.
+    console.error(
+      '[rateLimit] Set RATE_LIMIT_SALT or AUTH_SECRET in production'
+    );
+    return createHash('sha256')
+      .update(`ahmixen-missing-salt:${process.pid}:${Date.now()}`)
+      .digest('hex');
+  }
+
+  return 'dev-salt';
 }
 
 /** First x-forwarded-for value, hashed — never store raw IPs. */

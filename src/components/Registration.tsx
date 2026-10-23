@@ -95,7 +95,7 @@ export const Registration: React.FC<RegistrationProps> = ({
     if (isMentorship) {
       return { dateLine: 'Starts Nov 1, 2026', showSeats: false };
     }
-    if (/generalist|accelerator/i.test(plan.name)) {
+    if (/zero to ai pro|generalist|accelerator/i.test(plan.name)) {
       return { dateLine: 'Starts Nov 15, 2026', showSeats: false };
     }
     return { dateLine: workshopWhenLine, showSeats: false };

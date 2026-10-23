@@ -12,11 +12,11 @@ export type ProgramCard = {
   status: ProgramStatus;
 };
 
-/** Course catalog — Workshop, Mentorship, Accelerator */
+/** Course catalog — AI Money Lab, 30-Day Sprint, Zero to AI Pro */
 export const PROGRAMS: readonly ProgramCard[] = [
   {
     id: 'workshop',
-    title: 'Workshop',
+    title: 'AI Money Lab',
     instructor: 'Ahmi',
     badges: ['Live Event', '2 Hours'],
     price: 'PKR 999',
@@ -26,9 +26,9 @@ export const PROGRAMS: readonly ProgramCard[] = [
   },
   {
     id: 'mentorship-1-month',
-    title: 'one month Mentorship',
+    title: '30-Day AI Builder Sprint',
     instructor: 'Ahmi',
-    badges: ['Group Mentorship', '1 Month', '5 days/week · 2 hrs/session'],
+    badges: ['Group Mentorship', '30 Days', '5 days/week · 2 hrs/session'],
     price: 'PKR 8,999',
     image: '/course1.jpeg',
     href: '/#pricing',
@@ -36,9 +36,9 @@ export const PROGRAMS: readonly ProgramCard[] = [
   },
   {
     id: 'ai-generalist-accelerator',
-    title: 'AI Generalist Accelerator',
+    title: 'Zero to AI Pro',
     instructor: 'Ahmi',
-    badges: ['6 Months', '5 days/week · 2 hrs/session'],
+    badges: ['3 Months', '5 days/week · 2 hrs/session'],
     price: 'PKR 29,999',
     image: '/course2.jpeg',
     href: '/#pricing',
