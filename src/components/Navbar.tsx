@@ -43,7 +43,7 @@ export const Navbar: React.FC = () => {
 
   const onReserve = () => {
     if (reserveDisabled) return;
-    startWorkshopReserveFlow(null, { forTitle: 'AI Money Lab' });
+    startWorkshopReserveFlow(null);
   };
 
   // Keep SSR/client first paint identical; apply sold-out/closed labels after mount.

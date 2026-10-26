@@ -153,9 +153,7 @@ export const WorkshopPreview: React.FC<WorkshopPreviewProps> = ({
             type="button"
             onClick={() => {
               if (!workshopCta.disabled) {
-                startWorkshopReserveFlow(null, {
-                  forTitle: 'AI Money Lab',
-                });
+                startWorkshopReserveFlow(null);
               }
             }}
             disabled={workshopCta.disabled}

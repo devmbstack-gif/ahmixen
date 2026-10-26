@@ -225,9 +225,7 @@ export const Hero: React.FC<HeroProps> = ({
             id="hero-reserve-cta"
             onClick={() => {
               if (!workshopCta.disabled) {
-                startWorkshopReserveFlow(null, {
-                  forTitle: 'AI Money Lab',
-                });
+                startWorkshopReserveFlow(null);
               }
             }}
             disabled={workshopCta.disabled}
